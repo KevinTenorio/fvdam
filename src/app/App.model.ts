@@ -17,6 +17,8 @@ export interface AppContext {
   setUrlBackend: (urlBackend: string) => void;
   loadingMessages: string[];
   setLoading: (loading: string, status?: boolean) => void;
+  fvdamFile: any;
+  setFvdamFile: (fvdamFile: any) => void;
 }
 
 export interface PortalVars {

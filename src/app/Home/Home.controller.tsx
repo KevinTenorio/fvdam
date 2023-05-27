@@ -4,7 +4,15 @@
 import HomeView from './Home.view';
 
 function HomeController() {
-  return <HomeView />;
+  const handleFileRead = (file: any) => {
+    const fr = new FileReader();
+    fr.onload = (e) => {
+      const text = e.target?.result;
+      console.log(text);
+    };
+    fr.readAsText(file);
+  };
+  return <HomeView handleFileRead={handleFileRead} />;
 }
 
 export default HomeController;

@@ -14,6 +14,7 @@ export function AppProvider({ children }: any) {
   // Global application variables
   const [loadingMessages, setLoadingMessages] = useState<string[]>([]);
   const [errorMessages, setErrorMessages] = useState<any[]>([]);
+  const [fvdamFile, setFvdamFile] = useState<any>();
 
   // Function to manage the global loading state. To start loading pass the message you want to display. To finish loading pass the same message and the false status.
   const setLoading = (message: string, status = true) => {
@@ -53,9 +54,11 @@ export function AppProvider({ children }: any) {
       setError,
       errorMessages,
       loadingMessages,
-      setLoading
+      setLoading,
+      fvdamFile,
+      setFvdamFile
     }),
-    [loadingMessages, errorMessages]
+    [loadingMessages, errorMessages, fvdamFile]
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
