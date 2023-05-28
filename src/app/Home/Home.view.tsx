@@ -135,7 +135,8 @@ function HomeView({
                     flexDirection: 'column',
                     padding: '15px',
                     backgroundColor: 'rgba(0, 0, 0, 0.08)',
-                    border: '1px solid var(--off-white)'
+                    border: '1px solid var(--off-white)',
+                    marginRight: '20px'
                   }}
                 >
                   <div
@@ -235,16 +236,25 @@ function HomeView({
                   >
                     <div
                       style={{
-                        height: '150px',
-                        width: '150px',
+                        height: '300px',
+                        width: '300px',
                         borderRadius: '50%',
                         background: `conic-gradient(${getPieChartColors(materials.state)})`,
-                        border: '1px solid var(--off-white)',
                         boxShadow: '0px 0px 5px 0px rgba(0,0,0,0.75)'
                       }}
                     />
                   </div>
                 </div>
+                <div
+                  style={{
+                    flex: '1',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    padding: '15px',
+                    backgroundColor: 'rgba(0, 0, 0, 0.08)',
+                    border: '1px solid var(--off-white)'
+                  }}
+                ></div>
               </div>
             )}
             <div style={{ width: '20px', flex: '1' }}></div>
