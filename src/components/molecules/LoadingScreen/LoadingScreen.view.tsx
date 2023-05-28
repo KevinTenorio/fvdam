@@ -16,7 +16,7 @@ const LoadingScreenView = ({ loadingMessages }: { loadingMessages: string[] }) =
       }}
     >
       <div className={style.loadingSpinner}></div>
-      <div style={{ marginTop: '10px' }}>{loadingMessages[0] || 'Carregando...'}</div>
+      <div style={{ marginTop: '10px' }}>{loadingMessages[0] || 'Loading...'}</div>
     </div>
   );
 };

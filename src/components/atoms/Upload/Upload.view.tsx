@@ -105,7 +105,7 @@ function UploadView({ file, width, height }: UploadViewProps) {
                   fontWeight: '500'
                 }}
               >
-                Arraste ou clique para realizar o upload.
+                Drag or click to import a file.
               </span>
             </div>
           </div>
