@@ -20,6 +20,7 @@ export interface Material {
   constitutiveMatrixIn?: math.Matrix | math.MathCollection;
   constitutiveMatrixOut?: math.Matrix | math.MathCollection;
   area: number;
+  color: string;
 }
 
 export interface Node {

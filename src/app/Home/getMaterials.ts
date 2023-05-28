@@ -54,6 +54,7 @@ function getMaterials(materials: Material[], line: string, lines: string[], i: n
         poisson: undefined,
         young: undefined,
         constitutiveMatrix: undefined,
+        color: '',
         area: 0
       });
     }
@@ -78,6 +79,7 @@ function getMaterials(materials: Material[], line: string, lines: string[], i: n
       materials[j].constitutiveMatrix = C;
       materials[j].constitutiveMatrixIn = CIn;
       materials[j].constitutiveMatrixOut = COut;
+      materials[j].color = `#${Math.floor(Math.random() * 16777215).toString(16)}`;
     }
   }
 }

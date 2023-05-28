@@ -127,6 +127,30 @@ function HomeController() {
     };
     fr.readAsText(file);
   }
+
+  function getPieChartColors(materials: Material[]) {
+    let totalArea = 0;
+    const colors: string[] = [];
+    const percentages: number[] = [0];
+    materials.forEach((material) => {
+      totalArea += material.area;
+      colors.push(material.color);
+    });
+    let cumulativeArea = 0;
+    materials.forEach((material) => {
+      cumulativeArea += material.area;
+      percentages.push((cumulativeArea / totalArea) * 100);
+    });
+    let string = '';
+    for (let i = 0; i < colors.length; i++) {
+      string += `${colors[i]} ${percentages[i]}% ${percentages[i + 1]}%`;
+      if (i !== colors.length - 1) {
+        string += ', ';
+      }
+    }
+    return string;
+  }
+
   return (
     <HomeView
       handleFileRead={handleFileRead}
@@ -134,6 +158,7 @@ function HomeController() {
       materials={{ state: materials, set: setMaterials }}
       nodesInfo={{ state: nodesInfo, set: setNodesInfo }}
       elements={{ state: elements, set: setElements }}
+      getPieChartColors={getPieChartColors}
     />
   );
 }
