@@ -50,12 +50,15 @@ function getMaterials(materials: Material[], line: string, lines: string[], i: n
   if (line === '%MATERIAL') {
     for (let j = 0; j < Number(lines[i + 1]); j++) {
       materials.push({
-        label: undefined,
-        poisson: undefined,
-        young: undefined,
-        constitutiveMatrix: undefined,
+        label: '',
+        poisson: 0,
+        young: 0,
         color: '',
-        area: 0
+        constitutiveMatrix: math.matrix([]),
+        area: 0,
+        id: 0,
+        constitutiveMatrixIn: math.matrix([]),
+        constitutiveMatrixOut: math.matrix([])
       });
     }
   } else if (line === '%MATERIAL.LABEL') {
@@ -68,12 +71,11 @@ function getMaterials(materials: Material[], line: string, lines: string[], i: n
   } else if (line === '%MATERIAL.ISOTROPIC') {
     for (let j = 0; j < materials.length; j++) {
       const isotropicProps = lines[i + j + 2].replaceAll(' ', '').split('\t');
+      materials[j].id = Number(isotropicProps[0]);
       materials[j].poisson = Number(isotropicProps[2]);
       materials[j].young = Number(isotropicProps[1]);
       const { C, CIn, COut } = buildMaterialMatrices({
-        // @ts-ignore
         E: materials[j].young,
-        // @ts-ignore
         v: materials[j].poisson
       });
       materials[j].constitutiveMatrix = C;

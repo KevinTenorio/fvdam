@@ -13,34 +13,41 @@ export interface Model {
 }
 
 export interface Material {
-  label?: string;
-  poisson?: number;
-  young?: number;
-  constitutiveMatrix?: math.Matrix;
-  constitutiveMatrixIn?: math.Matrix | math.MathCollection;
-  constitutiveMatrixOut?: math.Matrix | math.MathCollection;
+  id: number;
+  label: string;
+  poisson: number;
+  young: number;
+  constitutiveMatrix: math.Matrix;
+  constitutiveMatrixIn: math.Matrix | math.MathCollection;
+  constitutiveMatrixOut: math.Matrix | math.MathCollection;
   area: number;
   color: string;
 }
 
 export interface Node {
-  id?: number;
-  x?: number;
-  y?: number;
+  id: number;
+  x: number;
+  y: number;
 }
 
 export interface NodesInfo {
-  nodesX?: number;
-  nodesY?: number;
-  minX?: number;
-  minY?: number;
-  maxX?: number;
-  maxY?: number;
+  nodesX: number;
+  nodesY: number;
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
 }
 
 export interface IElement {
-  id?: number;
-  nodes?: Node[];
+  id: number;
+  nodes: Node[];
   material: Material;
   area: number;
+  maxX: number;
+  minX: number;
+  maxY: number;
+  minY: number;
+  width: number;
+  height: number;
 }

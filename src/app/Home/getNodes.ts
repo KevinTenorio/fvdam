@@ -4,9 +4,9 @@ function getNodes(nodes: Node[], nodesInfo: NodesInfo, line: string, lines: stri
   if (line === '%NODE') {
     for (let j = 0; j < Number(lines[i + 1]); j++) {
       nodes.push({
-        id: undefined,
-        x: undefined,
-        y: undefined
+        id: 0,
+        x: 0,
+        y: 0
       });
     }
   } else if (line === '%NODE.COORD') {
@@ -21,25 +21,21 @@ function getNodes(nodes: Node[], nodesInfo: NodesInfo, line: string, lines: stri
       nodes[j].y = Number(nodeProps[2]);
       if (!minX) {
         minX = nodes[j].x;
-        // @ts-ignore
       } else if (nodes[j].x < minX) {
         minX = nodes[j].x;
       }
       if (!maxX) {
         maxX = nodes[j].x;
-        // @ts-ignore
       } else if (nodes[j].x > maxX) {
         maxX = nodes[j].x;
       }
       if (!minY) {
         minY = nodes[j].y;
-        // @ts-ignore
       } else if (nodes[j].y < minY) {
         minY = nodes[j].y;
       }
       if (!maxY) {
         maxY = nodes[j].y;
-        // @ts-ignore
       } else if (nodes[j].y > maxY) {
         maxY = nodes[j].y;
       }

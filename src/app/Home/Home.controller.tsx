@@ -12,7 +12,14 @@ import getElements from './getElements';
 function HomeController() {
   const { setError, setLoading }: AppContext = useAppContext();
   const [nodes, setNodes] = useState<Node[]>([]);
-  const [nodesInfo, setNodesInfo] = useState<NodesInfo>();
+  const [nodesInfo, setNodesInfo] = useState<NodesInfo>({
+    nodesX: 0,
+    nodesY: 0,
+    minX: 0,
+    maxX: 0,
+    minY: 0,
+    maxY: 0
+  });
   const [materials, setMaterials] = useState<Material[]>([]);
   const [elements, setElements] = useState<IElement[]>([]);
 
@@ -20,12 +27,12 @@ function HomeController() {
     const lines = fileStr.split('\n');
     const nodes: Node[] = [];
     const nodesInfo: NodesInfo = {
-      nodesX: undefined,
-      nodesY: undefined,
-      minX: undefined,
-      maxX: undefined,
-      minY: undefined,
-      maxY: undefined
+      nodesX: 0,
+      nodesY: 0,
+      minX: 0,
+      maxX: 0,
+      minY: 0,
+      maxY: 0
     };
     const materials: Material[] = [];
     const elements: IElement[] = [];

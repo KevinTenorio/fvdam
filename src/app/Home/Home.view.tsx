@@ -11,7 +11,7 @@ interface HomeViewProps {
   handleFileRead: (file: any) => void;
   nodes: State<Node[]>;
   materials: State<Material[]>;
-  nodesInfo: State<NodesInfo | undefined>;
+  nodesInfo: State<NodesInfo>;
   elements: State<IElement[]>;
   getPieChartColors: (materials: Material[]) => string;
 }
@@ -165,11 +165,9 @@ function HomeView({
                       .reduce((a, b) => a + b, 0)
                       .toFixed(2)}`}</div>
                     <div style={{ paddingLeft: '20px', marginBottom: '5px' }}>{`Width: ${
-                      // @ts-ignore
                       nodesInfo.state?.maxX - nodesInfo.state?.minX
                     }`}</div>
                     <div style={{ paddingLeft: '20px', marginBottom: '5px' }}>{`Height: ${
-                      // @ts-ignore
                       nodesInfo.state?.maxY - nodesInfo.state?.minY
                     }`}</div>
                   </div>
@@ -186,7 +184,6 @@ function HomeView({
                     }}
                   >
                     <div style={{ marginRight: '10px', marginBottom: '20px' }}>{`${
-                      // @ts-ignore
                       nodesInfo.state?.maxY - nodesInfo.state?.minY
                     }`}</div>
                     <div
@@ -200,15 +197,11 @@ function HomeView({
                       <div
                         style={{
                           width: `${
-                            // @ts-ignore
                             ((nodesInfo.state?.maxX - nodesInfo.state?.minX) * 100) /
-                            // @ts-ignore
                             (nodesInfo.state?.maxY - nodesInfo.state?.minY)
                           }px`,
                           height: `${
-                            // @ts-ignore
                             ((nodesInfo.state?.maxY - nodesInfo.state?.minY) * 100) /
-                            // @ts-ignore
                             (nodesInfo.state?.maxY - nodesInfo.state?.minY)
                           }px`,
                           backgroundColor: 'rgb(233, 233, 233)',
@@ -217,7 +210,6 @@ function HomeView({
                         }}
                       />
                       <div style={{ marginTop: '5px' }}>{`${
-                        // @ts-ignore
                         nodesInfo.state?.maxX - nodesInfo.state?.minX
                       }`}</div>
                     </div>
@@ -254,7 +246,52 @@ function HomeView({
                     backgroundColor: 'rgba(0, 0, 0, 0.08)',
                     border: '1px solid var(--off-white)'
                   }}
-                ></div>
+                >
+                  <div
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      border: '1px solid var(--off-white)',
+                      backgroundColor: 'rgba(0, 0, 0, 0.08)',
+                      padding: '10px',
+                      position: 'relative',
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      overflow: 'hidden'
+                    }}
+                  >
+                    <div
+                      style={{
+                        position: 'absolute',
+                        transform: 'scale(3)',
+                        width: `${nodesInfo.state.maxX - nodesInfo.state.minX}px`,
+                        height: `${nodesInfo.state.maxY - nodesInfo.state.minY}px`,
+                        boxShadow: '0px 0px 5px 0px rgba(0,0,0,0.75)'
+                      }}
+                    >
+                      {elements.state.map((element) => (
+                        <div
+                          key={element.id}
+                          style={{
+                            position: 'absolute',
+                            left: `${
+                              element.minX + (nodesInfo.state.maxX - nodesInfo.state.minX) / 2
+                            }px`,
+                            top: `${
+                              element.minY + (nodesInfo.state.maxY - nodesInfo.state.minY) / 2
+                            }px`,
+                            right: `${element.maxX}px`,
+                            bottom: `${element.maxY}px`,
+                            width: `${element.width}px`,
+                            height: `${element.height}px`,
+                            backgroundColor: `${element.material.color}`
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
             <div style={{ width: '20px', flex: '1' }}></div>
