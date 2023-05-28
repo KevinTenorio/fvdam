@@ -6,6 +6,7 @@ import { AppContext } from '../App.model';
 import Upload from '/src/components/atoms/Upload';
 import { State } from '/src/index.model';
 import { Node, NodesInfo, Material, IElement } from './Home.model';
+import './Home.style.css';
 
 interface HomeViewProps {
   handleFileRead: (file: any) => void;
@@ -39,16 +40,55 @@ function HomeView({
               flexDirection: 'column'
             }}
           >
-            <Upload file={{ state: fvdamFile, set: setFvdamFile }} width="200px" height="50px" />
-            {fvdamFile && (
-              <button
-                style={{ marginTop: '20px', cursor: 'pointer' }}
-                onClick={() => handleFileRead(fvdamFile)}
+            <div // HEADER
+              style={{
+                width: '100%',
+                display: 'flex',
+                flexDirection: 'row',
+                alignItems: 'center'
+              }}
+            >
+              <div
+                style={{
+                  marginRight: '20px',
+                  marginLeft: '10px',
+                  color: 'white',
+                  fontWeight: 'bold',
+                  fontSize: '22px'
+                }}
               >
-                Start
-              </button>
-            )}
-            {nodes.state.length > 0 && (
+                FVDAM
+              </div>
+              <Upload file={{ state: fvdamFile, set: setFvdamFile }} width="200px" height="50px" />
+              {fvdamFile && (
+                <button
+                  className="button"
+                  style={{
+                    marginLeft: '20px',
+                    cursor: 'pointer',
+                    backgroundColor: 'rgba(0, 0, 0, 0.08)',
+                    border: '1px solid var(--off-white)',
+                    color: 'white',
+                    padding: '10px',
+                    borderRadius: '5px',
+                    fontWeight: 'bold',
+                    fontSize: '16px',
+                    width: '80px'
+                  }}
+                  onClick={() => handleFileRead(fvdamFile)}
+                >
+                  Start
+                </button>
+              )}
+            </div>
+            <div
+              style={{
+                marginTop: '20px',
+                width: '100%',
+                border: '1px solid var(--off-white)'
+              }}
+            />
+            {nodes.state.length > 0 && ( // CONTENT
               <div
                 style={{
                   marginTop: '20px',
@@ -57,9 +97,75 @@ function HomeView({
                   flexDirection: 'row'
                 }}
               >
-                <div
+                <div // UNIT CELL
                   style={{
                     width: '400px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    padding: '15px',
+                    backgroundColor: 'rgba(0, 0, 0, 0.08)',
+                    border: '1px solid var(--off-white)',
+                    marginRight: '20px'
+                  }}
+                >
+                  <div
+                    style={{
+                      margin: '10px',
+                      border: '1px solid var(--off-white)',
+                      color: 'white',
+                      backgroundColor: 'rgba(0, 0, 0, 0.08)',
+                      padding: '10px'
+                    }}
+                  >
+                    <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>Unit Cell</div>
+                    <div
+                      style={{ paddingLeft: '20px', marginBottom: '5px' }}
+                    >{`Materials: ${materials.state.length}`}</div>
+                    <div
+                      style={{ paddingLeft: '20px', marginBottom: '5px' }}
+                    >{`Nodes: ${nodes.state.length}`}</div>
+                    <div
+                      style={{ paddingLeft: '20px', marginBottom: '5px' }}
+                    >{`Elements: ${elements.state.length}`}</div>
+                    <div
+                      style={{ paddingLeft: '20px', marginBottom: '5px' }}
+                    >{`Area: ${elements.state
+                      .map((element) => element?.area || 0)
+                      .reduce((a, b) => a + b, 0)
+                      .toFixed(2)}`}</div>
+                    <div style={{ paddingLeft: '20px', marginBottom: '5px' }}>{`Width: ${
+                      nodesInfo.state?.maxX - nodesInfo.state?.minX
+                    }`}</div>
+                    <div style={{ paddingLeft: '20px', marginBottom: '5px' }}>{`Height: ${
+                      nodesInfo.state?.maxY - nodesInfo.state?.minY
+                    }`}</div>
+                  </div>
+                  <div
+                    style={{
+                      margin: '10px',
+                      border: '1px solid var(--off-white)',
+                      color: 'white',
+                      backgroundColor: 'rgba(0, 0, 0, 0.08)',
+                      padding: '20px 20px 20px 20px',
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center'
+                    }}
+                  >
+                    <div
+                      style={{
+                        height: '300px',
+                        width: '300px',
+                        borderRadius: '50%',
+                        background: `conic-gradient(${getPieChartColors(materials.state)})`,
+                        boxShadow: '0px 0px 5px 0px rgba(0,0,0,0.75)'
+                      }}
+                    />
+                  </div>
+                </div>
+                <div // MATERIALS
+                  style={{
+                    width: '300px',
                     display: 'flex',
                     flexDirection: 'column',
                     padding: '15px',
@@ -128,116 +234,7 @@ function HomeView({
                     </div>
                   ))}
                 </div>
-                <div
-                  style={{
-                    width: '400px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    padding: '15px',
-                    backgroundColor: 'rgba(0, 0, 0, 0.08)',
-                    border: '1px solid var(--off-white)',
-                    marginRight: '20px'
-                  }}
-                >
-                  <div
-                    style={{
-                      margin: '10px',
-                      border: '1px solid var(--off-white)',
-                      color: 'white',
-                      backgroundColor: 'rgba(0, 0, 0, 0.08)',
-                      padding: '10px'
-                    }}
-                  >
-                    <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>Unit Cell</div>
-                    <div
-                      style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                    >{`Materials: ${materials.state.length}`}</div>
-                    <div
-                      style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                    >{`Nodes: ${nodes.state.length}`}</div>
-                    <div
-                      style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                    >{`Elements: ${elements.state.length}`}</div>
-                    <div
-                      style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                    >{`Area: ${elements.state
-                      .map((element) => element?.area || 0)
-                      .reduce((a, b) => a + b, 0)
-                      .toFixed(2)}`}</div>
-                    <div style={{ paddingLeft: '20px', marginBottom: '5px' }}>{`Width: ${
-                      nodesInfo.state?.maxX - nodesInfo.state?.minX
-                    }`}</div>
-                    <div style={{ paddingLeft: '20px', marginBottom: '5px' }}>{`Height: ${
-                      nodesInfo.state?.maxY - nodesInfo.state?.minY
-                    }`}</div>
-                  </div>
-                  <div
-                    style={{
-                      margin: '10px',
-                      border: '1px solid var(--off-white)',
-                      color: 'white',
-                      backgroundColor: 'rgba(0, 0, 0, 0.08)',
-                      padding: '20px 20px 5px 0px',
-                      display: 'flex',
-                      justifyContent: 'center',
-                      alignItems: 'center'
-                    }}
-                  >
-                    <div style={{ marginRight: '10px', marginBottom: '20px' }}>{`${
-                      nodesInfo.state?.maxY - nodesInfo.state?.minY
-                    }`}</div>
-                    <div
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        flexDirection: 'column'
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: `${
-                            ((nodesInfo.state?.maxX - nodesInfo.state?.minX) * 100) /
-                            (nodesInfo.state?.maxY - nodesInfo.state?.minY)
-                          }px`,
-                          height: `${
-                            ((nodesInfo.state?.maxY - nodesInfo.state?.minY) * 100) /
-                            (nodesInfo.state?.maxY - nodesInfo.state?.minY)
-                          }px`,
-                          backgroundColor: 'rgb(233, 233, 233)',
-                          border: '1px solid var(--off-white)',
-                          boxShadow: '0px 0px 5px 0px rgba(0,0,0,0.75)'
-                        }}
-                      />
-                      <div style={{ marginTop: '5px' }}>{`${
-                        nodesInfo.state?.maxX - nodesInfo.state?.minX
-                      }`}</div>
-                    </div>
-                  </div>
-                  <div
-                    style={{
-                      margin: '10px',
-                      border: '1px solid var(--off-white)',
-                      color: 'white',
-                      backgroundColor: 'rgba(0, 0, 0, 0.08)',
-                      padding: '20px 20px 20px 20px',
-                      display: 'flex',
-                      justifyContent: 'center',
-                      alignItems: 'center'
-                    }}
-                  >
-                    <div
-                      style={{
-                        height: '300px',
-                        width: '300px',
-                        borderRadius: '50%',
-                        background: `conic-gradient(${getPieChartColors(materials.state)})`,
-                        boxShadow: '0px 0px 5px 0px rgba(0,0,0,0.75)'
-                      }}
-                    />
-                  </div>
-                </div>
-                <div
+                <div // MODEL RENDER
                   style={{
                     flex: '1',
                     display: 'flex',
@@ -278,11 +275,15 @@ function HomeView({
                             left: `${
                               element.minX + (nodesInfo.state.maxX - nodesInfo.state.minX) / 2
                             }px`,
+                            right: `${
+                              element.maxX + (nodesInfo.state.maxX - nodesInfo.state.minX) / 2
+                            }px`,
                             top: `${
                               element.minY + (nodesInfo.state.maxY - nodesInfo.state.minY) / 2
                             }px`,
-                            right: `${element.maxX}px`,
-                            bottom: `${element.maxY}px`,
+                            bottom: `${
+                              element.maxY + (nodesInfo.state.maxY - nodesInfo.state.minY) / 2
+                            }px`,
                             width: `${element.width}px`,
                             height: `${element.height}px`,
                             backgroundColor: `${element.material.color}`
@@ -294,9 +295,9 @@ function HomeView({
                 </div>
               </div>
             )}
-            <div style={{ width: '20px', flex: '1' }}></div>
+            <div style={{ width: '20px', flex: '1' }} />
           </div>
-          <div
+          <div // FOOTER
             style={{
               color: 'white',
               textAlign: 'center',
@@ -304,7 +305,8 @@ function HomeView({
               width: '100%',
               height: '30px',
               backgroundColor: 'rgba(0, 0, 0, 0.08)',
-              borderTop: '1px solid var(--off-white)'
+              borderTop: '1px solid var(--off-white)',
+              marginTop: '20px'
             }}
           >
             App developed by Kevin de Souza
