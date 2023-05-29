@@ -62,6 +62,8 @@ export interface IElement {
   thetaOut: math.Matrix;
   t0In: math.Matrix;
   t0Out: math.Matrix;
+  nIn: math.MathCollection;
+  nOut: math.MathCollection;
 }
 
 export interface Face {

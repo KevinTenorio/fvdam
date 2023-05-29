@@ -14,11 +14,14 @@ function calcLocal(
   POut: math.MathType
 ) {
   const AbIn = math.multiply(element.DIn, element.material.CIn, EIn, element.BIn, AIn);
+  console.log('AbIn foi');
   const BbIn = math.subtract(
     PIn,
     math.multiply(NIn, math.inv(element.phiIn), element.thetaIn, MIn)
   );
+  console.log('BbIn foi');
   const KeIn = math.multiply(AbIn, BbIn);
+  console.log('KeIn foi');
 
   const AbOut = math.multiply(
     element.DOut,
@@ -27,11 +30,14 @@ function calcLocal(
     element.BOut,
     AOut
   );
+  console.log('AbOut foi');
   const BbOut = math.subtract(
     POut,
     math.multiply(NOut, math.inv(element.phiOut), element.thetaOut, MOut)
   );
+  console.log('BbOut foi');
   const KeOut = math.multiply(AbOut, BbOut);
+  console.log('KeOut foi');
 
   return { KeIn, KeOut };
 
@@ -44,19 +50,19 @@ function calcLocal(
   //   );
 }
 
-function calcForces(NIn: math.MathCollection, NOut: math.MathCollection, C: math.Matrix) {
+function calcForces(nIn: math.MathCollection, nOut: math.MathCollection, C: math.Matrix) {
   const CAuxIn = math.matrix([
     [C.get([0, 1]), C.get([1, 1]), C.get([1, 2]), 0],
     [C.get([0, 2]), C.get([1, 2]), C.get([2, 2]), 0],
     [0, 0, 0, C.get([3, 3])]
   ]);
-  const t0In = math.multiply(-1, NIn, CAuxIn);
+  const t0In = math.multiply(-1, nIn, CAuxIn);
 
   const CAuxOut = math.matrix([
     [C.get([5, 5]), 0],
     [0, C.get([4, 4])]
   ]);
-  const t0Out = math.multiply(-1, NOut, CAuxOut);
+  const t0Out = math.multiply(-1, nOut, CAuxOut);
 
   return { t0In, t0Out };
 }
@@ -80,23 +86,24 @@ function calcStiffness(
   for (let i = 0; i < elements.length; i++) {
     const { KeIn, KeOut } = calcLocal(elements[i], AIn, EIn, MIn, NIn, PIn, AOut, MOut, NOut, POut);
 
-    const LMIn = math.concat(
-      elements[i].faces[0].dof,
-      elements[i].faces[1].dof,
-      elements[i].faces[2].dof,
-      elements[i].faces[3].dof,
-      0
+    const LMIn = math.subtract(
+      math.concat(
+        elements[i].faces[0].dof,
+        elements[i].faces[1].dof,
+        elements[i].faces[2].dof,
+        elements[i].faces[3].dof,
+        0
+      ),
+      1
     );
-    const LMOut = math.matrix([
-      [
-        elements[i].faces[0].id,
-        elements[i].faces[1].id,
-        elements[i].faces[2].id,
-        elements[i].faces[3].id
-      ]
-    ]);
+    const LMOut = [
+      elements[i].faces[0].id - 1,
+      elements[i].faces[1].id - 1,
+      elements[i].faces[2].id - 1,
+      elements[i].faces[3].id - 1
+    ];
 
-    const { t0In, t0Out } = calcForces(NIn, NOut, elements[i].material.C);
+    const { t0In, t0Out } = calcForces(elements[i].nIn, elements[i].nOut, elements[i].material.C);
     elements[i].t0In = t0In;
     elements[i].t0Out = t0Out;
 

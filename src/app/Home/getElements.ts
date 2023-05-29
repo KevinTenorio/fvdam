@@ -128,7 +128,7 @@ function calcDB(nodes: Node[]) {
 }
 
 function calcPhiTheta(element: IElement) {
-  const C = element.material.constitutiveMatrix;
+  const C = element.material.C;
   const J = element.JInv;
 
   const J22 = J.get([0, 0]);
@@ -200,7 +200,17 @@ function getElements(
           [0, 0],
           [0, 0]
         ]),
-        faces: []
+        faces: [],
+        DIn: math.matrix([]),
+        DOut: math.matrix([]),
+        BIn: math.matrix([]),
+        BOut: math.matrix([]),
+        phiIn: math.matrix([]),
+        thetaIn: math.matrix([]),
+        phiOut: 0,
+        thetaOut: math.matrix([]),
+        t0In: math.matrix([]),
+        t0Out: math.matrix([])
       });
     }
   } else if (line === '%ELEMENT.C4') {
@@ -250,6 +260,8 @@ function getElements(
       elements[j].BIn = BIn;
       elements[j].DOut = DOut;
       elements[j].BOut = BOut;
+      elements[j].nIn = nIn;
+      elements[j].nOut = nOut;
 
       const { phiIn, thetaIn, phiOut, thetaOut } = calcPhiTheta(elements[j]);
       elements[j].phiIn = phiIn;
@@ -280,6 +292,16 @@ function getElements(
         strain: [0, 0, 0],
         force: [0, 0, 0]
       });
+    }
+    for (let j = 0; j < elements.length; j++) {
+      const info = lines[i + j + 2].replaceAll(' ', '').split('\t');
+      const faceIds = [Number(info[1]), Number(info[2]), Number(info[3]), Number(info[4])];
+      elements[j].faces = [
+        faces[faceIds[0] - 1],
+        faces[faceIds[1] - 1],
+        faces[faceIds[2] - 1],
+        faces[faceIds[3] - 1]
+      ];
     }
   }
 }
