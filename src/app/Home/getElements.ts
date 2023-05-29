@@ -246,8 +246,16 @@ function getElements(
       const { DIn, BIn, nIn, DOut, BOut, nOut, area, JInv } = calcDB(elements[j].nodes);
       elements[j].area = area;
       elements[j].JInv = JInv;
+      elements[j].DIn = DIn;
+      elements[j].BIn = BIn;
+      elements[j].DOut = DOut;
+      elements[j].BOut = BOut;
 
       const { phiIn, thetaIn, phiOut, thetaOut } = calcPhiTheta(elements[j]);
+      elements[j].phiIn = phiIn;
+      elements[j].thetaIn = thetaIn;
+      elements[j].phiOut = phiOut;
+      elements[j].thetaOut = thetaOut;
 
       materials[Number(info[1]) - 1].area += elements[j].area;
     }
@@ -267,6 +275,7 @@ function getElements(
           nodes.find((node) => node.id === 2 * j + 1) ?? nodes[0],
           nodes.find((node) => node.id === 2 * j + 2) ?? nodes[0]
         ],
+        dof: [2 * j + 1, 2 * j + 2],
         constraints: [0, 0, 0],
         strain: [0, 0, 0],
         force: [0, 0, 0]

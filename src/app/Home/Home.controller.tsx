@@ -11,6 +11,7 @@ import getElements from './getElements';
 import getFaces from './getFaces';
 import calcConsts from './calcConsts';
 import calcDof from './calcDof';
+import calcStiffness from './calcStiffness';
 
 function HomeController() {
   const { setError, setLoading }: AppContext = useAppContext();
@@ -64,6 +65,19 @@ function HomeController() {
   ) {
     const { AIn, EIn, MIn, NIn, PIn, AOut, EOut, MOut, NOut, POut } = calcConsts();
     const { dofAOut, dofBOut, dofAIn, dofBIn } = calcDof(faces);
+    const { KgIn, KgOut } = calcStiffness(
+      faces,
+      elements,
+      AIn,
+      EIn,
+      MIn,
+      NIn,
+      PIn,
+      AOut,
+      MOut,
+      NOut,
+      POut
+    );
 
     return 0;
   }

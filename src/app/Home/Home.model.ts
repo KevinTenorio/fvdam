@@ -17,9 +17,9 @@ export interface Material {
   label: string;
   poisson: number;
   young: number;
-  constitutiveMatrix: math.Matrix;
-  constitutiveMatrixIn: math.Matrix | math.MathCollection;
-  constitutiveMatrixOut: math.Matrix | math.MathCollection;
+  C: math.Matrix;
+  CIn: math.Matrix | math.MathCollection;
+  COut: math.Matrix | math.MathCollection;
   area: number;
   color: string;
 }
@@ -52,6 +52,16 @@ export interface IElement {
   height: number;
   JInv: math.Matrix;
   faces: Face[];
+  DIn: math.MathCollection;
+  DOut: math.MathCollection;
+  BIn: math.MathCollection;
+  BOut: math.MathCollection;
+  phiIn: math.Matrix;
+  thetaIn: math.Matrix;
+  phiOut: number;
+  thetaOut: math.Matrix;
+  t0In: math.Matrix;
+  t0Out: math.Matrix;
 }
 
 export interface Face {
@@ -60,4 +70,5 @@ export interface Face {
   constraints: number[];
   strain: number[];
   force: number[];
+  dof: number[];
 }

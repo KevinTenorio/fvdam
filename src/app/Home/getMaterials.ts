@@ -54,11 +54,11 @@ function getMaterials(materials: Material[], line: string, lines: string[], i: n
         poisson: 0,
         young: 0,
         color: '',
-        constitutiveMatrix: math.matrix([]),
+        C: math.matrix([]),
         area: 0,
         id: 0,
-        constitutiveMatrixIn: math.matrix([]),
-        constitutiveMatrixOut: math.matrix([])
+        CIn: math.matrix([]),
+        COut: math.matrix([])
       });
     }
   } else if (line === '%MATERIAL.LABEL') {
@@ -78,9 +78,9 @@ function getMaterials(materials: Material[], line: string, lines: string[], i: n
         E: materials[j].young,
         v: materials[j].poisson
       });
-      materials[j].constitutiveMatrix = C;
-      materials[j].constitutiveMatrixIn = CIn;
-      materials[j].constitutiveMatrixOut = COut;
+      materials[j].C = C;
+      materials[j].CIn = CIn;
+      materials[j].COut = COut;
       let color = '';
       while (color.length < 6) {
         color = `${Math.floor(Math.random() * 16777215).toString(16)}`;
