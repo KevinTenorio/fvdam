@@ -295,20 +295,6 @@ function HomeView({
                 </div>
               </div>
             )}
-            <div style={{ width: '20px', height: '100%', minHeight: '5px' }} />
-            <div // FOOTER
-              style={{
-                color: 'white',
-                textAlign: 'center',
-                padding: '5px',
-                width: '100%',
-                height: '30px',
-                backgroundColor: 'rgba(0, 0, 0, 0.08)',
-                border: '1px solid var(--off-white)'
-              }}
-            >
-              App developed by Kevin de Souza
-            </div>
           </div>
         </div>
       );

@@ -1,5 +1,6 @@
 import Icon from '/src/components/atoms/Icon';
 import { State } from '/src/index.model';
+import './Upload.style.css';
 
 interface UploadViewProps {
   file: State<any>;
@@ -9,7 +10,7 @@ interface UploadViewProps {
 
 function UploadView({ file, width, height }: UploadViewProps) {
   return (
-    <div style={{ width, height, display: 'flex', alignItems: 'center' }}>
+    <div className="upload" style={{ width, height, display: 'flex', alignItems: 'center' }}>
       {file.state ? (
         <div
           style={{
