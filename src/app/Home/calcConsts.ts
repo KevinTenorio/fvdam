@@ -112,7 +112,7 @@ function calcConsts() {
     0.5
   );
 
-  const R = {
+  return {
     AIn,
     EIn,
     MIn,
@@ -124,8 +124,6 @@ function calcConsts() {
     NOut,
     POut
   };
-
-  return R;
 }
 
 export default calcConsts;

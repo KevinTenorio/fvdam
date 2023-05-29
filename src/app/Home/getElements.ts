@@ -239,6 +239,7 @@ function getElements(
         elements[j].nodes[2].y,
         elements[j].nodes[3].y
       );
+
       elements[j].width = elements[j].maxX - elements[j].minX;
       elements[j].height = elements[j].maxY - elements[j].minY;
 

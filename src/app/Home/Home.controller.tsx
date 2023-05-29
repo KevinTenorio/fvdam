@@ -62,8 +62,9 @@ function HomeController() {
     elements: IElement[],
     faces: Face[]
   ) {
-    const R = calcConsts();
+    const { AIn, EIn, MIn, NIn, PIn, AOut, EOut, MOut, NOut, POut } = calcConsts();
     const { dofAOut, dofBOut, dofAIn, dofBIn } = calcDof(faces);
+
     return 0;
   }
 
