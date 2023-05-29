@@ -10,6 +10,7 @@ import getMaterials from './getMaterials';
 import getElements from './getElements';
 import getFaces from './getFaces';
 import calcConsts from './calcConsts';
+import calcDof from './calcDof';
 
 function HomeController() {
   const { setError, setLoading }: AppContext = useAppContext();
@@ -62,6 +63,7 @@ function HomeController() {
     faces: Face[]
   ) {
     const R = calcConsts();
+    const { dofAOut, dofBOut, dofAIn, dofBIn } = calcDof(faces);
     return 0;
   }
 
