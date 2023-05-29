@@ -9,6 +9,7 @@ import getNodes from './getNodes';
 import getMaterials from './getMaterials';
 import getElements from './getElements';
 import getFaces from './getFaces';
+import calcConsts from './calcConsts';
 
 function HomeController() {
   const { setError, setLoading }: AppContext = useAppContext();
@@ -53,6 +54,17 @@ function HomeController() {
     return { nodes, nodesInfo, materials, elements, faces };
   }
 
+  async function fvdamAlg(
+    nodes: Node[],
+    nodesInfo: NodesInfo,
+    materials: Material[],
+    elements: IElement[],
+    faces: Face[]
+  ) {
+    const R = calcConsts();
+    return 0;
+  }
+
   async function handleFileRead(file: any) {
     const fr = new FileReader();
     fr.onload = (e) => {
@@ -69,6 +81,13 @@ function HomeController() {
             setNodesInfo(nodesInfo);
             setElements(elements);
             setFaces(faces);
+            setLoading('Executing FVDAM algorithm...');
+            fvdamAlg(nodes, nodesInfo, materials, elements, faces)
+              .then((res) => console.log(res))
+              .catch((error) => setError(error))
+              .finally(() => {
+                setLoading('Executing FVDAM algorithm...', false);
+              });
           })
           .catch((error) => setError(error))
           .finally(() => {

@@ -96,222 +96,242 @@ function HomeView({
                   marginTop: '20px',
                   width: '100%',
                   display: 'flex',
-                  flexDirection: 'row'
+                  flexDirection: 'column'
                 }}
               >
-                <div // UNIT CELL
+                <div
                   style={{
-                    width: '400px',
+                    width: '100%',
                     display: 'flex',
-                    flexDirection: 'column',
-                    padding: '15px',
-                    backgroundColor: 'rgba(0, 0, 0, 0.08)',
-                    border: '1px solid var(--off-white)',
-                    marginRight: '20px'
+                    flexDirection: 'row'
                   }}
                 >
-                  <div
+                  <div // UNIT CELL
                     style={{
-                      margin: '10px',
-                      border: '1px solid var(--off-white)',
-                      color: 'white',
-                      backgroundColor: 'rgba(0, 0, 0, 0.08)',
-                      padding: '10px',
+                      width: '400px',
                       display: 'flex',
-                      flexDirection: 'row'
-                    }}
-                  >
-                    <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>Unit Cell</div>
-                    <div>
-                      <div
-                        style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                      >{`Materials: ${materials.state.length}`}</div>
-                      <div
-                        style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                      >{`Nodes: ${nodes.state.length}`}</div>
-                      <div
-                        style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                      >{`Elements: ${elements.state.length}`}</div>
-                      <div
-                        style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                      >{`Faces: ${faces.state.length}`}</div>
-                    </div>
-                    <div>
-                      <div style={{ paddingLeft: '20px', marginBottom: '5px' }}>{`Constraints: ${
-                        faces.state.filter(
-                          (face) =>
-                            face.constraints.filter((constraint) => constraint === 1).length > 0
-                        ).length
-                      }`}</div>
-                      <div
-                        style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                      >{`Area: ${elements.state
-                        .map((element) => element?.area || 0)
-                        .reduce((a, b) => a + b, 0)
-                        .toFixed(2)}`}</div>
-                      <div style={{ paddingLeft: '20px', marginBottom: '5px' }}>{`Width: ${
-                        nodesInfo.state?.maxX - nodesInfo.state?.minX
-                      }`}</div>
-                      <div style={{ paddingLeft: '20px', marginBottom: '5px' }}>{`Height: ${
-                        nodesInfo.state?.maxY - nodesInfo.state?.minY
-                      }`}</div>
-                    </div>
-                  </div>
-                  <div
-                    style={{
-                      margin: '10px',
-                      border: '1px solid var(--off-white)',
-                      color: 'white',
+                      flexDirection: 'column',
+                      padding: '15px',
                       backgroundColor: 'rgba(0, 0, 0, 0.08)',
-                      padding: '20px 20px 20px 20px',
-                      display: 'flex',
-                      justifyContent: 'center',
-                      alignItems: 'center'
+                      border: '1px solid var(--off-white)',
+                      marginRight: '20px'
                     }}
                   >
-                    <div
-                      style={{
-                        height: '300px',
-                        width: '300px',
-                        borderRadius: '50%',
-                        background: `conic-gradient(${getPieChartColors(materials.state)})`,
-                        boxShadow: '0px 0px 5px 0px rgba(0,0,0,0.75)'
-                      }}
-                    />
-                  </div>
-                </div>
-                <div // MATERIALS
-                  style={{
-                    width: '300px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    padding: '15px',
-                    backgroundColor: 'rgba(0, 0, 0, 0.08)',
-                    border: '1px solid var(--off-white)',
-                    marginRight: '20px'
-                  }}
-                >
-                  <div
-                    style={{
-                      fontWeight: 'bold',
-                      color: 'white',
-                      width: '100%',
-                      textAlign: 'center',
-                      marginBottom: '10px'
-                    }}
-                  >
-                    Materials
-                  </div>
-                  {materials.state.map((material) => (
                     <div
                       style={{
                         margin: '10px',
                         border: '1px solid var(--off-white)',
                         color: 'white',
                         backgroundColor: 'rgba(0, 0, 0, 0.08)',
-                        padding: '10px'
+                        padding: '10px',
+                        display: 'flex',
+                        flexDirection: 'row'
                       }}
-                      key={material.label}
                     >
-                      <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>
-                        {material.label}
+                      <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>Unit Cell</div>
+                      <div>
+                        <div
+                          style={{ paddingLeft: '20px', marginBottom: '5px' }}
+                        >{`Materials: ${materials.state.length}`}</div>
+                        <div
+                          style={{ paddingLeft: '20px', marginBottom: '5px' }}
+                        >{`Nodes: ${nodes.state.length}`}</div>
+                        <div
+                          style={{ paddingLeft: '20px', marginBottom: '5px' }}
+                        >{`Elements: ${elements.state.length}`}</div>
+                        <div
+                          style={{ paddingLeft: '20px', marginBottom: '5px' }}
+                        >{`Faces: ${faces.state.length}`}</div>
                       </div>
-                      <div
-                        style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                      >{`Poisson: ${material.poisson}`}</div>
-                      <div
-                        style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                      >{`Young: ${material.young}`}</div>
-                      <div
-                        style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                      >{`Area: ${material.area.toFixed(2)}`}</div>
-                      <div style={{ paddingLeft: '20px', marginBottom: '5px' }}>{`Fraction: ${(
-                        (material.area * 100) /
-                        elements.state
+                      <div>
+                        <div style={{ paddingLeft: '20px', marginBottom: '5px' }}>{`Constraints: ${
+                          faces.state.filter(
+                            (face) =>
+                              face.constraints.filter((constraint) => constraint === 1).length > 0
+                          ).length
+                        }`}</div>
+                        <div
+                          style={{ paddingLeft: '20px', marginBottom: '5px' }}
+                        >{`Area: ${elements.state
                           .map((element) => element?.area || 0)
                           .reduce((a, b) => a + b, 0)
-                      ).toFixed(2)} %`}</div>
-                      <div
-                        style={{
-                          paddingLeft: '20px',
-                          marginBottom: '5px',
-                          display: 'flex',
-                          flexDirection: 'row'
-                        }}
-                      >
-                        {`Color: `}
-                        <div
-                          style={{
-                            paddingLeft: '5px',
-                            color: material.color,
-                            fontWeight: 'bold'
-                          }}
-                        >{`${material.color}`}</div>
+                          .toFixed(2)}`}</div>
+                        <div style={{ paddingLeft: '20px', marginBottom: '5px' }}>{`Width: ${
+                          nodesInfo.state?.maxX - nodesInfo.state?.minX
+                        }`}</div>
+                        <div style={{ paddingLeft: '20px', marginBottom: '5px' }}>{`Height: ${
+                          nodesInfo.state?.maxY - nodesInfo.state?.minY
+                        }`}</div>
                       </div>
                     </div>
-                  ))}
-                </div>
-                <div // MODEL RENDER
-                  style={{
-                    flex: '1',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    padding: '15px',
-                    backgroundColor: 'rgba(0, 0, 0, 0.08)',
-                    border: '1px solid var(--off-white)'
-                  }}
-                >
-                  <div
+                    <div
+                      style={{
+                        margin: '10px',
+                        border: '1px solid var(--off-white)',
+                        color: 'white',
+                        backgroundColor: 'rgba(0, 0, 0, 0.08)',
+                        padding: '20px 20px 20px 20px',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center'
+                      }}
+                    >
+                      <div
+                        style={{
+                          height: '300px',
+                          width: '300px',
+                          borderRadius: '50%',
+                          background: `conic-gradient(${getPieChartColors(materials.state)})`,
+                          boxShadow: '0px 0px 5px 0px rgba(0,0,0,0.75)'
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div // MODEL RENDER
                     style={{
-                      width: '100%',
-                      height: '100%',
-                      border: '1px solid var(--off-white)',
-                      backgroundColor: 'rgba(0, 0, 0, 0.08)',
-                      padding: '10px',
-                      position: 'relative',
+                      flex: '1',
                       display: 'flex',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      overflow: 'hidden'
+                      flexDirection: 'column',
+                      padding: '15px',
+                      backgroundColor: 'rgba(0, 0, 0, 0.08)',
+                      border: '1px solid var(--off-white)'
                     }}
                   >
                     <div
                       style={{
-                        position: 'absolute',
-                        transform: 'scale(3)',
-                        width: `${nodesInfo.state.maxX - nodesInfo.state.minX}px`,
-                        height: `${nodesInfo.state.maxY - nodesInfo.state.minY}px`,
-                        boxShadow: '0px 0px 5px 0px rgba(0,0,0,0.75)'
+                        width: '100%',
+                        height: '100%',
+                        border: '1px solid var(--off-white)',
+                        backgroundColor: 'rgba(0, 0, 0, 0.08)',
+                        padding: '10px',
+                        position: 'relative',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        overflow: 'hidden'
                       }}
                     >
-                      {elements.state.map((element) => (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          transform: 'scale(3)',
+                          width: `${nodesInfo.state.maxX - nodesInfo.state.minX}px`,
+                          height: `${nodesInfo.state.maxY - nodesInfo.state.minY}px`,
+                          boxShadow: '0px 0px 5px 0px rgba(0,0,0,0.75)'
+                        }}
+                      >
+                        {elements.state.map((element) => (
+                          <div
+                            key={element.id}
+                            style={{
+                              position: 'absolute',
+                              left: `${
+                                element.minX + (nodesInfo.state.maxX - nodesInfo.state.minX) / 2
+                              }px`,
+                              right: `${
+                                element.maxX + (nodesInfo.state.maxX - nodesInfo.state.minX) / 2
+                              }px`,
+                              top: `${
+                                element.minY + (nodesInfo.state.maxY - nodesInfo.state.minY) / 2
+                              }px`,
+                              bottom: `${
+                                element.maxY + (nodesInfo.state.maxY - nodesInfo.state.minY) / 2
+                              }px`,
+                              width: `${element.width}px`,
+                              height: `${element.height}px`,
+                              backgroundColor: `${element.material.color}`
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div
+                  style={{
+                    marginTop: '20px',
+                    width: '100%',
+                    display: 'flex',
+                    flexDirection: 'row'
+                  }}
+                >
+                  <div // MATERIALS
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      padding: '15px',
+                      backgroundColor: 'rgba(0, 0, 0, 0.08)',
+                      border: '1px solid var(--off-white)',
+                      marginRight: '20px'
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontWeight: 'bold',
+                        color: 'white',
+                        width: '100%',
+                        textAlign: 'center',
+                        marginBottom: '10px'
+                      }}
+                    >
+                      Materials
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'row' }}>
+                      {materials.state.map((material) => (
                         <div
-                          key={element.id}
                           style={{
-                            position: 'absolute',
-                            left: `${
-                              element.minX + (nodesInfo.state.maxX - nodesInfo.state.minX) / 2
-                            }px`,
-                            right: `${
-                              element.maxX + (nodesInfo.state.maxX - nodesInfo.state.minX) / 2
-                            }px`,
-                            top: `${
-                              element.minY + (nodesInfo.state.maxY - nodesInfo.state.minY) / 2
-                            }px`,
-                            bottom: `${
-                              element.maxY + (nodesInfo.state.maxY - nodesInfo.state.minY) / 2
-                            }px`,
-                            width: `${element.width}px`,
-                            height: `${element.height}px`,
-                            backgroundColor: `${element.material.color}`
+                            margin: '10px',
+                            border: '1px solid var(--off-white)',
+                            color: 'white',
+                            backgroundColor: 'rgba(0, 0, 0, 0.08)',
+                            padding: '10px'
                           }}
-                        />
+                          key={material.label}
+                        >
+                          <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>
+                            {material.label}
+                          </div>
+                          <div
+                            style={{ paddingLeft: '20px', marginBottom: '5px' }}
+                          >{`Poisson: ${material.poisson}`}</div>
+                          <div
+                            style={{ paddingLeft: '20px', marginBottom: '5px' }}
+                          >{`Young: ${material.young}`}</div>
+                          <div
+                            style={{ paddingLeft: '20px', marginBottom: '5px' }}
+                          >{`Area: ${material.area.toFixed(2)}`}</div>
+                          <div style={{ paddingLeft: '20px', marginBottom: '5px' }}>{`Fraction: ${(
+                            (material.area * 100) /
+                            elements.state
+                              .map((element) => element?.area || 0)
+                              .reduce((a, b) => a + b, 0)
+                          ).toFixed(2)} %`}</div>
+                          <div
+                            style={{
+                              paddingLeft: '20px',
+                              marginBottom: '5px',
+                              display: 'flex',
+                              flexDirection: 'row'
+                            }}
+                          >
+                            {`Color: `}
+                            <div
+                              style={{
+                                paddingLeft: '5px',
+                                color: material.color,
+                                fontWeight: 'bold'
+                              }}
+                            >{`${material.color}`}</div>
+                          </div>
+                        </div>
                       ))}
                     </div>
                   </div>
                 </div>
               </div>
             )}
+            <div style={{ height: '20px', width: '100%', color: 'transparent' }}>{'.'}</div>
           </div>
         </div>
       );
