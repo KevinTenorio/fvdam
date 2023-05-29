@@ -1,7 +1,7 @@
-import { Node, Material, IElement } from './Home.model';
+import { Node, Material, IElement, Face } from './Home.model';
 import * as math from 'mathjs';
 
-function calcMatrices(nodes: Node[]) {
+function calcDB(nodes: Node[]) {
   // Coords
   const x1 = nodes[0].x;
   const y1 = nodes[0].y;
@@ -127,8 +127,56 @@ function calcMatrices(nodes: Node[]) {
   return { DIn, BIn, nIn, DOut, BOut, nOut, area, JInv };
 }
 
+function calcPhiTheta(element: IElement) {
+  const C = element.material.constitutiveMatrix;
+  const J = element.JInv;
+
+  const J22 = J.get([0, 0]);
+  const J23 = J.get([0, 1]);
+  const J32 = J.get([1, 0]);
+  const J33 = J.get([1, 1]);
+
+  const phiIn = math.matrix([
+    [
+      C.get([1, 1]) * (J22 ** 2 + J23 ** 2) + C.get([4, 4]) * (J32 ** 2 + J33 ** 2),
+      C.get([1, 2]) + C.get([3, 3]) * (J22 * J32 + J23 * J33)
+    ],
+    [
+      C.get([1, 2]) + C.get([3, 3]) * (J22 * J32 + J23 * J33),
+      C.get([2, 2]) * (J32 ** 2 + J33 ** 2) + C.get([3, 3]) * (J22 ** 2 + J23 ** 2)
+    ]
+  ]);
+
+  const thetaIn = math.matrix([
+    [
+      (C.get([1, 1]) * J22 ** 2 + C.get([3, 3]) * J32 ** 2) / 2,
+      (C.get([1, 1]) * J23 ** 2 + C.get([3, 3]) * J33 ** 2) / 2,
+      (J22 * J32 * (C.get([1, 2]) + C.get([3, 3]))) / 2,
+      (J23 * J33 * (C.get([1, 2]) + C.get([3, 3]))) / 2
+    ],
+    [
+      (J22 * J32 * (C.get([2, 1]) + C.get([3, 3]))) / 2,
+      (J23 * J33 * (C.get([2, 1]) + C.get([3, 3]))) / 2,
+      (C.get([2, 2]) * J32 ** 2 + C.get([3, 3]) * J22 ** 2) / 2,
+      (C.get([2, 2]) * J33 ** 2 + C.get([3, 3]) * J23 ** 2) / 2
+    ]
+  ]);
+
+  const phiOut = C.get([5, 5]) * (J22 ** 2 + J23 ** 2) + C.get([4, 4]) * (J32 ** 2 + J33 ** 2);
+
+  const thetaOut = math.matrix([
+    [
+      (C.get([5, 5]) * J22 ** 2 + C.get([4, 4]) * J32 ** 2) / 2,
+      (C.get([5, 5]) * J23 ** 2 + C.get([4, 4]) * J33 ** 2) / 2
+    ]
+  ]);
+
+  return { phiIn, thetaIn, phiOut, thetaOut };
+}
+
 function getElements(
   elements: IElement[],
+  faces: Face[],
   nodes: Node[],
   materials: Material[],
   line: string,
@@ -147,7 +195,12 @@ function getElements(
         maxY: 0,
         minY: 0,
         width: 0,
-        height: 0
+        height: 0,
+        JInv: math.matrix([
+          [0, 0],
+          [0, 0]
+        ]),
+        faces: []
       });
     }
   } else if (line === '%ELEMENT.C4') {
@@ -189,10 +242,34 @@ function getElements(
       elements[j].width = elements[j].maxX - elements[j].minX;
       elements[j].height = elements[j].maxY - elements[j].minY;
 
-      const { DIn, BIn, nIn, DOut, BOut, nOut, area, JInv } = calcMatrices(elements[j].nodes);
+      const { DIn, BIn, nIn, DOut, BOut, nOut, area, JInv } = calcDB(elements[j].nodes);
       elements[j].area = area;
+      elements[j].JInv = JInv;
+
+      const { phiIn, thetaIn, phiOut, thetaOut } = calcPhiTheta(elements[j]);
 
       materials[Number(info[1]) - 1].area += elements[j].area;
+    }
+  } else if (line === '%ELEMENT.C4.FACES') {
+    let facesNumber = 0;
+    for (let j = 0; j < elements.length; j++) {
+      const info = lines[i + j + 2].replaceAll(' ', '').split('\t');
+      const faceIds = [Number(info[1]), Number(info[2]), Number(info[3]), Number(info[4])];
+      if (facesNumber < Math.max(...faceIds)) {
+        facesNumber = Math.max(...faceIds);
+      }
+    }
+    for (let j = 0; j < facesNumber; j++) {
+      faces.push({
+        id: j + 1,
+        nodes: [
+          nodes.find((node) => node.id === 2 * j + 1) ?? nodes[0],
+          nodes.find((node) => node.id === 2 * j + 2) ?? nodes[0]
+        ],
+        constraints: [0, 0, 0],
+        strain: [0, 0, 0],
+        force: [0, 0, 0]
+      });
     }
   }
 }

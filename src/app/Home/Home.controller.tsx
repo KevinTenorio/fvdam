@@ -4,10 +4,11 @@ import { useAppContext } from '../App.context';
 import { AppContext } from '../App.model';
 import HomeView from './Home.view';
 import { useState } from 'react';
-import { NodesInfo, Node, Material, IElement } from './Home.model';
+import { NodesInfo, Node, Material, IElement, Face } from './Home.model';
 import getNodes from './getNodes';
 import getMaterials from './getMaterials';
 import getElements from './getElements';
+import getFaces from './getFaces';
 
 function HomeController() {
   const { setError, setLoading }: AppContext = useAppContext();
@@ -22,6 +23,7 @@ function HomeController() {
   });
   const [materials, setMaterials] = useState<Material[]>([]);
   const [elements, setElements] = useState<IElement[]>([]);
+  const [faces, setFaces] = useState<Face[]>([]);
 
   async function parseFile(fileStr: string) {
     const lines = fileStr.split('\n');
@@ -36,17 +38,19 @@ function HomeController() {
     };
     const materials: Material[] = [];
     const elements: IElement[] = [];
+    const faces: Face[] = [];
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
       getNodes(nodes, nodesInfo, line, lines, i);
       getMaterials(materials, line, lines, i);
-      getElements(elements, nodes, materials, line, lines, i);
+      getElements(elements, faces, nodes, materials, line, lines, i);
+      getFaces(faces, line, lines, i);
     }
     if (materials.length === 0 || nodes.length === 0) {
       setError('Invalid file format.');
     }
-    return { nodes, nodesInfo, materials, elements };
+    return { nodes, nodesInfo, materials, elements, faces };
   }
 
   async function handleFileRead(file: any) {
@@ -59,11 +63,12 @@ function HomeController() {
         setLoading('Parsing file...');
         parseFile(text)
           .then((res) => {
-            const { nodes, nodesInfo, materials, elements } = res;
+            const { nodes, nodesInfo, materials, elements, faces } = res;
             setNodes(nodes);
             setMaterials(materials);
             setNodesInfo(nodesInfo);
             setElements(elements);
+            setFaces(faces);
           })
           .catch((error) => setError(error))
           .finally(() => {
@@ -104,6 +109,7 @@ function HomeController() {
       materials={{ state: materials, set: setMaterials }}
       nodesInfo={{ state: nodesInfo, set: setNodesInfo }}
       elements={{ state: elements, set: setElements }}
+      faces={{ state: faces, set: setFaces }}
       getPieChartColors={getPieChartColors}
     />
   );

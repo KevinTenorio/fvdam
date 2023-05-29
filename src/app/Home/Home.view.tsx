@@ -5,7 +5,7 @@ import { useAppContext } from '../App.context';
 import { AppContext } from '../App.model';
 import Upload from '/src/components/atoms/Upload';
 import { State } from '/src/index.model';
-import { Node, NodesInfo, Material, IElement } from './Home.model';
+import { Node, NodesInfo, Material, IElement, Face } from './Home.model';
 import './Home.style.css';
 
 interface HomeViewProps {
@@ -14,6 +14,7 @@ interface HomeViewProps {
   materials: State<Material[]>;
   nodesInfo: State<NodesInfo>;
   elements: State<IElement[]>;
+  faces: State<Face[]>;
   getPieChartColors: (materials: Material[]) => string;
 }
 function HomeView({
@@ -22,6 +23,7 @@ function HomeView({
   materials,
   nodesInfo,
   elements,
+  faces,
   getPieChartColors
 }: HomeViewProps) {
   const { setError, fvdamFile, setFvdamFile }: AppContext = useAppContext();
@@ -114,31 +116,46 @@ function HomeView({
                       border: '1px solid var(--off-white)',
                       color: 'white',
                       backgroundColor: 'rgba(0, 0, 0, 0.08)',
-                      padding: '10px'
+                      padding: '10px',
+                      display: 'flex',
+                      flexDirection: 'row'
                     }}
                   >
                     <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>Unit Cell</div>
-                    <div
-                      style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                    >{`Materials: ${materials.state.length}`}</div>
-                    <div
-                      style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                    >{`Nodes: ${nodes.state.length}`}</div>
-                    <div
-                      style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                    >{`Elements: ${elements.state.length}`}</div>
-                    <div
-                      style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                    >{`Area: ${elements.state
-                      .map((element) => element?.area || 0)
-                      .reduce((a, b) => a + b, 0)
-                      .toFixed(2)}`}</div>
-                    <div style={{ paddingLeft: '20px', marginBottom: '5px' }}>{`Width: ${
-                      nodesInfo.state?.maxX - nodesInfo.state?.minX
-                    }`}</div>
-                    <div style={{ paddingLeft: '20px', marginBottom: '5px' }}>{`Height: ${
-                      nodesInfo.state?.maxY - nodesInfo.state?.minY
-                    }`}</div>
+                    <div>
+                      <div
+                        style={{ paddingLeft: '20px', marginBottom: '5px' }}
+                      >{`Materials: ${materials.state.length}`}</div>
+                      <div
+                        style={{ paddingLeft: '20px', marginBottom: '5px' }}
+                      >{`Nodes: ${nodes.state.length}`}</div>
+                      <div
+                        style={{ paddingLeft: '20px', marginBottom: '5px' }}
+                      >{`Elements: ${elements.state.length}`}</div>
+                      <div
+                        style={{ paddingLeft: '20px', marginBottom: '5px' }}
+                      >{`Faces: ${faces.state.length}`}</div>
+                    </div>
+                    <div>
+                      <div style={{ paddingLeft: '20px', marginBottom: '5px' }}>{`Constraints: ${
+                        faces.state.filter(
+                          (face) =>
+                            face.constraints.filter((constraint) => constraint === 1).length > 0
+                        ).length
+                      }`}</div>
+                      <div
+                        style={{ paddingLeft: '20px', marginBottom: '5px' }}
+                      >{`Area: ${elements.state
+                        .map((element) => element?.area || 0)
+                        .reduce((a, b) => a + b, 0)
+                        .toFixed(2)}`}</div>
+                      <div style={{ paddingLeft: '20px', marginBottom: '5px' }}>{`Width: ${
+                        nodesInfo.state?.maxX - nodesInfo.state?.minX
+                      }`}</div>
+                      <div style={{ paddingLeft: '20px', marginBottom: '5px' }}>{`Height: ${
+                        nodesInfo.state?.maxY - nodesInfo.state?.minY
+                      }`}</div>
+                    </div>
                   </div>
                   <div
                     style={{

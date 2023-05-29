@@ -50,4 +50,14 @@ export interface IElement {
   minY: number;
   width: number;
   height: number;
+  JInv: math.Matrix;
+  faces: Face[];
+}
+
+export interface Face {
+  id: number;
+  nodes: Node[];
+  constraints: number[];
+  strain: number[];
+  force: number[];
 }

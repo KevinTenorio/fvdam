@@ -10,7 +10,10 @@ interface UploadViewProps {
 
 function UploadView({ file, width, height }: UploadViewProps) {
   return (
-    <div className="upload" style={{ width, height, display: 'flex', alignItems: 'center' }}>
+    <div
+      className="upload"
+      style={{ width, height, display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+    >
       {file.state ? (
         <div
           style={{
