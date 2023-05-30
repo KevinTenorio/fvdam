@@ -9,12 +9,12 @@ function calcConc(
   KgIn: math.MathCollection,
   KgOut: math.MathCollection
 ) {
-  const epIn1 = math.matrix([[0], [0], [0], [0]]);
-  const epIn2 = math.matrix([[0], [0], [0], [0]]);
-  const epIn3 = math.matrix([[0], [0], [0], [0]]);
-  const epIn4 = math.matrix([[0], [0], [0], [1]]);
-  const epOut1 = math.matrix([[1], [0]]);
-  const epOut2 = math.matrix([[0], [1]]);
+  const epIn1 = math.matrix([[1], [0], [0], [0]]);
+  const epIn2 = math.matrix([[0], [1], [0], [0]]);
+  const epIn3 = math.matrix([[0], [0], [1], [0]]);
+  const epIn4 = math.matrix([[0], [0], [0], [2]]);
+  const epOut1 = math.matrix([[2], [0]]);
+  const epOut2 = math.matrix([[0], [2]]);
 
   outOfPlane(faces, elements, epOut1, dofAIn, dofAOut, KgOut, 0);
   inPlane(faces, elements, epIn1, dofAIn, dofAOut, KgIn, 0);
@@ -34,7 +34,9 @@ function inPlane(
   m: number
 ) {
   const { f } = calcFaceForces(faces, elements, 'in', ep, dofAIn, dofAOut);
-  const UIn = math.multiply(math.inv(KgIn), f);
+  console.log('calcForce done');
+  const Kaa = math.subset(KgIn, math.index(dofAIn, dofAIn));
+  const UIn = math.multiply(math.inv(Kaa), f);
 
   for (let i = 0; i < elements.length; i++) {
     const u = math.zeros(8, 1, 'sparse');
@@ -94,6 +96,7 @@ function inPlane(
     elements[i].Conc.set([3, m], avgStrain[3] / ep.get([m, 0]));
     elements[i].W = math.concat(W00, W, 0);
   }
+  console.log('inPlane done');
 }
 
 function outOfPlane(
@@ -106,7 +109,10 @@ function outOfPlane(
   m: number
 ) {
   const { f } = calcFaceForces(faces, elements, 'out', ep, dofAIn, dofAOut);
-  const UOut = math.multiply(math.inv(KgOut), f);
+  console.log('calcForce done');
+  const Kaa = math.subset(KgOut, math.index(math.subtract(dofAOut, 1), math.subtract(dofAOut, 1)));
+  const UOut = math.multiply(math.inv(Kaa), f);
+  console.log('UOut done');
 
   for (let i = 0; i < elements.length; i++) {
     const u = math.zeros(4, 1, 'sparse');
@@ -146,7 +152,9 @@ function outOfPlane(
     elements[i].Conc.set([4, 4 + m], avgStrain[0] / ep.get([m, 0]));
     elements[i].Conc.set([5, 4 + m], avgStrain[1] / ep.get([m, 0]));
     elements[i].W = math.concat(W, W1, 0);
+    console.log(`step ${i} done`);
   }
+  console.log('outOfPlane done');
 }
 
 function calcFaceForces(
@@ -172,9 +180,12 @@ function calcFaceForces(
         1
       );
 
-      tIn.subset(math.index(LMIn), math.add(tIn.subset(math.index(LMIn)), math.multiply(t0In, ep)));
+      tIn.subset(
+        math.index(LMIn, 0),
+        math.add(math.subset(tIn, math.index(LMIn, 0)), math.multiply(t0In, ep))
+      );
     }
-    const f = math.subset(tIn, math.index(dofAIn, 1));
+    const f = math.subset(tIn, math.index(dofAIn, 0));
     return f;
   } else if (plane === 'out') {
     const tOut = math.zeros(2 * faces.length, 1);
@@ -186,12 +197,19 @@ function calcFaceForces(
         elements[i].faces[2].id - 1,
         elements[i].faces[3].id - 1
       ];
+      //   console.log('tOut', tOut);
+      //   console.log('LMOut', LMOut);
+      //   console.log(
+      //     'math.subset(tOut, math.index(LMOut, 0))',
+      //     math.subset(tOut, math.index(LMOut, 0))
+      //   );
+      //   console.log('math.multiply(t0Out, ep)', math.multiply(t0Out, ep));
       tOut.subset(
-        math.index(LMOut),
-        math.add(tOut.subset(math.index(LMOut)), math.multiply(t0Out, ep))
+        math.index(LMOut, 0),
+        math.add(math.subset(tOut, math.index(LMOut, 0)), math.multiply(t0Out, ep))
       );
     }
-    const f = math.subset(tOut, math.index(dofAOut, 1));
+    const f = math.subset(tOut, math.index(dofAOut, 0));
     return f;
   }
 }

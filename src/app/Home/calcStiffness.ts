@@ -42,6 +42,7 @@ function calcForces(nIn: math.MathCollection, nOut: math.MathCollection, C: math
     [C.get([0, 2]), C.get([1, 2]), C.get([2, 2]), 0],
     [0, 0, 0, C.get([3, 3])]
   ]);
+
   const t0In = math.multiply(-1, nIn, CAuxIn);
 
   const CAuxOut = math.matrix([
