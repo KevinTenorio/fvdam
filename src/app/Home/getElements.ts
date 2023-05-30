@@ -269,6 +269,8 @@ function getElements(
       elements[j].phiOut = phiOut;
       elements[j].thetaOut = thetaOut;
 
+      elements[j].Conc = math.zeros(6, 6, 'sparse');
+
       materials[Number(info[1]) - 1].area += elements[j].area;
     }
   } else if (line === '%ELEMENT.C4.FACES') {

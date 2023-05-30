@@ -64,6 +64,12 @@ export interface IElement {
   t0Out: math.Matrix;
   nIn: math.MathCollection;
   nOut: math.MathCollection;
+  KeIn: math.Matrix;
+  KeOut: math.Matrix;
+  BbIn: math.MathType;
+  BbOut: math.MathType;
+  Conc: math.MathCollection;
+  W: math.MathCollection;
 }
 
 export interface Face {

@@ -14,14 +14,11 @@ function calcLocal(
   POut: math.MathType
 ) {
   const AbIn = math.multiply(element.DIn, element.material.CIn, EIn, element.BIn, AIn);
-  console.log('AbIn foi');
   const BbIn = math.subtract(
     PIn,
     math.multiply(NIn, math.inv(element.phiIn), element.thetaIn, MIn)
   );
-  console.log('BbIn foi');
   const KeIn = math.multiply(AbIn, BbIn);
-  console.log('KeIn foi');
 
   const AbOut = math.multiply(
     element.DOut,
@@ -30,24 +27,13 @@ function calcLocal(
     element.BOut,
     AOut
   );
-  console.log('AbOut foi');
   const BbOut = math.subtract(
     POut,
     math.multiply(NOut, math.inv(element.phiOut), element.thetaOut, MOut)
   );
-  console.log('BbOut foi');
   const KeOut = math.multiply(AbOut, BbOut);
-  console.log('KeOut foi');
 
-  return { KeIn, KeOut };
-
-  //   const AbIn = math.multiply(
-  //     math.multiply(
-  //       math.multiply(math.multiply(element.DIn, element.material.CIn), EIn),
-  //       element.BIn
-  //     ),
-  //     AIn
-  //   );
+  return { KeIn, KeOut, BbIn, BbOut };
 }
 
 function calcForces(nIn: math.MathCollection, nOut: math.MathCollection, C: math.Matrix) {
@@ -84,7 +70,22 @@ function calcStiffness(
   const KgOut = math.zeros(faces.length, faces.length, 'sparse');
 
   for (let i = 0; i < elements.length; i++) {
-    const { KeIn, KeOut } = calcLocal(elements[i], AIn, EIn, MIn, NIn, PIn, AOut, MOut, NOut, POut);
+    const { KeIn, KeOut, BbIn, BbOut } = calcLocal(
+      elements[i],
+      AIn,
+      EIn,
+      MIn,
+      NIn,
+      PIn,
+      AOut,
+      MOut,
+      NOut,
+      POut
+    );
+    elements[i].KeIn = KeIn;
+    elements[i].KeOut = KeOut;
+    elements[i].BbIn = BbIn;
+    elements[i].BbOut = BbOut;
 
     const LMIn = math.subtract(
       math.concat(

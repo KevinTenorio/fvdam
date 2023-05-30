@@ -12,6 +12,7 @@ import getFaces from './getFaces';
 import calcConsts from './calcConsts';
 import calcDof from './calcDof';
 import calcStiffness from './calcStiffness';
+import calcConc from './calcConc';
 
 function HomeController() {
   const { setError, setLoading }: AppContext = useAppContext();
@@ -78,6 +79,7 @@ function HomeController() {
       NOut,
       POut
     );
+    calcConc(faces, elements, dofAIn, dofAOut, KgIn, KgOut);
 
     return 0;
   }
