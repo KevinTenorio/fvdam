@@ -4,7 +4,7 @@ import { useAppContext } from '../App.context';
 import { AppContext } from '../App.model';
 import HomeView from './Home.view';
 import { useState } from 'react';
-import { NodesInfo, Node, Material, IElement, Face } from './Home.model';
+import { NodesInfo, Node, Material, IElement, Face, Results } from './Home.model';
 import getNodes from './getNodes';
 import getMaterials from './getMaterials';
 import getElements from './getElements';
@@ -13,6 +13,8 @@ import calcConsts from './calcConsts';
 import calcDof from './calcDof';
 import calcStiffness from './calcStiffness';
 import calcConc from './calcConc';
+import homogenize from './homogenize';
+import * as math from 'mathjs';
 
 function HomeController() {
   const { setError, setLoading }: AppContext = useAppContext();
@@ -28,6 +30,7 @@ function HomeController() {
   const [materials, setMaterials] = useState<Material[]>([]);
   const [elements, setElements] = useState<IElement[]>([]);
   const [faces, setFaces] = useState<Face[]>([]);
+  const [results, setResults] = useState<Results>();
 
   async function parseFile(fileStr: string) {
     const lines = fileStr.split('\n');
@@ -80,8 +83,35 @@ function HomeController() {
       POut
     );
     calcConc(faces, elements, dofAIn, dofAOut, KgIn, KgOut);
+    const Ch = homogenize(elements, materials);
 
-    return 0;
+    return Ch;
+  }
+
+  function handleEffectiveStiffness(Ch: math.MathCollection) {
+    const S = math.inv(Ch);
+    const E11 = 1 / S.get([0, 0]);
+    const E22 = 1 / S.get([1, 1]);
+    const E33 = 1 / S.get([2, 2]);
+    const v23 = -1 * S.get([2, 1]) * E22;
+    const v13 = -1 * S.get([2, 0]) * E11;
+    const v12 = -1 * S.get([1, 0]) * E11;
+    const G23 = 1 / S.get([3, 3]);
+    const G13 = 1 / S.get([4, 4]);
+    const G12 = 1 / S.get([5, 5]);
+
+    setResults({
+      E11,
+      E22,
+      E33,
+      v23,
+      v13,
+      v12,
+      G23,
+      G13,
+      G12,
+      Ch
+    });
   }
 
   async function handleFileRead(file: any) {
@@ -102,7 +132,7 @@ function HomeController() {
             setFaces(faces);
             setLoading('Executing FVDAM algorithm...');
             fvdamAlg(nodes, nodesInfo, materials, elements, faces)
-              .then((res) => console.log(res))
+              .then((res) => handleEffectiveStiffness(res))
               .catch((error) => setError(error))
               .finally(() => {
                 setLoading('Executing FVDAM algorithm...', false);
@@ -149,6 +179,7 @@ function HomeController() {
       elements={{ state: elements, set: setElements }}
       faces={{ state: faces, set: setFaces }}
       getPieChartColors={getPieChartColors}
+      results={{ state: results, set: setResults }}
     />
   );
 }

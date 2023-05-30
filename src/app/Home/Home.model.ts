@@ -30,6 +30,19 @@ export interface Node {
   y: number;
 }
 
+export interface Results {
+  E11: number;
+  E22: number;
+  E33: number;
+  v23: number;
+  v13: number;
+  v12: number;
+  G23: number;
+  G13: number;
+  G12: number;
+  Ch: math.MathCollection;
+}
+
 export interface NodesInfo {
   nodesX: number;
   nodesY: number;

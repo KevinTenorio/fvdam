@@ -5,7 +5,7 @@ import { useAppContext } from '../App.context';
 import { AppContext } from '../App.model';
 import Upload from '/src/components/atoms/Upload';
 import { State } from '/src/index.model';
-import { Node, NodesInfo, Material, IElement, Face } from './Home.model';
+import { Node, NodesInfo, Material, IElement, Face, Results } from './Home.model';
 import './Home.style.css';
 
 interface HomeViewProps {
@@ -16,6 +16,7 @@ interface HomeViewProps {
   elements: State<IElement[]>;
   faces: State<Face[]>;
   getPieChartColors: (materials: Material[]) => string;
+  results: State<Results>;
 }
 function HomeView({
   handleFileRead,
@@ -24,7 +25,8 @@ function HomeView({
   nodesInfo,
   elements,
   faces,
-  getPieChartColors
+  getPieChartColors,
+  results
 }: HomeViewProps) {
   const { setError, fvdamFile, setFvdamFile }: AppContext = useAppContext();
 
@@ -326,6 +328,99 @@ function HomeView({
                           </div>
                         </div>
                       ))}
+                    </div>
+                  </div>
+                  <div // RESULTS
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      padding: '15px',
+                      backgroundColor: 'rgba(0, 0, 0, 0.08)',
+                      border: '1px solid var(--off-white)',
+                      marginRight: '20px'
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontWeight: 'bold',
+                        color: 'white',
+                        width: '100%',
+                        textAlign: 'center',
+                        marginBottom: '10px'
+                      }}
+                    >
+                      Results
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'row' }}>
+                      <div
+                        style={{
+                          margin: '10px',
+                          border: '1px solid var(--off-white)',
+                          color: 'white',
+                          backgroundColor: 'rgba(0, 0, 0, 0.08)',
+                          padding: '10px'
+                        }}
+                      >
+                        <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>
+                          Effective Stiffness Matrix
+                        </div>
+                        <div
+                          style={{ paddingLeft: '20px', marginBottom: '5px' }}
+                        >{`C1111: ${results.state.Ch.get([0, 0])}`}</div>
+                        <div
+                          style={{ paddingLeft: '20px', marginBottom: '5px' }}
+                        >{`C2222: ${results.state.Ch.get([1, 1])}`}</div>
+                        <div
+                          style={{ paddingLeft: '20px', marginBottom: '5px' }}
+                        >{`C3333: ${results.state.Ch.get([2, 2])}`}</div>
+                        <div
+                          style={{ paddingLeft: '20px', marginBottom: '5px' }}
+                        >{`C2233: ${results.state.Ch.get([1, 2])}`}</div>
+                        <div
+                          style={{ paddingLeft: '20px', marginBottom: '5px' }}
+                        >{`C2323: ${results.state.Ch.get([3, 3])}`}</div>
+                      </div>
+                      <div
+                        style={{
+                          margin: '10px',
+                          border: '1px solid var(--off-white)',
+                          color: 'white',
+                          backgroundColor: 'rgba(0, 0, 0, 0.08)',
+                          padding: '10px'
+                        }}
+                      >
+                        <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>
+                          Constitutive Parameters
+                        </div>
+                        <div
+                          style={{ paddingLeft: '20px', marginBottom: '5px' }}
+                        >{`E11: ${results.state.E11}`}</div>
+                        <div
+                          style={{ paddingLeft: '20px', marginBottom: '5px' }}
+                        >{`E22: ${results.state.E22}`}</div>
+                        <div
+                          style={{ paddingLeft: '20px', marginBottom: '5px' }}
+                        >{`E33: ${results.state.E33}`}</div>
+                        <div
+                          style={{ paddingLeft: '20px', marginBottom: '5px' }}
+                        >{`v23: ${results.state.v23}`}</div>
+                        <div
+                          style={{ paddingLeft: '20px', marginBottom: '5px' }}
+                        >{`v13: ${results.state.v13}`}</div>
+                        <div
+                          style={{ paddingLeft: '20px', marginBottom: '5px' }}
+                        >{`v12: ${results.state.v12}`}</div>
+                        <div
+                          style={{ paddingLeft: '20px', marginBottom: '5px' }}
+                        >{`G23: ${results.state.G23}`}</div>
+                        <div
+                          style={{ paddingLeft: '20px', marginBottom: '5px' }}
+                        >{`G13: ${results.state.G13}`}</div>
+                        <div
+                          style={{ paddingLeft: '20px', marginBottom: '5px' }}
+                        >{`G12: ${results.state.G12}`}</div>
+                      </div>
                     </div>
                   </div>
                 </div>

@@ -17,26 +17,20 @@ function calcConc(
   const epOut2 = math.matrix([[0], [2]]);
 
   const KaaIn = math.subset(KgIn, math.index(math.subtract(dofAOut, 1), math.subtract(dofAOut, 1)));
-  console.log('KaaIn done');
-  const KaaInInv = math.inv(KaaIn);
-  console.log('KaaInInv done');
   const KaaOut = math.subset(
     KgOut,
     math.index(math.subtract(dofAOut, 1), math.subtract(dofAOut, 1))
   );
-  console.log('KaaOut done');
-  const KaaOutInv = math.inv(KaaOut);
-  console.log('KaaOutInv done');
 
   const fixedDofAOut = math.subtract(dofAOut, 1);
   const fixedDofAIn = math.subtract(dofAIn, 1);
 
-  outOfPlane(faces, elements, epOut1, fixedDofAIn, fixedDofAOut, KaaOutInv, 0);
-  inPlane(faces, elements, epIn1, fixedDofAIn, fixedDofAOut, KaaInInv, 0);
-  outOfPlane(faces, elements, epOut2, fixedDofAIn, fixedDofAOut, KaaOutInv, 1);
-  inPlane(faces, elements, epIn2, fixedDofAIn, fixedDofAOut, KaaInInv, 1);
-  inPlane(faces, elements, epIn3, fixedDofAIn, fixedDofAOut, KaaInInv, 2);
-  inPlane(faces, elements, epIn4, fixedDofAIn, fixedDofAOut, KaaInInv, 3);
+  outOfPlane(faces, elements, epOut1, fixedDofAIn, fixedDofAOut, KaaOut, 0);
+  inPlane(faces, elements, epIn1, fixedDofAIn, fixedDofAOut, KaaIn, 0);
+  outOfPlane(faces, elements, epOut2, fixedDofAIn, fixedDofAOut, KaaOut, 1);
+  inPlane(faces, elements, epIn2, fixedDofAIn, fixedDofAOut, KaaIn, 1);
+  inPlane(faces, elements, epIn3, fixedDofAIn, fixedDofAOut, KaaIn, 2);
+  inPlane(faces, elements, epIn4, fixedDofAIn, fixedDofAOut, KaaIn, 3);
 }
 
 function inPlane(
@@ -45,13 +39,11 @@ function inPlane(
   ep: math.Matrix,
   dofAIn: math.MathType,
   dofAOut: math.MathType,
-  KaaInv: math.MathCollection,
+  KaaIn: math.MathCollection,
   m: number
 ) {
   const f = calcFaceForces(faces, elements, 'in', ep, dofAIn, dofAOut);
-  console.log('calcForce done');
-  const UIn = math.multiply(KaaInv, f);
-  console.log('UIn done');
+  const UIn = math.lusolve(KaaIn, f);
 
   for (let i = 0; i < elements.length; i++) {
     const u = math.zeros(8, 1, 'sparse');
@@ -68,7 +60,7 @@ function inPlane(
     const c1 = [];
     const c2 = [];
     for (let w = 0; w < 8; w++) {
-      const a = dofAIn.indexOf(LMIn.get([w, 0]));
+      const a = dofAIn.indexOf(LMIn[w]);
       if (a > -1) {
         c1.push(a);
         c2.push(w);
@@ -111,7 +103,6 @@ function inPlane(
     elements[i].Conc.set([3, m], avgStrain[3] / ep.get([m, 0]));
     elements[i].W = math.concat(W00, W, 0);
   }
-  console.log('inPlane done');
 }
 
 function outOfPlane(
@@ -120,14 +111,12 @@ function outOfPlane(
   ep: math.Matrix,
   dofAIn: math.MathType,
   dofAOut: math.MathType,
-  KaaInv: math.MathCollection,
+  KaaOut: math.MathCollection,
   m: number
 ) {
   const f = calcFaceForces(faces, elements, 'out', ep, dofAIn, dofAOut);
-  console.log('calcForce done');
 
-  const UOut = math.multiply(KaaInv, f);
-  console.log('UOut done');
+  const UOut = math.lusolve(KaaOut, f);
 
   for (let i = 0; i < elements.length; i++) {
     const u = math.zeros(4, 1, 'sparse');
@@ -167,9 +156,7 @@ function outOfPlane(
     elements[i].Conc.set([4, 4 + m], avgStrain[0] / ep.get([m, 0]));
     elements[i].Conc.set([5, 4 + m], avgStrain[1] / ep.get([m, 0]));
     elements[i].W = math.concat(W, W1, 0);
-    console.log(`step ${i} done`);
   }
-  console.log('outOfPlane done');
 }
 
 function calcFaceForces(
