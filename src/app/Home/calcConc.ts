@@ -16,27 +16,42 @@ function calcConc(
   const epOut1 = math.matrix([[2], [0]]);
   const epOut2 = math.matrix([[0], [2]]);
 
-  outOfPlane(faces, elements, epOut1, dofAIn, dofAOut, KgOut, 0);
-  inPlane(faces, elements, epIn1, dofAIn, dofAOut, KgIn, 0);
-  outOfPlane(faces, elements, epOut2, dofAIn, dofAOut, KgOut, 1);
-  inPlane(faces, elements, epIn2, dofAIn, dofAOut, KgIn, 1);
-  inPlane(faces, elements, epIn3, dofAIn, dofAOut, KgIn, 2);
-  inPlane(faces, elements, epIn4, dofAIn, dofAOut, KgIn, 3);
+  const KaaIn = math.subset(KgIn, math.index(math.subtract(dofAOut, 1), math.subtract(dofAOut, 1)));
+  console.log('KaaIn done');
+  const KaaInInv = math.inv(KaaIn);
+  console.log('KaaInInv done');
+  const KaaOut = math.subset(
+    KgOut,
+    math.index(math.subtract(dofAOut, 1), math.subtract(dofAOut, 1))
+  );
+  console.log('KaaOut done');
+  const KaaOutInv = math.inv(KaaOut);
+  console.log('KaaOutInv done');
+
+  const fixedDofAOut = math.subtract(dofAOut, 1);
+  const fixedDofAIn = math.subtract(dofAIn, 1);
+
+  outOfPlane(faces, elements, epOut1, fixedDofAIn, fixedDofAOut, KaaOutInv, 0);
+  inPlane(faces, elements, epIn1, fixedDofAIn, fixedDofAOut, KaaInInv, 0);
+  outOfPlane(faces, elements, epOut2, fixedDofAIn, fixedDofAOut, KaaOutInv, 1);
+  inPlane(faces, elements, epIn2, fixedDofAIn, fixedDofAOut, KaaInInv, 1);
+  inPlane(faces, elements, epIn3, fixedDofAIn, fixedDofAOut, KaaInInv, 2);
+  inPlane(faces, elements, epIn4, fixedDofAIn, fixedDofAOut, KaaInInv, 3);
 }
 
 function inPlane(
   faces: Face[],
   elements: IElement[],
   ep: math.Matrix,
-  dofAIn: number[],
-  dofAOut: number[],
-  KgIn: math.MathCollection,
+  dofAIn: math.MathType,
+  dofAOut: math.MathType,
+  KaaInv: math.MathCollection,
   m: number
 ) {
-  const { f } = calcFaceForces(faces, elements, 'in', ep, dofAIn, dofAOut);
+  const f = calcFaceForces(faces, elements, 'in', ep, dofAIn, dofAOut);
   console.log('calcForce done');
-  const Kaa = math.subset(KgIn, math.index(dofAIn, dofAIn));
-  const UIn = math.multiply(math.inv(Kaa), f);
+  const UIn = math.multiply(KaaInv, f);
+  console.log('UIn done');
 
   for (let i = 0; i < elements.length; i++) {
     const u = math.zeros(8, 1, 'sparse');
@@ -103,15 +118,15 @@ function outOfPlane(
   faces: Face[],
   elements: IElement[],
   ep: math.Matrix,
-  dofAIn: number[],
-  dofAOut: number[],
-  KgOut: math.MathCollection,
+  dofAIn: math.MathType,
+  dofAOut: math.MathType,
+  KaaInv: math.MathCollection,
   m: number
 ) {
-  const { f } = calcFaceForces(faces, elements, 'out', ep, dofAIn, dofAOut);
+  const f = calcFaceForces(faces, elements, 'out', ep, dofAIn, dofAOut);
   console.log('calcForce done');
-  const Kaa = math.subset(KgOut, math.index(math.subtract(dofAOut, 1), math.subtract(dofAOut, 1)));
-  const UOut = math.multiply(math.inv(Kaa), f);
+
+  const UOut = math.multiply(KaaInv, f);
   console.log('UOut done');
 
   for (let i = 0; i < elements.length; i++) {
@@ -125,7 +140,7 @@ function outOfPlane(
     const c1 = [];
     const c2 = [];
     for (let w = 0; w < 8; w++) {
-      const a = dofAOut.indexOf(LMOut.get([w, 0]));
+      const a = dofAOut.indexOf(LMOut[w]);
       if (a > -1) {
         c1.push(a);
         c2.push(w);
@@ -162,8 +177,8 @@ function calcFaceForces(
   elements: IElement[],
   plane: string,
   ep: math.Matrix,
-  dofAIn: number[],
-  dofAOut: number[]
+  dofAIn: math.MathType,
+  dofAOut: math.MathType
 ) {
   if (plane === 'in') {
     const tIn = math.zeros(2 * faces.length, 1);
@@ -197,13 +212,6 @@ function calcFaceForces(
         elements[i].faces[2].id - 1,
         elements[i].faces[3].id - 1
       ];
-      //   console.log('tOut', tOut);
-      //   console.log('LMOut', LMOut);
-      //   console.log(
-      //     'math.subset(tOut, math.index(LMOut, 0))',
-      //     math.subset(tOut, math.index(LMOut, 0))
-      //   );
-      //   console.log('math.multiply(t0Out, ep)', math.multiply(t0Out, ep));
       tOut.subset(
         math.index(LMOut, 0),
         math.add(math.subset(tOut, math.index(LMOut, 0)), math.multiply(t0Out, ep))
