@@ -125,16 +125,16 @@ function HomeController() {
         parseFile(text)
           .then((res) => {
             const { nodes, nodesInfo, materials, elements, faces } = res;
-            setNodes(nodes);
-            setMaterials(materials);
-            setNodesInfo(nodesInfo);
-            setElements(elements);
-            setFaces(faces);
             setLoading('Executing FVDAM algorithm...');
             fvdamAlg(nodes, nodesInfo, materials, elements, faces)
               .then((res) => handleEffectiveStiffness(res))
               .catch((error) => setError(error))
               .finally(() => {
+                setNodes(nodes);
+                setMaterials(materials);
+                setNodesInfo(nodesInfo);
+                setElements(elements);
+                setFaces(faces);
                 setLoading('Executing FVDAM algorithm...', false);
               });
           })

@@ -367,19 +367,19 @@ function HomeView({
                         </div>
                         <div
                           style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                        >{`C1111: ${results.state.Ch.get([0, 0])}`}</div>
+                        >{`C1111: ${results.state.Ch.get([0, 0]).toFixed(2)}`}</div>
                         <div
                           style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                        >{`C2222: ${results.state.Ch.get([1, 1])}`}</div>
+                        >{`C2222: ${results.state.Ch.get([1, 1]).toFixed(2)}`}</div>
                         <div
                           style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                        >{`C3333: ${results.state.Ch.get([2, 2])}`}</div>
+                        >{`C3333: ${results.state.Ch.get([2, 2]).toFixed(2)}`}</div>
                         <div
                           style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                        >{`C2233: ${results.state.Ch.get([1, 2])}`}</div>
+                        >{`C2233: ${results.state.Ch.get([1, 2]).toFixed(2)}`}</div>
                         <div
                           style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                        >{`C2323: ${results.state.Ch.get([3, 3])}`}</div>
+                        >{`C2323: ${results.state.Ch.get([3, 3]).toFixed(2)}`}</div>
                       </div>
                       <div
                         style={{
@@ -387,39 +387,63 @@ function HomeView({
                           border: '1px solid var(--off-white)',
                           color: 'white',
                           backgroundColor: 'rgba(0, 0, 0, 0.08)',
-                          padding: '10px'
+                          padding: '20px'
                         }}
                       >
                         <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>
-                          Constitutive Parameters
+                          Young's Modulus
                         </div>
                         <div
                           style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                        >{`E11: ${results.state.E11}`}</div>
+                        >{`E11: ${results.state.E11.toFixed(2)}`}</div>
                         <div
                           style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                        >{`E22: ${results.state.E22}`}</div>
+                        >{`E22: ${results.state.E22.toFixed(2)}`}</div>
                         <div
                           style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                        >{`E33: ${results.state.E33}`}</div>
+                        >{`E33: ${results.state.E33.toFixed(2)}`}</div>
+                      </div>
+                      <div
+                        style={{
+                          margin: '10px',
+                          border: '1px solid var(--off-white)',
+                          color: 'white',
+                          backgroundColor: 'rgba(0, 0, 0, 0.08)',
+                          padding: '20px'
+                        }}
+                      >
+                        <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>
+                          Poisson's Ratio
+                        </div>
                         <div
                           style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                        >{`v23: ${results.state.v23}`}</div>
+                        >{`v23: ${results.state.v23.toFixed(4)}`}</div>
                         <div
                           style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                        >{`v13: ${results.state.v13}`}</div>
+                        >{`v13: ${results.state.v13.toFixed(4)}`}</div>
                         <div
                           style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                        >{`v12: ${results.state.v12}`}</div>
+                        >{`v12: ${results.state.v12.toFixed(4)}`}</div>
+                      </div>
+                      <div
+                        style={{
+                          margin: '10px',
+                          border: '1px solid var(--off-white)',
+                          color: 'white',
+                          backgroundColor: 'rgba(0, 0, 0, 0.08)',
+                          padding: '20px'
+                        }}
+                      >
+                        <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>Shear Modulus</div>
                         <div
                           style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                        >{`G23: ${results.state.G23}`}</div>
+                        >{`G23: ${results.state.G23.toFixed(2)}`}</div>
                         <div
                           style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                        >{`G13: ${results.state.G13}`}</div>
+                        >{`G13: ${results.state.G13.toFixed(2)}`}</div>
                         <div
                           style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                        >{`G12: ${results.state.G12}`}</div>
+                        >{`G12: ${results.state.G12.toFixed(2)}`}</div>
                       </div>
                     </div>
                   </div>
