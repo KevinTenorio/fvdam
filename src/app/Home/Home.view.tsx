@@ -262,7 +262,12 @@ function HomeView({
                         id="model-div"
                         style={{
                           position: 'absolute',
-                          transform: 'scale(3)',
+                          transform: `scale(${
+                            100 /
+                            elements.state
+                              .map((element) => element?.area || 0)
+                              .reduce((a, b) => a + b, 0)
+                          })`,
                           width: `${nodesInfo.state.maxX - nodesInfo.state.minX}px`,
                           height: `${nodesInfo.state.maxY - nodesInfo.state.minY}px`,
                           boxShadow: '0px 0px 5px 0px rgba(0,0,0,0.75)'
