@@ -47,7 +47,8 @@ function buildMaterialMatrices({ E, v }: { E: number; v: number }) {
 }
 
 function getMaterials(materials: Material[], line: string, lines: string[], i: number) {
-  if (line === '%MATERIAL') {
+  const formattedLine = line.replaceAll('\r', '');
+  if (formattedLine === '%MATERIAL') {
     for (let j = 0; j < Number(lines[i + 1]); j++) {
       materials.push({
         label: '',
@@ -61,14 +62,14 @@ function getMaterials(materials: Material[], line: string, lines: string[], i: n
         COut: math.matrix([])
       });
     }
-  } else if (line === '%MATERIAL.LABEL') {
+  } else if (formattedLine === '%MATERIAL.LABEL') {
     for (let j = 0; j < materials.length; j++) {
       materials[j].label = lines[i + j + 2].slice(
         lines[i + j + 2].indexOf('\t') + 2,
         lines[i + j + 2].length - 1
       );
     }
-  } else if (line === '%MATERIAL.ISOTROPIC') {
+  } else if (formattedLine === '%MATERIAL.ISOTROPIC') {
     for (let j = 0; j < materials.length; j++) {
       const isotropicProps = lines[i + j + 2].replaceAll(' ', '').split('\t');
       materials[j].id = Number(isotropicProps[0]);

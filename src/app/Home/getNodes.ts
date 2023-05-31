@@ -1,7 +1,8 @@
 import { Node, NodesInfo } from './Home.model';
 
 function getNodes(nodes: Node[], nodesInfo: NodesInfo, line: string, lines: string[], i: number) {
-  if (line === '%NODE') {
+  const formattedLine = line.replaceAll('\r', '');
+  if (formattedLine === '%NODE') {
     for (let j = 0; j < Number(lines[i + 1]); j++) {
       nodes.push({
         id: 0,
@@ -9,7 +10,7 @@ function getNodes(nodes: Node[], nodesInfo: NodesInfo, line: string, lines: stri
         y: 0
       });
     }
-  } else if (line === '%NODE.COORD') {
+  } else if (formattedLine === '%NODE.COORD') {
     let minX: number | undefined = undefined;
     let maxX: number | undefined = undefined;
     let minY: number | undefined = undefined;

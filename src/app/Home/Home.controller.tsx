@@ -33,7 +33,7 @@ function HomeController() {
   const [results, setResults] = useState<Results>();
 
   async function parseFile(fileStr: string) {
-    const lines = fileStr.split('\n');
+    const lines = fileStr.replaceAll('\r\n', '\n').replaceAll('\r', '\n').split('\n');
     const nodes: Node[] = [];
     const nodesInfo: NodesInfo = {
       nodesX: 0,

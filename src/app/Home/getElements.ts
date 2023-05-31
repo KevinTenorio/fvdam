@@ -183,7 +183,8 @@ function getElements(
   lines: string[],
   i: number
 ) {
-  if (line === '%ELEMENT') {
+  const formattedLine = line.replaceAll('\r', '');
+  if (formattedLine === '%ELEMENT') {
     for (let j = 0; j < Number(lines[i + 1]); j++) {
       elements.push({
         id: 0,
@@ -213,7 +214,7 @@ function getElements(
         t0Out: math.matrix([])
       });
     }
-  } else if (line === '%ELEMENT.C4') {
+  } else if (formattedLine === '%ELEMENT.C4') {
     for (let j = 0; j < elements.length; j++) {
       const info = lines[i + j + 2].replaceAll(' ', '').split('\t');
       elements[j].id = Number(info[0]);
@@ -273,7 +274,7 @@ function getElements(
 
       materials[Number(info[1]) - 1].area += elements[j].area;
     }
-  } else if (line === '%ELEMENT.C4.FACES') {
+  } else if (formattedLine === '%ELEMENT.C4.FACES') {
     let facesNumber = 0;
     for (let j = 0; j < elements.length; j++) {
       const info = lines[i + j + 2].replaceAll(' ', '').split('\t');

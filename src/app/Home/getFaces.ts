@@ -1,7 +1,8 @@
 import { Face } from './Home.model';
 
 function getFaces(faces: Face[], line: string, lines: string[], i: number) {
-  if (line === '%LOAD.CASE.FACE.PRESCRIBED.DISPLACEMENT') {
+  const formattedLine = line.replaceAll('\r', '');
+  if (formattedLine === '%LOAD.CASE.FACE.PRESCRIBED.DISPLACEMENT') {
     const numConstraints = Number(lines[i + 1]);
     for (let j = 0; j < numConstraints; j++) {
       const info = lines[i + j + 2].replaceAll(' ', '').split('\t');
@@ -10,7 +11,7 @@ function getFaces(faces: Face[], line: string, lines: string[], i: number) {
       faces[faceId - 1].constraints[degreeOfFreedom - 1] = 1;
       faces[faceId - 1].constraints[2] = 1;
     }
-  } else if (line === '%LOAD.CASE.FACE.PRESCRIBED.DISPLACEMENT.OUT') {
+  } else if (formattedLine === '%LOAD.CASE.FACE.PRESCRIBED.DISPLACEMENT.OUT') {
     const numConstraints = Number(lines[i + 1]);
     for (let j = 0; j < numConstraints; j++) {
       const info = lines[i + j + 2].replaceAll(' ', '').split('\t');
@@ -18,7 +19,7 @@ function getFaces(faces: Face[], line: string, lines: string[], i: number) {
       const degreeOfFreedom = Number(info[2]);
       faces[faceId - 1].constraints[degreeOfFreedom - 1] = 1;
     }
-  } else if (line === '%LOAD.CASE.FACE.PRESCRIBED.STRAIN') {
+  } else if (formattedLine === '%LOAD.CASE.FACE.PRESCRIBED.STRAIN') {
     const numStrains = Number(lines[i + 1]);
     for (let j = 0; j < numStrains; j++) {
       const info = lines[i + j + 2].replaceAll(' ', '').split('\t');
@@ -27,7 +28,7 @@ function getFaces(faces: Face[], line: string, lines: string[], i: number) {
       const value = Number(info[3]);
       faces[faceId - 1].strain[degreeOfFreedom - 1] = value;
     }
-  } else if (line === '%LOAD.CASE.FACE.PRESCRIBED.FORCES') {
+  } else if (formattedLine === '%LOAD.CASE.FACE.PRESCRIBED.FORCES') {
     const numForces = Number(lines[i + 1]);
     for (let j = 0; j < numForces; j++) {
       const info = lines[i + j + 2].replaceAll(' ', '').split('\t');
