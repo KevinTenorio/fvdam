@@ -134,12 +134,15 @@ function HomeController() {
 
   async function handleExecuteFvdam() {
     const runAlg = async () => {
+      const start = performance.now();
       await fvdamAlg(nodes, nodesInfo, materials, elements, faces)
         .then((res) => handleEffectiveStiffness(res))
         .catch((error) => setError(error))
         .finally(() => {
           setLoading('Executing FVDAM algorithm. This may take a while...', false);
         });
+      const end = performance.now();
+      console.log(`Execution time: ${end - start}ms`);
     };
     setTimeout(() => {
       runAlg();
