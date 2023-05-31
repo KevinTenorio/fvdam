@@ -5,3 +5,11 @@
 .icon:hover {
   filter: brightness(0.8);
 }
+
+.zoom-btns {
+  opacity: 0.5;
+}
+
+.zoom-btns:hover {
+  opacity: 1;
+}

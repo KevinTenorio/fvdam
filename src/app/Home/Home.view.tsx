@@ -31,7 +31,7 @@ function HomeView({
   results,
   handleExecuteFvdam
 }: HomeViewProps) {
-  const { setError, fvdamFile, setFvdamFile }: AppContext = useAppContext();
+  const { setError, fvdamFile, setFvdamFile, setLoading }: AppContext = useAppContext();
 
   const Content = () => {
     try {
@@ -217,6 +217,7 @@ function HomeView({
                       }}
                     >
                       <div
+                        className="zoom-btns"
                         style={{
                           position: 'absolute',
                           top: '10px',
@@ -225,6 +226,22 @@ function HomeView({
                           flexDirection: 'row'
                         }}
                       >
+                        <div
+                          className="icon"
+                          style={{ cursor: 'pointer', marginRight: '10px' }}
+                          onClick={() => {
+                            const modelDiv = document.getElementById('model-div');
+                            if (modelDiv) {
+                              modelDiv.style.transform = `scale(${Math.min(
+                                (window.innerWidth - 600) /
+                                  (nodesInfo.state.maxX - nodesInfo.state.minX),
+                                300 / (nodesInfo.state.maxY - nodesInfo.state.minY)
+                              )})`;
+                            }
+                          }}
+                        >
+                          <Icon icon="refresh" size="18px" color="white" />
+                        </div>
                         <div
                           className="icon"
                           style={{ cursor: 'pointer', marginRight: '10px' }}
@@ -260,13 +277,11 @@ function HomeView({
                         id="model-div"
                         style={{
                           position: 'absolute',
-                          transform: `scale(${
-                            100 /
-                            Math.max(
-                              nodesInfo.state.maxX - nodesInfo.state.minX,
-                              nodesInfo.state.maxY - nodesInfo.state.minY
-                            )
-                          })`,
+                          transform: `scale(${Math.min(
+                            (window.innerWidth - 600) /
+                              (nodesInfo.state.maxX - nodesInfo.state.minX),
+                            300 / (nodesInfo.state.maxY - nodesInfo.state.minY)
+                          )})`,
                           width: `${nodesInfo.state.maxX - nodesInfo.state.minX}px`,
                           height: `${nodesInfo.state.maxY - nodesInfo.state.minY}px`,
                           boxShadow: '0px 0px 5px 0px rgba(0,0,0,0.75)'
@@ -698,7 +713,10 @@ function HomeView({
                             width: '200px',
                             margin: '15px'
                           }}
-                          onClick={handleExecuteFvdam}
+                          onClick={() => {
+                            setLoading('Executing FVDAM algorithm. This may take a while...');
+                            handleExecuteFvdam();
+                          }}
                         >
                           Execute FVDAM
                         </button>

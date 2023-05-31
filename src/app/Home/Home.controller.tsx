@@ -3,7 +3,7 @@
 import { useAppContext } from '../App.context';
 import { AppContext } from '../App.model';
 import HomeView from './Home.view';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { NodesInfo, Node, Material, IElement, Face, Results } from './Home.model';
 import getNodes from './getNodes';
 import getMaterials from './getMaterials';
@@ -17,7 +17,7 @@ import homogenize from './homogenize';
 import * as math from 'mathjs';
 
 function HomeController() {
-  const { setError, setLoading }: AppContext = useAppContext();
+  const { setError, setLoading, fvdamFile }: AppContext = useAppContext();
   const [nodes, setNodes] = useState<Node[]>([]);
   const [nodesInfo, setNodesInfo] = useState<NodesInfo>({
     nodesX: 0,
@@ -31,6 +31,24 @@ function HomeController() {
   const [elements, setElements] = useState<IElement[]>([]);
   const [faces, setFaces] = useState<Face[]>([]);
   const [results, setResults] = useState<Results>();
+
+  useEffect(() => {
+    if (!fvdamFile) {
+      setNodes([]);
+      setNodesInfo({
+        nodesX: 0,
+        nodesY: 0,
+        minX: 0,
+        maxX: 0,
+        minY: 0,
+        maxY: 0
+      });
+      setMaterials([]);
+      setElements([]);
+      setFaces([]);
+      setResults(undefined);
+    }
+  }, [fvdamFile]);
 
   async function parseFile(fileStr: string) {
     const lines = fileStr.replaceAll('\r\n', '\n').replaceAll('\r', '\n').split('\n');
@@ -115,23 +133,28 @@ function HomeController() {
   }
 
   async function handleExecuteFvdam() {
-    setLoading('Executing FVDAM algorithm...');
-    fvdamAlg(nodes, nodesInfo, materials, elements, faces)
-      .then((res) => handleEffectiveStiffness(res))
-      .catch((error) => setError(error))
-      .finally(() => {
-        setLoading('Executing FVDAM algorithm...', false);
-      });
+    const runAlg = async () => {
+      await fvdamAlg(nodes, nodesInfo, materials, elements, faces)
+        .then((res) => handleEffectiveStiffness(res))
+        .catch((error) => setError(error))
+        .finally(() => {
+          setLoading('Executing FVDAM algorithm. This may take a while...', false);
+        });
+    };
+    setTimeout(() => {
+      runAlg();
+    }, 5);
   }
 
   async function handleFileRead(file: any) {
+    setLoading('Reading file...');
     const fr = new FileReader();
     fr.onload = (e) => {
       const text = e.target?.result;
       if (typeof text !== 'string') {
         setError('Error reading file');
+        setLoading('Reading file...', false);
       } else {
-        setLoading('Parsing file...');
         parseFile(text)
           .then((res) => {
             const { nodes, nodesInfo, materials, elements, faces } = res;
@@ -143,8 +166,7 @@ function HomeController() {
           })
           .catch((error) => setError(error))
           .finally(() => {
-            setLoading('Parsing file...', false);
-            handleExecuteFvdam();
+            setLoading('Reading file...', false);
           });
       }
     };
