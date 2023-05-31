@@ -229,10 +229,12 @@ function HomeView({
                           onClick={() => {
                             const modelDiv = document.getElementById('model-div');
                             if (modelDiv) {
-                              modelDiv.style.transform = `scale(${(
-                                parseFloat(modelDiv.style.transform.split('(')[1].split(')')[0]) -
-                                0.1
-                              ).toFixed(1)})`;
+                              const modelDivScale = parseFloat(
+                                modelDiv?.style.transform.split('(')[1].split(')')[0]
+                              );
+                              modelDiv.style.transform = `scale(${(modelDivScale / 1.1).toFixed(
+                                1
+                              )})`;
                             }
                           }}
                         >
@@ -244,10 +246,12 @@ function HomeView({
                           onClick={() => {
                             const modelDiv = document.getElementById('model-div');
                             if (modelDiv) {
-                              modelDiv.style.transform = `scale(${(
-                                parseFloat(modelDiv.style.transform.split('(')[1].split(')')[0]) +
-                                0.1
-                              ).toFixed(1)})`;
+                              const modelDivScale = parseFloat(
+                                modelDiv?.style.transform.split('(')[1].split(')')[0]
+                              );
+                              modelDiv.style.transform = `scale(${(modelDivScale * 1.1).toFixed(
+                                1
+                              )})`;
                             }
                           }}
                         >
@@ -255,7 +259,7 @@ function HomeView({
                         </div>
                       </div>
                       <div
-                        className="model-div"
+                        id="model-div"
                         style={{
                           position: 'absolute',
                           transform: 'scale(3)',
