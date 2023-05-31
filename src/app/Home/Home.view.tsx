@@ -17,7 +17,8 @@ interface HomeViewProps {
   elements: State<IElement[]>;
   faces: State<Face[]>;
   getPieChartColors: (materials: Material[]) => string;
-  results: State<Results>;
+  results: State<Results | undefined>;
+  handleExecuteFvdam: () => void;
 }
 function HomeView({
   handleFileRead,
@@ -27,7 +28,8 @@ function HomeView({
   elements,
   faces,
   getPieChartColors,
-  results
+  results,
+  handleExecuteFvdam
 }: HomeViewProps) {
   const { setError, fvdamFile, setFvdamFile }: AppContext = useAppContext();
 
@@ -232,9 +234,7 @@ function HomeView({
                               const modelDivScale = parseFloat(
                                 modelDiv?.style.transform.split('(')[1].split(')')[0]
                               );
-                              modelDiv.style.transform = `scale(${(modelDivScale / 1.1).toFixed(
-                                1
-                              )})`;
+                              modelDiv.style.transform = `scale(${modelDivScale / 1.1})`;
                             }
                           }}
                         >
@@ -249,9 +249,7 @@ function HomeView({
                               const modelDivScale = parseFloat(
                                 modelDiv?.style.transform.split('(')[1].split(')')[0]
                               );
-                              modelDiv.style.transform = `scale(${(modelDivScale * 1.1).toFixed(
-                                1
-                              )})`;
+                              modelDiv.style.transform = `scale(${modelDivScale * 1.1})`;
                             }
                           }}
                         >
@@ -264,9 +262,10 @@ function HomeView({
                           position: 'absolute',
                           transform: `scale(${
                             100 /
-                            elements.state
-                              .map((element) => element?.area || 0)
-                              .reduce((a, b) => a + b, 0)
+                            Math.max(
+                              nodesInfo.state.maxX - nodesInfo.state.minX,
+                              nodesInfo.state.maxY - nodesInfo.state.minY
+                            )
                           })`,
                           width: `${nodesInfo.state.maxX - nodesInfo.state.minX}px`,
                           height: `${nodesInfo.state.maxY - nodesInfo.state.minY}px`,
@@ -400,268 +399,312 @@ function HomeView({
                       ))}
                     </div>
                   </div>
-                  <div // RESULTS
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      padding: '15px',
-                      backgroundColor: 'rgba(0, 0, 0, 0.08)',
-                      border: '1px solid var(--off-white)',
-                      marginRight: '20px'
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontWeight: 'bold',
-                        color: 'white',
-                        width: '100%',
-                        textAlign: 'center',
-                        marginBottom: '10px'
-                      }}
-                    >
-                      Results
-                    </div>
+                  {results.state ? (
+                    <>
+                      <div // RESULTS
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          padding: '15px',
+                          backgroundColor: 'rgba(0, 0, 0, 0.08)',
+                          border: '1px solid var(--off-white)',
+                          marginRight: '20px'
+                        }}
+                      >
+                        <div
+                          style={{
+                            fontWeight: 'bold',
+                            color: 'white',
+                            width: '100%',
+                            textAlign: 'center',
+                            marginBottom: '10px'
+                          }}
+                        >
+                          Results
+                        </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'row' }}>
-                      <div
-                        style={{
-                          margin: '10px',
-                          border: '1px solid var(--off-white)',
-                          color: 'white',
-                          backgroundColor: 'rgba(0, 0, 0, 0.08)',
-                          padding: '10px'
-                        }}
-                      >
-                        <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>
-                          Effective Stiffness Matrix
+                        <div style={{ display: 'flex', flexDirection: 'row' }}>
+                          <div
+                            style={{
+                              margin: '10px',
+                              border: '1px solid var(--off-white)',
+                              color: 'white',
+                              backgroundColor: 'rgba(0, 0, 0, 0.08)',
+                              padding: '10px'
+                            }}
+                          >
+                            <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>
+                              Effective Stiffness Matrix
+                            </div>
+                            <div
+                              style={{ paddingLeft: '20px', marginBottom: '5px' }}
+                            >{`C1111: ${results.state.Ch.get([0, 0]).toFixed(2)}`}</div>
+                            <div
+                              style={{ paddingLeft: '20px', marginBottom: '5px' }}
+                            >{`C2222: ${results.state.Ch.get([1, 1]).toFixed(2)}`}</div>
+                            <div
+                              style={{ paddingLeft: '20px', marginBottom: '5px' }}
+                            >{`C3333: ${results.state.Ch.get([2, 2]).toFixed(2)}`}</div>
+                            <div
+                              style={{ paddingLeft: '20px', marginBottom: '5px' }}
+                            >{`C2233: ${results.state.Ch.get([1, 2]).toFixed(2)}`}</div>
+                            <div
+                              style={{ paddingLeft: '20px', marginBottom: '5px' }}
+                            >{`C2323: ${results.state.Ch.get([3, 3]).toFixed(2)}`}</div>
+                          </div>
+                          <div
+                            style={{
+                              margin: '10px',
+                              border: '1px solid var(--off-white)',
+                              color: 'white',
+                              backgroundColor: 'rgba(0, 0, 0, 0.08)',
+                              padding: '20px'
+                            }}
+                          >
+                            <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>
+                              Young&apos;s Modulus
+                            </div>
+                            <div
+                              style={{ paddingLeft: '20px', marginBottom: '5px' }}
+                            >{`E11: ${results.state.E11.toFixed(2)}`}</div>
+                            <div
+                              style={{ paddingLeft: '20px', marginBottom: '5px' }}
+                            >{`E22: ${results.state.E22.toFixed(2)}`}</div>
+                            <div
+                              style={{ paddingLeft: '20px', marginBottom: '5px' }}
+                            >{`E33: ${results.state.E33.toFixed(2)}`}</div>
+                          </div>
+                          <div
+                            style={{
+                              margin: '10px',
+                              border: '1px solid var(--off-white)',
+                              color: 'white',
+                              backgroundColor: 'rgba(0, 0, 0, 0.08)',
+                              padding: '20px'
+                            }}
+                          >
+                            <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>
+                              Poisson&apos;s Ratio
+                            </div>
+                            <div
+                              style={{ paddingLeft: '20px', marginBottom: '5px' }}
+                            >{`v23: ${results.state.v23.toFixed(4)}`}</div>
+                            <div
+                              style={{ paddingLeft: '20px', marginBottom: '5px' }}
+                            >{`v13: ${results.state.v13.toFixed(4)}`}</div>
+                            <div
+                              style={{ paddingLeft: '20px', marginBottom: '5px' }}
+                            >{`v12: ${results.state.v12.toFixed(4)}`}</div>
+                          </div>
+                          <div
+                            style={{
+                              margin: '10px',
+                              border: '1px solid var(--off-white)',
+                              color: 'white',
+                              backgroundColor: 'rgba(0, 0, 0, 0.08)',
+                              padding: '20px'
+                            }}
+                          >
+                            <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>
+                              Shear Modulus
+                            </div>
+                            <div
+                              style={{ paddingLeft: '20px', marginBottom: '5px' }}
+                            >{`G23: ${results.state.G23.toFixed(2)}`}</div>
+                            <div
+                              style={{ paddingLeft: '20px', marginBottom: '5px' }}
+                            >{`G13: ${results.state.G13.toFixed(2)}`}</div>
+                            <div
+                              style={{ paddingLeft: '20px', marginBottom: '5px' }}
+                            >{`G12: ${results.state.G12.toFixed(2)}`}</div>
+                          </div>
                         </div>
-                        <div
-                          style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                        >{`C1111: ${results.state.Ch.get([0, 0]).toFixed(2)}`}</div>
-                        <div
-                          style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                        >{`C2222: ${results.state.Ch.get([1, 1]).toFixed(2)}`}</div>
-                        <div
-                          style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                        >{`C3333: ${results.state.Ch.get([2, 2]).toFixed(2)}`}</div>
-                        <div
-                          style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                        >{`C2233: ${results.state.Ch.get([1, 2]).toFixed(2)}`}</div>
-                        <div
-                          style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                        >{`C2323: ${results.state.Ch.get([3, 3]).toFixed(2)}`}</div>
                       </div>
-                      <div
+                      <div // DOWNLOAD BTNS
                         style={{
-                          margin: '10px',
-                          border: '1px solid var(--off-white)',
-                          color: 'white',
-                          backgroundColor: 'rgba(0, 0, 0, 0.08)',
-                          padding: '20px'
+                          width: '100%',
+                          flex: '1',
+                          display: 'flex',
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                          flexDirection: 'column'
                         }}
                       >
-                        <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>
-                          Young&apos;s Modulus
-                        </div>
-                        <div
-                          style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                        >{`E11: ${results.state.E11.toFixed(2)}`}</div>
-                        <div
-                          style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                        >{`E22: ${results.state.E22.toFixed(2)}`}</div>
-                        <div
-                          style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                        >{`E33: ${results.state.E33.toFixed(2)}`}</div>
+                        <button
+                          className="button"
+                          style={{
+                            cursor: 'pointer',
+                            backgroundColor: 'rgba(0, 0, 0, 0.08)',
+                            border: '1px solid var(--off-white)',
+                            color: 'white',
+                            padding: '10px',
+                            borderRadius: '5px',
+                            fontWeight: 'bold',
+                            fontSize: '16px',
+                            height: '50px',
+                            width: '200px',
+                            margin: '15px'
+                          }}
+                          onClick={() => {
+                            const data = {
+                              // @ts-ignore
+                              results: { ...results.state, Ch: results.state.Ch }
+                            };
+                            const dataStr =
+                              'data:text/json;charset=utf-8,' +
+                              encodeURIComponent(JSON.stringify(data));
+                            const downloadAnchorNode = document.createElement('a');
+                            downloadAnchorNode.setAttribute('href', dataStr);
+                            downloadAnchorNode.setAttribute('download', 'fvdam.json');
+                            document.body.appendChild(downloadAnchorNode);
+                            downloadAnchorNode.click();
+                            downloadAnchorNode.remove();
+                          }}
+                        >
+                          Download Results
+                        </button>
+                        <button
+                          className="button"
+                          style={{
+                            marginLeft: '20px',
+                            cursor: 'pointer',
+                            backgroundColor: 'rgba(0, 0, 0, 0.08)',
+                            border: '1px solid var(--off-white)',
+                            color: 'white',
+                            padding: '10px',
+                            borderRadius: '5px',
+                            fontWeight: 'bold',
+                            fontSize: '16px',
+                            height: '50px',
+                            width: '200px',
+                            margin: '15px'
+                          }}
+                          onClick={() => {
+                            const data = {
+                              materials: materials.state.map((material) => ({
+                                id: material.id,
+                                label: material.label,
+                                poisson: material.poisson,
+                                young: material.young
+                              })),
+                              nodes: nodes.state.map((node) => ({
+                                id: node.x,
+                                x: node.x,
+                                y: node.x
+                              })),
+                              elements: elements.state.map((element) => ({
+                                id: element.id,
+                                nodes: element.nodes.map((node) => ({
+                                  id: node.x,
+                                  x: node.x,
+                                  y: node.x
+                                })),
+                                material: {
+                                  id: element.material.id,
+                                  label: element.material.label,
+                                  poisson: element.material.poisson,
+                                  young: element.material.young
+                                }
+                              })),
+                              faces: faces.state.map((face) => ({
+                                id: face.id,
+                                constraints: face.constraints,
+                                nodes: face.nodes.map((node) => ({
+                                  id: node.id,
+                                  x: node.x,
+                                  y: node.y
+                                })),
+                                strain: face.strain,
+                                force: face.force,
+                                dof: face.dof
+                              }))
+                            };
+                            const dataStr =
+                              'data:text/json;charset=utf-8,' +
+                              encodeURIComponent(JSON.stringify(data));
+                            const downloadAnchorNode = document.createElement('a');
+                            downloadAnchorNode.setAttribute('href', dataStr);
+                            downloadAnchorNode.setAttribute('download', 'fvdam.json');
+                            document.body.appendChild(downloadAnchorNode);
+                            downloadAnchorNode.click();
+                            downloadAnchorNode.remove();
+                          }}
+                        >
+                          Download Model
+                        </button>
+                        <button
+                          className="button"
+                          style={{
+                            marginLeft: '20px',
+                            cursor: 'pointer',
+                            backgroundColor: 'rgba(0, 0, 0, 0.08)',
+                            border: '1px solid var(--off-white)',
+                            color: 'white',
+                            padding: '10px',
+                            borderRadius: '5px',
+                            fontWeight: 'bold',
+                            fontSize: '16px',
+                            height: '50px',
+                            width: '200px',
+                            margin: '15px'
+                          }}
+                          onClick={() => {
+                            const data = {
+                              materials: materials.state,
+                              nodes: nodes.state,
+                              elements: elements.state,
+                              faces: faces.state,
+                              results: results.state
+                            };
+                            const dataStr =
+                              'data:text/json;charset=utf-8,' +
+                              encodeURIComponent(JSON.stringify(data));
+                            const downloadAnchorNode = document.createElement('a');
+                            downloadAnchorNode.setAttribute('href', dataStr);
+                            downloadAnchorNode.setAttribute('download', 'fvdam.json');
+                            document.body.appendChild(downloadAnchorNode);
+                            downloadAnchorNode.click();
+                            downloadAnchorNode.remove();
+                          }}
+                        >
+                          Download All
+                        </button>
                       </div>
-                      <div
+                    </>
+                  ) : (
+                    <>
+                      <div // EXECUTE FVDAM BTN
                         style={{
-                          margin: '10px',
-                          border: '1px solid var(--off-white)',
-                          color: 'white',
-                          backgroundColor: 'rgba(0, 0, 0, 0.08)',
-                          padding: '20px'
+                          width: '100%',
+                          flex: '1',
+                          display: 'flex',
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                          flexDirection: 'column'
                         }}
                       >
-                        <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>
-                          Poisson&apos;s Ratio
-                        </div>
-                        <div
-                          style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                        >{`v23: ${results.state.v23.toFixed(4)}`}</div>
-                        <div
-                          style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                        >{`v13: ${results.state.v13.toFixed(4)}`}</div>
-                        <div
-                          style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                        >{`v12: ${results.state.v12.toFixed(4)}`}</div>
+                        <button
+                          className="button"
+                          style={{
+                            cursor: 'pointer',
+                            backgroundColor: 'rgba(0, 0, 0, 0.08)',
+                            border: '1px solid var(--off-white)',
+                            color: 'white',
+                            padding: '10px',
+                            borderRadius: '5px',
+                            fontWeight: 'bold',
+                            fontSize: '16px',
+                            height: '50px',
+                            width: '200px',
+                            margin: '15px'
+                          }}
+                          onClick={handleExecuteFvdam}
+                        >
+                          Execute FVDAM
+                        </button>
                       </div>
-                      <div
-                        style={{
-                          margin: '10px',
-                          border: '1px solid var(--off-white)',
-                          color: 'white',
-                          backgroundColor: 'rgba(0, 0, 0, 0.08)',
-                          padding: '20px'
-                        }}
-                      >
-                        <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>Shear Modulus</div>
-                        <div
-                          style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                        >{`G23: ${results.state.G23.toFixed(2)}`}</div>
-                        <div
-                          style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                        >{`G13: ${results.state.G13.toFixed(2)}`}</div>
-                        <div
-                          style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                        >{`G12: ${results.state.G12.toFixed(2)}`}</div>
-                      </div>
-                    </div>
-                  </div>
-                  <div
-                    style={{
-                      width: '100%',
-                      flex: '1',
-                      display: 'flex',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      flexDirection: 'column'
-                    }}
-                  >
-                    <button
-                      className="button"
-                      style={{
-                        cursor: 'pointer',
-                        backgroundColor: 'rgba(0, 0, 0, 0.08)',
-                        border: '1px solid var(--off-white)',
-                        color: 'white',
-                        padding: '10px',
-                        borderRadius: '5px',
-                        fontWeight: 'bold',
-                        fontSize: '16px',
-                        height: '50px',
-                        width: '200px',
-                        margin: '15px'
-                      }}
-                      onClick={() => {
-                        const data = {
-                          results: { ...results.state, Ch: results.state.Ch }
-                        };
-                        const dataStr =
-                          'data:text/json;charset=utf-8,' +
-                          encodeURIComponent(JSON.stringify(data));
-                        const downloadAnchorNode = document.createElement('a');
-                        downloadAnchorNode.setAttribute('href', dataStr);
-                        downloadAnchorNode.setAttribute('download', 'fvdam.json');
-                        document.body.appendChild(downloadAnchorNode);
-                        downloadAnchorNode.click();
-                        downloadAnchorNode.remove();
-                      }}
-                    >
-                      Download Results
-                    </button>
-                    <button
-                      className="button"
-                      style={{
-                        marginLeft: '20px',
-                        cursor: 'pointer',
-                        backgroundColor: 'rgba(0, 0, 0, 0.08)',
-                        border: '1px solid var(--off-white)',
-                        color: 'white',
-                        padding: '10px',
-                        borderRadius: '5px',
-                        fontWeight: 'bold',
-                        fontSize: '16px',
-                        height: '50px',
-                        width: '200px',
-                        margin: '15px'
-                      }}
-                      onClick={() => {
-                        const data = {
-                          materials: materials.state.map((material) => ({
-                            id: material.id,
-                            label: material.label,
-                            poisson: material.poisson,
-                            young: material.young
-                          })),
-                          nodes: nodes.state.map((node) => ({ id: node.x, x: node.x, y: node.x })),
-                          elements: elements.state.map((element) => ({
-                            id: element.id,
-                            nodes: element.nodes.map((node) => ({
-                              id: node.x,
-                              x: node.x,
-                              y: node.x
-                            })),
-                            material: {
-                              id: element.material.id,
-                              label: element.material.label,
-                              poisson: element.material.poisson,
-                              young: element.material.young
-                            }
-                          })),
-                          faces: faces.state.map((face) => ({
-                            id: face.id,
-                            constraints: face.constraints,
-                            nodes: face.nodes.map((node) => ({
-                              id: node.id,
-                              x: node.x,
-                              y: node.y
-                            })),
-                            strain: face.strain,
-                            force: face.force,
-                            dof: face.dof
-                          }))
-                        };
-                        const dataStr =
-                          'data:text/json;charset=utf-8,' +
-                          encodeURIComponent(JSON.stringify(data));
-                        const downloadAnchorNode = document.createElement('a');
-                        downloadAnchorNode.setAttribute('href', dataStr);
-                        downloadAnchorNode.setAttribute('download', 'fvdam.json');
-                        document.body.appendChild(downloadAnchorNode);
-                        downloadAnchorNode.click();
-                        downloadAnchorNode.remove();
-                      }}
-                    >
-                      Download Model
-                    </button>
-                    <button
-                      className="button"
-                      style={{
-                        marginLeft: '20px',
-                        cursor: 'pointer',
-                        backgroundColor: 'rgba(0, 0, 0, 0.08)',
-                        border: '1px solid var(--off-white)',
-                        color: 'white',
-                        padding: '10px',
-                        borderRadius: '5px',
-                        fontWeight: 'bold',
-                        fontSize: '16px',
-                        height: '50px',
-                        width: '200px',
-                        margin: '15px'
-                      }}
-                      onClick={() => {
-                        const data = {
-                          materials: materials.state,
-                          nodes: nodes.state,
-                          elements: elements.state,
-                          faces: faces.state,
-                          results: results.state
-                        };
-                        const dataStr =
-                          'data:text/json;charset=utf-8,' +
-                          encodeURIComponent(JSON.stringify(data));
-                        const downloadAnchorNode = document.createElement('a');
-                        downloadAnchorNode.setAttribute('href', dataStr);
-                        downloadAnchorNode.setAttribute('download', 'fvdam.json');
-                        document.body.appendChild(downloadAnchorNode);
-                        downloadAnchorNode.click();
-                        downloadAnchorNode.remove();
-                      }}
-                    >
-                      Download All
-                    </button>
-                  </div>
+                    </>
+                  )}
                 </div>
               </div>
             )}

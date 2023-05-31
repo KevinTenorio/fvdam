@@ -114,6 +114,16 @@ function HomeController() {
     });
   }
 
+  async function handleExecuteFvdam() {
+    setLoading('Executing FVDAM algorithm...');
+    fvdamAlg(nodes, nodesInfo, materials, elements, faces)
+      .then((res) => handleEffectiveStiffness(res))
+      .catch((error) => setError(error))
+      .finally(() => {
+        setLoading('Executing FVDAM algorithm...', false);
+      });
+  }
+
   async function handleFileRead(file: any) {
     const fr = new FileReader();
     fr.onload = (e) => {
@@ -125,22 +135,16 @@ function HomeController() {
         parseFile(text)
           .then((res) => {
             const { nodes, nodesInfo, materials, elements, faces } = res;
-            setLoading('Executing FVDAM algorithm...');
-            fvdamAlg(nodes, nodesInfo, materials, elements, faces)
-              .then((res) => handleEffectiveStiffness(res))
-              .catch((error) => setError(error))
-              .finally(() => {
-                setNodes(nodes);
-                setMaterials(materials);
-                setNodesInfo(nodesInfo);
-                setElements(elements);
-                setFaces(faces);
-                setLoading('Executing FVDAM algorithm...', false);
-              });
+            setNodes(nodes);
+            setMaterials(materials);
+            setNodesInfo(nodesInfo);
+            setElements(elements);
+            setFaces(faces);
           })
           .catch((error) => setError(error))
           .finally(() => {
             setLoading('Parsing file...', false);
+            handleExecuteFvdam();
           });
       }
     };
@@ -180,6 +184,7 @@ function HomeController() {
       faces={{ state: faces, set: setFaces }}
       getPieChartColors={getPieChartColors}
       results={{ state: results, set: setResults }}
+      handleExecuteFvdam={handleExecuteFvdam}
     />
   );
 }
