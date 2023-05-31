@@ -12,8 +12,8 @@ function calcDof(faces: Face[]) {
     } else {
       dofBOut.push(i + 1);
     }
-    for (let j = 1; j < 2; j++) {
-      if (faces[i].constraints[0] === 0) {
+    for (let j = 1; j < 3; j++) {
+      if (faces[i].constraints[j - 1] === 0) {
         dofAIn.push(2 * i + j);
       } else {
         dofBIn.push(2 * i + j);

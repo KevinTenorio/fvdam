@@ -139,10 +139,10 @@ function calcPhiTheta(element: IElement) {
   const phiIn = math.matrix([
     [
       C.get([1, 1]) * (J22 ** 2 + J23 ** 2) + C.get([4, 4]) * (J32 ** 2 + J33 ** 2),
-      C.get([1, 2]) + C.get([3, 3]) * (J22 * J32 + J23 * J33)
+      (C.get([1, 2]) + C.get([3, 3])) * (J22 * J32 + J23 * J33)
     ],
     [
-      C.get([1, 2]) + C.get([3, 3]) * (J22 * J32 + J23 * J33),
+      (C.get([1, 2]) + C.get([3, 3])) * (J22 * J32 + J23 * J33),
       C.get([2, 2]) * (J32 ** 2 + J33 ** 2) + C.get([3, 3]) * (J22 ** 2 + J23 ** 2)
     ]
   ]);

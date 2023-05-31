@@ -16,7 +16,7 @@ function calcConc(
   const epOut1 = math.matrix([[2], [0]]);
   const epOut2 = math.matrix([[0], [2]]);
 
-  const KaaIn = math.subset(KgIn, math.index(math.subtract(dofAOut, 1), math.subtract(dofAOut, 1)));
+  const KaaIn = math.subset(KgIn, math.index(math.subtract(dofAIn, 1), math.subtract(dofAIn, 1)));
   const KaaOut = math.subset(
     KgOut,
     math.index(math.subtract(dofAOut, 1), math.subtract(dofAOut, 1))

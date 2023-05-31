@@ -7,6 +7,7 @@ import Upload from '/src/components/atoms/Upload';
 import { State } from '/src/index.model';
 import { Node, NodesInfo, Material, IElement, Face, Results } from './Home.model';
 import './Home.style.css';
+import Icon from '/src/components/atoms/Icon';
 
 interface HomeViewProps {
   handleFileRead: (file: any) => void;
@@ -216,6 +217,47 @@ function HomeView({
                       <div
                         style={{
                           position: 'absolute',
+                          top: '10px',
+                          right: '10px',
+                          display: 'flex',
+                          flexDirection: 'row'
+                        }}
+                      >
+                        <div
+                          className="icon"
+                          style={{ cursor: 'pointer', marginRight: '10px' }}
+                          onClick={() => {
+                            const modelDiv = document.getElementById('model-div');
+                            if (modelDiv) {
+                              modelDiv.style.transform = `scale(${(
+                                parseFloat(modelDiv.style.transform.split('(')[1].split(')')[0]) -
+                                0.1
+                              ).toFixed(1)})`;
+                            }
+                          }}
+                        >
+                          <Icon icon="zoom-out" size="18px" color="white" />
+                        </div>
+                        <div
+                          className="icon"
+                          style={{ cursor: 'pointer' }}
+                          onClick={() => {
+                            const modelDiv = document.getElementById('model-div');
+                            if (modelDiv) {
+                              modelDiv.style.transform = `scale(${(
+                                parseFloat(modelDiv.style.transform.split('(')[1].split(')')[0]) +
+                                0.1
+                              ).toFixed(1)})`;
+                            }
+                          }}
+                        >
+                          <Icon icon="zoom-in" size="18px" color="white" />
+                        </div>
+                      </div>
+                      <div
+                        className="model-div"
+                        style={{
+                          position: 'absolute',
                           transform: 'scale(3)',
                           width: `${nodesInfo.state.maxX - nodesInfo.state.minX}px`,
                           height: `${nodesInfo.state.maxY - nodesInfo.state.minY}px`,
@@ -280,7 +322,7 @@ function HomeView({
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'row' }}>
-                      {materials.state.map((material) => (
+                      {materials.state.map((material, materialIndex) => (
                         <div
                           style={{
                             margin: '10px',
@@ -319,10 +361,29 @@ function HomeView({
                           >
                             {`Color: `}
                             <div
+                              className="button"
                               style={{
                                 paddingLeft: '5px',
                                 color: material.color,
-                                fontWeight: 'bold'
+                                fontWeight: 'bold',
+                                cursor: 'pointer'
+                              }}
+                              onClick={() => {
+                                let color = '';
+                                while (color.length < 6) {
+                                  color = `${Math.floor(Math.random() * 16777215).toString(16)}`;
+                                }
+                                color = `#${color}`;
+                                const newMaterials = [...materials.state];
+                                newMaterials[materialIndex] = { ...material, color: color };
+                                const newElements = [...elements.state];
+                                newElements.forEach((element) => {
+                                  if (element.material.label === material.label) {
+                                    element.material.color = color;
+                                  }
+                                });
+                                materials.set(newMaterials);
+                                elements.set(newElements);
                               }}
                             >{`${material.color}`}</div>
                           </div>
@@ -391,7 +452,7 @@ function HomeView({
                         }}
                       >
                         <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>
-                          Young's Modulus
+                          Young&apos;s Modulus
                         </div>
                         <div
                           style={{ paddingLeft: '20px', marginBottom: '5px' }}
@@ -413,7 +474,7 @@ function HomeView({
                         }}
                       >
                         <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>
-                          Poisson's Ratio
+                          Poisson&apos;s Ratio
                         </div>
                         <div
                           style={{ paddingLeft: '20px', marginBottom: '5px' }}
@@ -446,6 +507,151 @@ function HomeView({
                         >{`G12: ${results.state.G12.toFixed(2)}`}</div>
                       </div>
                     </div>
+                  </div>
+                  <div
+                    style={{
+                      width: '100%',
+                      flex: '1',
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      flexDirection: 'column'
+                    }}
+                  >
+                    <button
+                      className="button"
+                      style={{
+                        cursor: 'pointer',
+                        backgroundColor: 'rgba(0, 0, 0, 0.08)',
+                        border: '1px solid var(--off-white)',
+                        color: 'white',
+                        padding: '10px',
+                        borderRadius: '5px',
+                        fontWeight: 'bold',
+                        fontSize: '16px',
+                        height: '50px',
+                        width: '200px',
+                        margin: '15px'
+                      }}
+                      onClick={() => {
+                        const data = {
+                          results: { ...results.state, Ch: results.state.Ch }
+                        };
+                        const dataStr =
+                          'data:text/json;charset=utf-8,' +
+                          encodeURIComponent(JSON.stringify(data));
+                        const downloadAnchorNode = document.createElement('a');
+                        downloadAnchorNode.setAttribute('href', dataStr);
+                        downloadAnchorNode.setAttribute('download', 'fvdam.json');
+                        document.body.appendChild(downloadAnchorNode);
+                        downloadAnchorNode.click();
+                        downloadAnchorNode.remove();
+                      }}
+                    >
+                      Download Results
+                    </button>
+                    <button
+                      className="button"
+                      style={{
+                        marginLeft: '20px',
+                        cursor: 'pointer',
+                        backgroundColor: 'rgba(0, 0, 0, 0.08)',
+                        border: '1px solid var(--off-white)',
+                        color: 'white',
+                        padding: '10px',
+                        borderRadius: '5px',
+                        fontWeight: 'bold',
+                        fontSize: '16px',
+                        height: '50px',
+                        width: '200px',
+                        margin: '15px'
+                      }}
+                      onClick={() => {
+                        const data = {
+                          materials: materials.state.map((material) => ({
+                            id: material.id,
+                            label: material.label,
+                            poisson: material.poisson,
+                            young: material.young
+                          })),
+                          nodes: nodes.state.map((node) => ({ id: node.x, x: node.x, y: node.x })),
+                          elements: elements.state.map((element) => ({
+                            id: element.id,
+                            nodes: element.nodes.map((node) => ({
+                              id: node.x,
+                              x: node.x,
+                              y: node.x
+                            })),
+                            material: {
+                              id: element.material.id,
+                              label: element.material.label,
+                              poisson: element.material.poisson,
+                              young: element.material.young
+                            }
+                          })),
+                          faces: faces.state.map((face) => ({
+                            id: face.id,
+                            constraints: face.constraints,
+                            nodes: face.nodes.map((node) => ({
+                              id: node.id,
+                              x: node.x,
+                              y: node.y
+                            })),
+                            strain: face.strain,
+                            force: face.force,
+                            dof: face.dof
+                          }))
+                        };
+                        const dataStr =
+                          'data:text/json;charset=utf-8,' +
+                          encodeURIComponent(JSON.stringify(data));
+                        const downloadAnchorNode = document.createElement('a');
+                        downloadAnchorNode.setAttribute('href', dataStr);
+                        downloadAnchorNode.setAttribute('download', 'fvdam.json');
+                        document.body.appendChild(downloadAnchorNode);
+                        downloadAnchorNode.click();
+                        downloadAnchorNode.remove();
+                      }}
+                    >
+                      Download Model
+                    </button>
+                    <button
+                      className="button"
+                      style={{
+                        marginLeft: '20px',
+                        cursor: 'pointer',
+                        backgroundColor: 'rgba(0, 0, 0, 0.08)',
+                        border: '1px solid var(--off-white)',
+                        color: 'white',
+                        padding: '10px',
+                        borderRadius: '5px',
+                        fontWeight: 'bold',
+                        fontSize: '16px',
+                        height: '50px',
+                        width: '200px',
+                        margin: '15px'
+                      }}
+                      onClick={() => {
+                        const data = {
+                          materials: materials.state,
+                          nodes: nodes.state,
+                          elements: elements.state,
+                          faces: faces.state,
+                          results: results.state
+                        };
+                        const dataStr =
+                          'data:text/json;charset=utf-8,' +
+                          encodeURIComponent(JSON.stringify(data));
+                        const downloadAnchorNode = document.createElement('a');
+                        downloadAnchorNode.setAttribute('href', dataStr);
+                        downloadAnchorNode.setAttribute('download', 'fvdam.json');
+                        document.body.appendChild(downloadAnchorNode);
+                        downloadAnchorNode.click();
+                        downloadAnchorNode.remove();
+                      }}
+                    >
+                      Download All
+                    </button>
                   </div>
                 </div>
               </div>
