@@ -9,6 +9,7 @@ function homogenize(elements: IElement[], materials: Material[]) {
   for (let i = 0; i < elements.length; i++) {
     Ch = math.add(
       Ch,
+      // @ts-ignore
       math.multiply(elements[i].area / totalArea, elements[i].material.C, elements[i].Conc)
     );
   }

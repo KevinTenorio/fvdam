@@ -108,14 +108,23 @@ function HomeController() {
 
   function handleEffectiveStiffness(Ch: math.MathCollection) {
     const S = math.inv(Ch);
+    // @ts-ignore
     const E11 = 1 / S.get([0, 0]);
+    // @ts-ignore
     const E22 = 1 / S.get([1, 1]);
+    // @ts-ignore
     const E33 = 1 / S.get([2, 2]);
+    // @ts-ignore
     const v23 = -1 * S.get([2, 1]) * E22;
+    // @ts-ignore
     const v13 = -1 * S.get([2, 0]) * E11;
+    // @ts-ignore
     const v12 = -1 * S.get([1, 0]) * E11;
+    // @ts-ignore
     const G23 = 1 / S.get([3, 3]);
+    // @ts-ignore
     const G13 = 1 / S.get([4, 4]);
+    // @ts-ignore
     const G12 = 1 / S.get([5, 5]);
 
     setResults({

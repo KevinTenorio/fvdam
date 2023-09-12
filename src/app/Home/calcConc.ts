@@ -1,3 +1,4 @@
+// @ts-nocheck
 import * as math from 'mathjs';
 import { IElement, Face } from './Home.model';
 
