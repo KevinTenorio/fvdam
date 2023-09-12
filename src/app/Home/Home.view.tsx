@@ -7,7 +7,6 @@ import Upload from '/src/components/atoms/Upload';
 import { IState } from '/src/index.model';
 import { Node, NodesInfo, Material, IElement, Face, Results } from './Home.model';
 import './Home.style.css';
-import Icon from '/src/components/atoms/Icon';
 import MeshGenerator from './MeshGenerator';
 import FvdamContent from './Content';
 
@@ -33,7 +32,7 @@ function HomeView({
   results,
   handleExecuteFvdam
 }: HomeViewProps) {
-  const { setError, fvdamFile, setFvdamFile, setLoading }: AppContext = useAppContext();
+  const { setError, fvdamFile, setFvdamFile }: AppContext = useAppContext();
 
   const Content = () => {
     try {
@@ -111,7 +110,7 @@ function HomeView({
             ) : (
               <MeshGenerator />
             )}
-            <div style={{ height: '20px', width: '100%', color: 'transparent' }}>{'.'}</div>
+            {/* <div style={{ height: '5px', width: '100%', color: 'transparent' }}>{'.'}</div> */}
           </div>
         </div>
       );
