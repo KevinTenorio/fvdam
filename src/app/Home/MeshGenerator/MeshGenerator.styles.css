@@ -1,3 +1,13 @@
-.example {
-  color: red;
+.materialItem:hover {
+  background-color: #949494;
+  cursor: pointer;
+}
+
+.materialItem {
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 18px;
+  padding: 5px;
 }
