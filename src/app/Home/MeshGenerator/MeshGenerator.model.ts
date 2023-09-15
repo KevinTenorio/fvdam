@@ -6,6 +6,12 @@ export interface IMeshGeneratorViewProps {
   unitCellHeight: IState<number | null>;
   materials: IState<IMeshMaterial[]>;
   regions: IState<IMeshRegion[]>;
+  nodes: IState<number[][]>;
+  faces: IState<number[][]>;
+  elements: IState<number[][]>;
+  generateMesh: () => void;
+  stuffToShow: IState<IStuffToShow>;
+  divisionsByRegion: IState<number>;
 }
 
 export interface IMeshMaterial {
@@ -26,4 +32,14 @@ export interface IMeshRegion {
   x: number;
   y: number;
   collapsed: boolean;
+  showMaterialsDropdown: boolean;
+}
+
+export interface IStuffToShow {
+  elements: boolean;
+  elementsIds: boolean;
+  regionsLabels: boolean;
+  nodesIds: boolean;
+  facesIds: boolean;
+  regionsMaterials: boolean;
 }

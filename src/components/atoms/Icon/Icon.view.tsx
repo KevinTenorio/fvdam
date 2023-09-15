@@ -121,6 +121,39 @@ function IconView({ icon, size, color }: IconProps) {
           <path d="M12,9a.994.994,0,0,1-.2925.7045l-3.9915,3.99a1,1,0,1,1-1.4355-1.386l.0245-.0245L9.5905,9,6.3045,5.715A1,1,0,0,1,7.691,4.28l.0245.0245,3.9915,3.99A.994.994,0,0,1,12,9Z" />
         </svg>
       );
+    case 'copy':
+      return (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 18 18"
+          height={size || '18px'}
+          width={size || '18px'}
+          fill={color}
+        >
+          <rect id="Canvas" fill={color} opacity="0" width="18" height="18" />
+          <rect height="1" rx="0.25" width="1" x="16" y="11" />
+          <rect height="1" rx="0.25" width="1" x="16" y="9" />
+          <rect height="1" rx="0.25" width="1" x="16" y="7" />
+          <rect height="1" rx="0.25" width="1" x="16" y="5" />
+          <rect height="1" rx="0.25" width="1" x="16" y="3" />
+          <rect height="1" rx="0.25" width="1" x="16" y="1" />
+          <rect height="1" rx="0.25" width="1" x="14" y="1" />
+          <rect height="1" rx="0.25" width="1" x="12" y="1" />
+          <rect height="1" rx="0.25" width="1" x="10" y="1" />
+          <rect height="1" rx="0.25" width="1" x="8" y="1" />
+          <rect height="1" rx="0.25" width="1" x="6" y="1" />
+          <rect height="1" rx="0.25" width="1" x="6" y="3" />
+          <rect height="1" rx="0.25" width="1" x="6" y="5" />
+          <rect height="1" rx="0.25" width="1" x="6" y="7" />
+          <rect height="1" rx="0.25" width="1" x="6" y="9" />
+          <rect height="1" rx="0.25" width="1" x="6" y="11" />
+          <rect height="1" rx="0.25" width="1" x="8" y="11" />
+          <rect height="1" rx="0.25" width="1" x="10" y="11" />
+          <rect height="1" rx="0.25" width="1" x="12" y="11" />
+          <rect height="1" rx="0.25" width="1" x="14" y="11" />
+          <path d="M5,6H1.5a.5.5,0,0,0-.5.5v10a.5.5,0,0,0,.5.5h10a.5.5,0,0,0,.5-.5V13H5.5a.5.5,0,0,1-.5-.5Z" />
+        </svg>
+      );
     default:
       return <></>;
   }

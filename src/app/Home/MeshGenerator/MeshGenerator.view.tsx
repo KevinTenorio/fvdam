@@ -5,13 +5,26 @@ import { IMeshGeneratorViewProps } from './MeshGenerator.model';
 import './MeshGenerator.styles.css';
 import Icon from '/src/components/atoms/Icon';
 import generateUuid from '/src/commons/generateUuid';
+import generateColor from '/src/commons/generateColor';
 
 function MeshGeneratorView({
   unitCellHeight,
   unitCellWidth,
   materials,
-  regions
+  regions,
+  nodes,
+  faces,
+  elements,
+  generateMesh,
+  stuffToShow,
+  divisionsByRegion
 }: IMeshGeneratorViewProps) {
+  const zoom =
+    0.6 *
+    Math.min(
+      window.innerWidth / (unitCellWidth.state || 1),
+      window.innerHeight / (unitCellHeight.state || 1)
+    );
   return (
     <div
       style={{
@@ -93,7 +106,18 @@ function MeshGeneratorView({
                     )
                   }
                 >
-                  {material.label}
+                  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                    {material.label}
+                    <div
+                      style={{
+                        width: '14px',
+                        height: '14px',
+                        backgroundColor: material.color,
+                        marginLeft: '5px'
+                      }}
+                    />
+                  </div>
+
                   <div
                     style={{
                       transform: material.collapsed ? 'rotate(0deg)' : 'rotate(90deg)',
@@ -162,6 +186,23 @@ function MeshGeneratorView({
                       }}
                     />
                     <div style={{ height: '5px' }} />
+                    <label htmlFor="materialColor">Color:</label>
+                    <input
+                      type="text"
+                      id="materialColor"
+                      name="materialColor"
+                      size={5}
+                      value={material.color}
+                      style={{ color: material.color }}
+                      onChange={(event) => {
+                        materials.set(
+                          materials.state.map((mat) =>
+                            mat.id === material.id ? { ...mat, color: event.target.value } : mat
+                          )
+                        );
+                      }}
+                    />
+                    <div style={{ height: '5px' }} />
                     <div
                       style={{ cursor: 'pointer', position: 'absolute', top: '5px', right: '0px' }}
                       onClick={() => {
@@ -181,7 +222,7 @@ function MeshGeneratorView({
               newMaterials.push({
                 id: generateUuid(),
                 label: 'Material ' + (newMaterials.length + 1),
-                color: '#000000',
+                color: generateColor(),
                 poisson: 0,
                 young: 0,
                 collapsed: false
@@ -257,6 +298,79 @@ function MeshGeneratorView({
                       }}
                     />
                     <div style={{ height: '5px' }} />
+                    <label htmlFor="regionMaterial">Material:</label>
+                    <input
+                      type="text"
+                      id="regionMaterial"
+                      name="regionMaterial"
+                      value={materials.state.find((mat) => mat.id === region.materialId)?.label}
+                      size={5}
+                      onChange={(event) => {
+                        regions.set(
+                          regions.state.map((reg) =>
+                            reg.id === region.id ? { ...reg, materialId: event.target.value } : reg
+                          )
+                        );
+                      }}
+                      onClick={() => {
+                        regions.set(
+                          regions.state.map((reg) =>
+                            reg.id === region.id
+                              ? { ...reg, showMaterialsDropdown: !region.showMaterialsDropdown }
+                              : reg
+                          )
+                        );
+                      }}
+                    />
+
+                    {region.showMaterialsDropdown && (
+                      <div
+                        style={{
+                          border: '2px solid var(--off-white)',
+                          position: 'absolute',
+                          top: '90px',
+                          backgroundColor: 'grey',
+                          width: '100%'
+                        }}
+                      >
+                        {materials.state.map((material) => (
+                          <div
+                            className="materialItem"
+                            key={material.id}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between'
+                            }}
+                            onClick={() => {
+                              regions.set(
+                                regions.state.map((reg) =>
+                                  reg.id === region.id
+                                    ? {
+                                        ...reg,
+                                        materialId: material.id,
+                                        showMaterialsDropdown: false
+                                      }
+                                    : reg
+                                )
+                              );
+                            }}
+                          >
+                            {material.label}
+                            <div
+                              style={{
+                                width: '14px',
+                                height: '14px',
+                                backgroundColor: material.color,
+                                marginLeft: '5px'
+                              }}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <div style={{ height: '5px' }} />
                     <label htmlFor="regionWidth">Width:</label>
                     <input
                       type="text"
@@ -265,7 +379,13 @@ function MeshGeneratorView({
                       value={region.width}
                       size={5}
                       onChange={(event) => {
-                        let value = Number(event.target.value);
+                        let value: number;
+                        if (event.target.value.includes('.')) {
+                          value = Number(event.target.value + '0');
+                        } else {
+                          value = Number(event.target.value);
+                        }
+
                         if (unitCellWidth.state && region.x + value > unitCellWidth.state) {
                           value = unitCellWidth.state - region.x;
                         }
@@ -285,11 +405,15 @@ function MeshGeneratorView({
                       value={region.height}
                       size={5}
                       onChange={(event) => {
+                        let value: number;
+                        if (event.target.value.includes('.')) {
+                          value = Number(event.target.value + '5');
+                        } else {
+                          value = Number(event.target.value);
+                        }
                         regions.set(
                           regions.state.map((reg) =>
-                            reg.id === region.id
-                              ? { ...reg, height: Number(event.target.value) }
-                              : reg
+                            reg.id === region.id ? { ...reg, height: value } : reg
                           )
                         );
                       }}
@@ -335,10 +459,50 @@ function MeshGeneratorView({
                     >
                       <Icon icon="trash" color="white" size="14px" />
                     </div>
+                    <div
+                      style={{ cursor: 'pointer', position: 'absolute', top: '5px', right: '20px' }}
+                      onClick={() => {
+                        if (
+                          !unitCellWidth.state ||
+                          !unitCellHeight.state ||
+                          !regions.state.find((reg) => reg.id === region.id)
+                        )
+                          return;
+                        const newRegions = [...regions.state];
+                        newRegions.push({
+                          id: generateUuid(),
+                          label: 'Region ' + (newRegions.length + 1),
+                          collapsed: true,
+                          showMaterialsDropdown: false,
+                          width: regions.state.find((reg) => reg.id === region.id)?.width || 0,
+                          height: regions.state.find((reg) => reg.id === region.id)?.height || 0,
+                          x:
+                            (newRegions[newRegions.length - 1]?.x +
+                              newRegions[newRegions.length - 1]?.width >=
+                            unitCellWidth.state
+                              ? 0
+                              : newRegions[newRegions.length - 1]?.x +
+                                newRegions[newRegions.length - 1]?.width) || 0,
+                          y:
+                            (newRegions[newRegions.length - 1]?.x +
+                              newRegions[newRegions.length - 1]?.width >=
+                            unitCellWidth.state
+                              ? newRegions[newRegions.length - 1]?.y +
+                                newRegions[newRegions.length - 1]?.height
+                              : newRegions[newRegions.length - 1]?.y) || 0,
+                          materialId:
+                            regions.state.find((reg) => reg.id === region.id)?.materialId || ''
+                        });
+                        regions.set(newRegions);
+                      }}
+                    >
+                      <Icon icon="copy" color="white" size="14px" />
+                    </div>
                   </div>
                 )}
               </div>
             ))}
+          <div style={{ height: '5px' }} />
           <button
             style={{ cursor: 'pointer' }}
             onClick={() => {
@@ -348,6 +512,7 @@ function MeshGeneratorView({
                 id: generateUuid(),
                 label: 'Region ' + (newRegions.length + 1),
                 collapsed: false,
+                showMaterialsDropdown: false,
                 width: 0,
                 height:
                   (newRegions[newRegions.length - 1]?.x +
@@ -383,6 +548,28 @@ function MeshGeneratorView({
             Add Region
           </button>
         </div>
+        <div style={{ flex: '1' }} />
+        <label htmlFor="regionX">Divisions:</label>
+        <input
+          type="text"
+          id="regionX"
+          name="regionX"
+          value={divisionsByRegion.state}
+          size={5}
+          onChange={(event) => {
+            divisionsByRegion.set(Number(event.target.value) || 1);
+          }}
+        />
+        <div style={{ height: '15px' }} />
+        <button
+          style={{ cursor: 'pointer' }}
+          onClick={() => {
+            generateMesh();
+          }}
+          disabled={!unitCellWidth.state || !unitCellHeight.state || regions.state.length === 0}
+        >
+          Generate Mesh
+        </button>
       </div>
       <div style={{ width: '20px' }} />
       <div style={{ border: '1px solid var(--off-white)' }} />
@@ -419,15 +606,17 @@ function MeshGeneratorView({
               border: '1px solid var(--off-white)',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center'
+              justifyContent: 'center',
+              position: 'relative'
             }}
           >
             {unitCellWidth.state || unitCellHeight.state ? (
               <div
                 style={{
-                  width: unitCellWidth.state || 0,
-                  height: unitCellHeight.state || 0,
+                  width: (unitCellWidth.state || 0) * zoom,
+                  height: (unitCellHeight.state || 0) * zoom,
                   border: '1px solid white',
+                  boxSizing: 'content-box',
                   position: 'relative'
                 }}
               >
@@ -436,11 +625,13 @@ function MeshGeneratorView({
                     key={region.id}
                     style={{
                       position: 'absolute',
-                      top: region.y,
-                      left: region.x,
-                      width: region.width,
-                      height: region.height,
-                      backgroundColor: 'rgba(0, 0, 0, 0.2)',
+                      top: region.y * zoom,
+                      left: region.x * zoom,
+                      width: region.width * zoom,
+                      height: region.height * zoom,
+                      backgroundColor:
+                        materials.state.find((mat) => mat.id === region.materialId)?.color ||
+                        'white',
                       border: region.collapsed ? '1px solid var(--off-white)' : '1px dashed white',
                       boxSizing: 'border-box',
                       display: 'flex',
@@ -448,13 +639,263 @@ function MeshGeneratorView({
                       justifyContent: 'center'
                     }}
                   >
-                    {region.label}
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      <div style={{ fontWeight: 'bold' }}>
+                        {stuffToShow.state.regionsMaterials &&
+                          `${materials.state.find((mat) => mat.id === region.materialId)?.label}`}
+                        {stuffToShow.state.regionsLabels && `${region.label}`}
+                      </div>
+                    </div>
                   </div>
                 ))}
+                {stuffToShow.state.elements &&
+                  elements.state.length > 0 &&
+                  elements.state.map((element, index) => (
+                    <div
+                      key={index}
+                      style={{
+                        position: 'absolute',
+                        boxSizing: 'border-box',
+                        left:
+                          nodes.state[element[0]][0] *
+                          0.6 *
+                          Math.min(
+                            window.innerWidth / (unitCellWidth.state || 1),
+                            window.innerHeight / (unitCellHeight.state || 1)
+                          ),
+                        top:
+                          nodes.state[element[0]][1] *
+                          0.6 *
+                          Math.min(
+                            window.innerWidth / (unitCellWidth.state || 1),
+                            window.innerHeight / (unitCellHeight.state || 1)
+                          ),
+                        width:
+                          (nodes.state[element[1]][0] - nodes.state[element[0]][0]) *
+                          0.6 *
+                          Math.min(
+                            window.innerWidth / (unitCellWidth.state || 1),
+                            window.innerHeight / (unitCellHeight.state || 1)
+                          ),
+                        height:
+                          (nodes.state[element[2]][1] - nodes.state[element[0]][1]) *
+                          0.6 *
+                          Math.min(
+                            window.innerWidth / (unitCellWidth.state || 1),
+                            window.innerHeight / (unitCellHeight.state || 1)
+                          ),
+                        // right: nodes.state[element[2]][0],
+                        // bottom: nodes.state[element[2]][1],
+                        border: '1px solid white',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}
+                      >
+                        <div style={{ fontSize: '8px' }}>
+                          {stuffToShow.state.elementsIds && index}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                {stuffToShow.state.nodesIds &&
+                  nodes.state.length > 0 &&
+                  nodes.state.map((node, index) => (
+                    <div
+                      key={index}
+                      style={{
+                        position: 'absolute',
+                        boxSizing: 'border-box',
+                        left:
+                          node[0] *
+                            0.6 *
+                            Math.min(
+                              window.innerWidth / (unitCellWidth.state || 1),
+                              window.innerHeight / (unitCellHeight.state || 1)
+                            ) -
+                          2,
+                        top:
+                          node[1] *
+                            0.6 *
+                            Math.min(
+                              window.innerWidth / (unitCellWidth.state || 1),
+                              window.innerHeight / (unitCellHeight.state || 1)
+                            ) -
+                          2,
+                        width: '4px',
+                        height: '4px',
+                        backgroundColor: 'white',
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          position: 'relative',
+                          top: '-10px',
+                          left: '-10px'
+                        }}
+                      >
+                        <div style={{ fontSize: '8px' }}>{stuffToShow.state.nodesIds && index}</div>
+                      </div>
+                    </div>
+                  ))}
+                {stuffToShow.state.facesIds &&
+                  faces.state.length > 0 &&
+                  faces.state.map((face, index) => (
+                    <div
+                      key={index}
+                      style={{
+                        position: 'absolute',
+                        boxSizing: 'border-box',
+                        left:
+                          ((nodes.state[face[0]][0] + nodes.state[face[1]][0]) / 2 - 2) *
+                          0.6 *
+                          Math.min(
+                            window.innerWidth / (unitCellWidth.state || 1),
+                            window.innerHeight / (unitCellHeight.state || 1)
+                          ),
+                        top:
+                          ((nodes.state[face[0]][1] + nodes.state[face[1]][1]) / 2 - 2) *
+                          0.6 *
+                          Math.min(
+                            window.innerWidth / (unitCellWidth.state || 1),
+                            window.innerHeight / (unitCellHeight.state || 1)
+                          ),
+                        width: '4px',
+                        height: '4px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          position: 'relative'
+                        }}
+                      >
+                        <div style={{ fontSize: '8px' }}>{index}</div>
+                      </div>
+                    </div>
+                  ))}
               </div>
             ) : (
               <>No data.</>
             )}
+            <div style={{ position: 'absolute', top: '5px', right: '5px' }}>
+              <div // Filter Visualization
+              >
+                <input
+                  type="checkbox"
+                  id="elements"
+                  name="elements"
+                  checked={stuffToShow.state.elements}
+                  onChange={() => {
+                    stuffToShow.set({
+                      ...stuffToShow.state,
+                      elements: !stuffToShow.state.elements
+                    });
+                  }}
+                />
+                <label htmlFor="elements">Elements</label>
+              </div>
+              <div>
+                <input
+                  type="checkbox"
+                  id="elementsIds"
+                  name="elementsIds"
+                  checked={stuffToShow.state.elementsIds}
+                  onChange={() => {
+                    stuffToShow.set({
+                      ...stuffToShow.state,
+                      elementsIds: !stuffToShow.state.elementsIds
+                    });
+                  }}
+                />
+                <label htmlFor="elementsIds">Elements Ids</label>
+              </div>
+              <div>
+                <input
+                  type="checkbox"
+                  id="regionsMaterials"
+                  name="regionsMaterials"
+                  checked={stuffToShow.state.regionsMaterials}
+                  onChange={() => {
+                    stuffToShow.set({
+                      ...stuffToShow.state,
+                      regionsMaterials: !stuffToShow.state.regionsMaterials
+                    });
+                  }}
+                />
+                <label htmlFor="regionsMaterials">Materials</label>
+              </div>
+              <div>
+                <input
+                  type="checkbox"
+                  id="regionsLabels"
+                  name="regionsLabels"
+                  checked={stuffToShow.state.regionsLabels}
+                  onChange={() => {
+                    stuffToShow.set({
+                      ...stuffToShow.state,
+                      regionsLabels: !stuffToShow.state.regionsLabels
+                    });
+                  }}
+                />
+                <label htmlFor="regionsLabels">Regions</label>
+              </div>
+              <div>
+                <input
+                  type="checkbox"
+                  id="nodesIds"
+                  name="nodesIds"
+                  checked={stuffToShow.state.nodesIds}
+                  onChange={() => {
+                    stuffToShow.set({
+                      ...stuffToShow.state,
+                      nodesIds: !stuffToShow.state.nodesIds
+                    });
+                  }}
+                />
+                <label htmlFor="nodesIds">Nodes</label>
+              </div>
+              <div>
+                <input
+                  type="checkbox"
+                  id="facesIds"
+                  name="facesIds"
+                  checked={stuffToShow.state.facesIds}
+                  onChange={() => {
+                    stuffToShow.set({
+                      ...stuffToShow.state,
+                      facesIds: !stuffToShow.state.facesIds
+                    });
+                  }}
+                />
+                <label htmlFor="facesIds">Faces</label>
+              </div>
+            </div>
           </div>
         </div>
       </div>
