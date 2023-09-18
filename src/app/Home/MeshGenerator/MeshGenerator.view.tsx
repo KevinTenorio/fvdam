@@ -406,7 +406,7 @@ function MeshGeneratorView({
                       size={5}
                       onChange={(event) => {
                         let value: number;
-                        if (event.target.value.includes('.')) {
+                        if (event.target.value.includes('.') && !event.target.value.split('.')[1]) {
                           value = Number(event.target.value + '5');
                         } else {
                           value = Number(event.target.value);

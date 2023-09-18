@@ -27,38 +27,99 @@ function MeshGeneratorController() {
   const [divisionsByRegion, setDivisionsByRegion] = useState<number>(2);
   const { setError }: AppContext = useAppContext();
 
+  function getMaxWidth(regions: IMeshRegion[]) {
+    if (unitCellWidth === null || unitCellHeight === null) return null;
+    let maxWidth = unitCellWidth;
+    for (let i = 0; i < regions.length; i++) {
+      const region = regions[i];
+      const decimals = region.width.toString().split('.')[1]?.length ?? 0;
+      const widthGcd = (region.width * Math.pow(10, decimals)) / divisionsByRegion;
+      const width = widthGcd / Math.pow(10, decimals);
+      if (width < maxWidth) {
+        maxWidth = width;
+      }
+    }
+    return maxWidth;
+  }
+
+  function getMaxHeight(regions: IMeshRegion[]) {
+    if (unitCellWidth === null || unitCellHeight === null) return null;
+    let maxHeight = unitCellHeight;
+    for (let i = 0; i < regions.length; i++) {
+      const region = regions[i];
+      const decimals = region.height.toString().split('.')[1]?.length ?? 0;
+      const heightGcd = (region.height * Math.pow(10, decimals)) / divisionsByRegion;
+      const height = heightGcd / Math.pow(10, decimals);
+      if (height < maxHeight) {
+        maxHeight = height;
+      }
+    }
+    return maxHeight;
+  }
+
   function generateMesh() {
     if (unitCellWidth === null || unitCellHeight === null) return null;
     const nodesList = [];
     const facesList = [];
     const elementsList = [];
-    let maxWidth = unitCellWidth;
-    let maxHeight = unitCellHeight;
-    for (let i = 0; i < regions.length; i++) {
-      const region = regions[i];
-      const widthGcd = findGcd(region.width / divisionsByRegion, unitCellWidth);
-      const heightGcd = findGcd(region.height / divisionsByRegion, unitCellHeight);
-      if (widthGcd < maxWidth) {
-        maxWidth = widthGcd;
-      }
-      if (heightGcd < maxHeight) {
-        maxHeight = heightGcd;
-      }
-    }
-    const horizontalElements = Math.ceil(unitCellWidth / maxWidth);
-    const verticalElements = Math.ceil(unitCellHeight / maxHeight);
-    const numElements = horizontalElements * verticalElements;
-    if (numElements > 1000000) {
-      setError(
-        `The number of elements is too high (${numElements}). For this minimum number of divisions by region (${divisionsByRegion}), the maximum element size must be ${maxHeight} by ${maxWidth}. Please, reduce the number of divisions.`
+    // let maxWidth = unitCellWidth;
+    // let maxHeight = unitCellHeight;
+    // for (let i = 0; i < regions.length; i++) {
+    //   const region = regions[i];
+    //   const widthGcd = findGcd(region.width / divisionsByRegion, unitCellWidth);
+    //   const heightGcd = findGcd(region.height / divisionsByRegion, unitCellHeight);
+    //   if (widthGcd < maxWidth) {
+    //     maxWidth = widthGcd;
+    //   }
+    //   if (heightGcd < maxHeight) {
+    //     maxHeight = heightGcd;
+    //   }
+    // }
+    // const horizontalElements = Math.ceil(unitCellWidth / maxWidth);
+    // const verticalElements = Math.ceil(unitCellHeight / maxHeight);
+    // const numElements = horizontalElements * verticalElements;
+    // if (numElements > 1000000) {
+    //   setError(
+    //     `The number of elements is too high (${numElements}). For this minimum number of divisions by region (${divisionsByRegion}), the maximum element size must be ${maxHeight} by ${maxWidth}. Please, reduce the number of divisions.`
+    //   );
+    //   return null;
+    // }
+    let x = 0;
+    let y = 0;
+    let running = true;
+    let horizontalNodes = 1;
+    let verticalNodes = 1;
+    while (running) {
+      const horizontalRegions = regions.filter(
+        (region) => region.y <= y && y < region.y + region.height
       );
-      return null;
-    }
-    for (let j = 0; j <= unitCellHeight; j = j + maxHeight) {
-      for (let i = 0; i <= unitCellWidth; i = i + maxWidth) {
-        nodesList.push([i, j]);
+      const verticalRegions = regions.filter(
+        (region) => region.x <= x && x < region.x + region.width
+      );
+      const width = getMaxWidth(verticalRegions) || 0;
+      const height = getMaxHeight(horizontalRegions) || 0;
+      nodesList.push([x, y]);
+      if (x + width <= unitCellWidth) {
+        x = x + width;
+      } else {
+        x = 0;
+        if (y + height <= unitCellHeight) {
+          y = y + height;
+          verticalNodes++;
+        } else {
+          horizontalNodes = nodesList.length / verticalNodes;
+          running = false;
+        }
       }
     }
+    // for (let j = 0; j <= unitCellHeight; j = j + maxHeight) {
+    //   for (let i = 0; i <= unitCellWidth; i = i + maxWidth) {
+    //     nodesList.push([i, j]);
+    //   }
+    // }
+    const horizontalElements = horizontalNodes - 1;
+    const verticalElements = verticalNodes - 1;
+    const numElements = horizontalElements * verticalElements;
     for (let i = 0; i < numElements + verticalElements; i++) {
       if (i % (horizontalElements + 1) === 0) continue;
       const element = [i - 1, i, i + horizontalElements + 1, i + horizontalElements];
