@@ -99,12 +99,16 @@ function MeshGeneratorController() {
       const width = getMaxWidth(verticalRegions) || 0;
       const height = getMaxHeight(horizontalRegions) || 0;
       nodesList.push([x, y]);
-      if (x + width <= unitCellWidth) {
+      // if (x + width <= unitCellWidth) {
+      if (x + width <= unitCellWidth + 0.1 ** 13) {
         x = x + width;
+        // x = Math.round((x + width) * 10 ** 13) / 10 ** 13;
       } else {
         x = 0;
-        if (y + height <= unitCellHeight) {
+        // if (y + height <= unitCellHeight) {
+        if (y + height <= unitCellHeight + 0.1 ** 13) {
           y = y + height;
+          // y = Math.round((y + height) * 10 ** 13) / 10 ** 13;
           verticalNodes++;
         } else {
           horizontalNodes = nodesList.length / verticalNodes;
