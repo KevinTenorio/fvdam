@@ -154,6 +154,18 @@ function IconView({ icon, size, color }: IconProps) {
           <path d="M5,6H1.5a.5.5,0,0,0-.5.5v10a.5.5,0,0,0,.5.5h10a.5.5,0,0,0,.5-.5V13H5.5a.5.5,0,0,1-.5-.5Z" />
         </svg>
       );
+    case 'support':
+      return (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 18 18"
+          height={size || '18px'}
+          width={size || '18px'}
+          fill={color}
+        >
+          <path d="M2.65,15.1245l5.45-5.036a.505.505,0,0,1,.714,0l5.536,5.036a.505.505,0,0,1-.357.862H3.006a.505.505,0,0,1-.356-.862Z" />
+        </svg>
+      );
     default:
       return <></>;
   }

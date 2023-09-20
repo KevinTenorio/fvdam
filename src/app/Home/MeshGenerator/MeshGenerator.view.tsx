@@ -17,7 +17,10 @@ function MeshGeneratorView({
   elements,
   generateMesh,
   stuffToShow,
-  divisionsByRegion
+  divisionsByRegion,
+  generateFvtFile,
+  supportType,
+  supportedFaces
 }: IMeshGeneratorViewProps) {
   const zoom =
     0.6 *
@@ -548,6 +551,47 @@ function MeshGeneratorView({
             Add Region
           </button>
         </div>
+        <div style={{ height: '20px' }} />
+        <div // Supports
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            width: '100%'
+          }}
+        >
+          <div style={{ fontWeight: 'bold', fontSize: '16px' }}>Add Supports</div>
+          <div style={{ height: '10px' }} />
+          {/* <div>
+            <input
+              type="radio"
+              id="centralSupport"
+              name="support"
+              value="central"
+              style={{ cursor: 'pointer' }}
+              checked={supportType.state === 'central'}
+              onClick={() => {
+                supportType.set('central');
+                stuffToShow.set({ ...stuffToShow.state, supports: true });
+              }}
+            />
+            <label htmlFor="centralSupport">Central</label>
+          </div> */}
+          <div>
+            <input
+              type="radio"
+              id="borderSupport"
+              name="support"
+              value="border"
+              style={{ cursor: 'pointer' }}
+              checked={supportType.state === 'border'}
+              onClick={() => {
+                supportType.set('border');
+                stuffToShow.set({ ...stuffToShow.state, supports: true });
+              }}
+            />
+            <label htmlFor="borderSupport">Border</label>
+          </div>
+        </div>
         <div style={{ flex: '1' }} />
         <label htmlFor="regionX">Divisions:</label>
         <input
@@ -662,34 +706,10 @@ function MeshGeneratorView({
                       style={{
                         position: 'absolute',
                         boxSizing: 'border-box',
-                        left:
-                          nodes.state[element[0]][0] *
-                          0.6 *
-                          Math.min(
-                            window.innerWidth / (unitCellWidth.state || 1),
-                            window.innerHeight / (unitCellHeight.state || 1)
-                          ),
-                        top:
-                          nodes.state[element[0]][1] *
-                          0.6 *
-                          Math.min(
-                            window.innerWidth / (unitCellWidth.state || 1),
-                            window.innerHeight / (unitCellHeight.state || 1)
-                          ),
-                        width:
-                          (nodes.state[element[1]][0] - nodes.state[element[0]][0]) *
-                          0.6 *
-                          Math.min(
-                            window.innerWidth / (unitCellWidth.state || 1),
-                            window.innerHeight / (unitCellHeight.state || 1)
-                          ),
-                        height:
-                          (nodes.state[element[2]][1] - nodes.state[element[0]][1]) *
-                          0.6 *
-                          Math.min(
-                            window.innerWidth / (unitCellWidth.state || 1),
-                            window.innerHeight / (unitCellHeight.state || 1)
-                          ),
+                        left: nodes.state[element[3]][0] * zoom,
+                        top: nodes.state[element[3]][1] * zoom,
+                        width: (nodes.state[element[2]][0] - nodes.state[element[3]][0]) * zoom,
+                        height: (nodes.state[element[1]][1] - nodes.state[element[3]][1]) * zoom,
                         // right: nodes.state[element[2]][0],
                         // bottom: nodes.state[element[2]][1],
                         border: '1px solid white',
@@ -706,7 +726,7 @@ function MeshGeneratorView({
                         }}
                       >
                         <div style={{ fontSize: '8px' }}>
-                          {stuffToShow.state.elementsIds && index}
+                          {stuffToShow.state.elementsIds && index + 1}
                         </div>
                       </div>
                     </div>
@@ -719,22 +739,8 @@ function MeshGeneratorView({
                       style={{
                         position: 'absolute',
                         boxSizing: 'border-box',
-                        left:
-                          node[0] *
-                            0.6 *
-                            Math.min(
-                              window.innerWidth / (unitCellWidth.state || 1),
-                              window.innerHeight / (unitCellHeight.state || 1)
-                            ) -
-                          2,
-                        top:
-                          node[1] *
-                            0.6 *
-                            Math.min(
-                              window.innerWidth / (unitCellWidth.state || 1),
-                              window.innerHeight / (unitCellHeight.state || 1)
-                            ) -
-                          2,
+                        left: node[0] * zoom - 2,
+                        top: node[1] * zoom - 2,
                         width: '4px',
                         height: '4px',
                         backgroundColor: 'white',
@@ -754,7 +760,9 @@ function MeshGeneratorView({
                           left: '-10px'
                         }}
                       >
-                        <div style={{ fontSize: '8px' }}>{stuffToShow.state.nodesIds && index}</div>
+                        <div style={{ fontSize: '8px' }}>
+                          {stuffToShow.state.nodesIds && index + 1}
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -767,19 +775,11 @@ function MeshGeneratorView({
                         position: 'absolute',
                         boxSizing: 'border-box',
                         left:
-                          ((nodes.state[face[0]][0] + nodes.state[face[1]][0]) / 2 - 2) *
-                          0.6 *
-                          Math.min(
-                            window.innerWidth / (unitCellWidth.state || 1),
-                            window.innerHeight / (unitCellHeight.state || 1)
-                          ),
+                          ((nodes.state[face[1]][0] + nodes.state[face[0]][0]) / 2) * zoom -
+                          (nodes.state[face[1]][0] === nodes.state[face[0]][0] ? 10 : 0),
                         top:
-                          ((nodes.state[face[0]][1] + nodes.state[face[1]][1]) / 2 - 2) *
-                          0.6 *
-                          Math.min(
-                            window.innerWidth / (unitCellWidth.state || 1),
-                            window.innerHeight / (unitCellHeight.state || 1)
-                          ),
+                          ((nodes.state[face[1]][1] + nodes.state[face[0]][1]) / 2) * zoom -
+                          (nodes.state[face[1]][1] === nodes.state[face[0]][1] ? 10 : 0),
                         width: '4px',
                         height: '4px',
                         display: 'flex',
@@ -795,7 +795,57 @@ function MeshGeneratorView({
                           position: 'relative'
                         }}
                       >
-                        <div style={{ fontSize: '8px' }}>{index}</div>
+                        <div style={{ fontSize: '8px' }}>{index + 1}</div>
+                      </div>
+                    </div>
+                  ))}
+                {stuffToShow.state.supports &&
+                  supportedFaces.state.map((faceIndex) => (
+                    <div
+                      key={faceIndex}
+                      style={{
+                        position: 'absolute',
+                        boxSizing: 'border-box',
+                        left:
+                          ((nodes.state[faces.state[faceIndex][1]][0] +
+                            nodes.state[faces.state[faceIndex][0]][0]) /
+                            2) *
+                            zoom -
+                          (nodes.state[faces.state[faceIndex][1]][0] ===
+                          nodes.state[faces.state[faceIndex][0]][0]
+                            ? 2
+                            : 0),
+                        top:
+                          ((nodes.state[faces.state[faceIndex][1]][1] +
+                            nodes.state[faces.state[faceIndex][0]][1]) /
+                            2) *
+                            zoom -
+                          (nodes.state[faces.state[faceIndex][1]][1] ===
+                          nodes.state[faces.state[faceIndex][0]][1]
+                            ? 2
+                            : 0),
+                        width: '4px',
+                        transform: `rotate(${
+                          nodes.state[faces.state[faceIndex][1]][0] ===
+                          nodes.state[faces.state[faceIndex][0]][0]
+                            ? 270
+                            : 0
+                        }deg)`,
+                        height: '4px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          position: 'relative'
+                        }}
+                      >
+                        <Icon icon="support" color="white" />
                       </div>
                     </div>
                   ))}
@@ -895,6 +945,31 @@ function MeshGeneratorView({
                 />
                 <label htmlFor="facesIds">Faces</label>
               </div>
+              <div>
+                <input
+                  type="checkbox"
+                  id="supports"
+                  name="supports"
+                  checked={stuffToShow.state.supports}
+                  onChange={() => {
+                    stuffToShow.set({
+                      ...stuffToShow.state,
+                      supports: !stuffToShow.state.supports
+                    });
+                  }}
+                />
+                <label htmlFor="supports">Supports</label>
+              </div>
+            </div>
+            <div style={{ position: 'absolute', bottom: '5px', right: '5px' }}>
+              <button
+                style={{ cursor: 'pointer' }}
+                onClick={() => {
+                  generateFvtFile();
+                }}
+              >
+                Generate FVT File
+              </button>
             </div>
           </div>
         </div>

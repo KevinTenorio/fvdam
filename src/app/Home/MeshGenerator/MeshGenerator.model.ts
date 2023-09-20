@@ -12,6 +12,10 @@ export interface IMeshGeneratorViewProps {
   generateMesh: () => void;
   stuffToShow: IState<IStuffToShow>;
   divisionsByRegion: IState<number>;
+  generateFvtFile: () => void;
+  supportType: IState<string>;
+  elementsFaces: IState<number[][]>;
+  supportedFaces: IState<number[]>;
 }
 
 export interface IMeshMaterial {
@@ -42,4 +46,5 @@ export interface IStuffToShow {
   nodesIds: boolean;
   facesIds: boolean;
   regionsMaterials: boolean;
+  supports: boolean;
 }
