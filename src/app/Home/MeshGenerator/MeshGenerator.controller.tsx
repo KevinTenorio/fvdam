@@ -1,35 +1,44 @@
 // No controller fica a lógica do componente
 // Importa o view e o context (se precisar) e é exportado para o index
-import { IMeshMaterial, IMeshRegion, IStuffToShow } from './MeshGenerator.model';
+import {
+  IMeshGeneratorContext,
+  IMeshGeneratorControllerProps,
+  IMeshRegion
+} from './MeshGenerator.model';
 import MeshGeneratorView from './MeshGenerator.view';
-import { useState } from 'react';
+import { useAppContext } from '../../App.context';
 
-function MeshGeneratorController() {
-  const [unitCellWidth, setUnitCellWidth] = useState<number | null>(null);
-  const [unitCellHeight, setUnitCellHeight] = useState<number | null>(null);
-  const [materials, setMaterials] = useState<IMeshMaterial[]>([]);
-  const [regions, setRegions] = useState<IMeshRegion[]>([]);
-  const [nodes, setNodes] = useState<number[][]>([]);
-  const [elements, setElements] = useState<number[][]>([]);
-  const [faces, setFaces] = useState<number[][]>([]);
-  const [stuffToShow, setStuffToShow] = useState<IStuffToShow>({
-    elements: false,
-    elementsIds: false,
-    regionsLabels: false,
-    nodesIds: false,
-    facesIds: false,
-    regionsMaterials: true,
-    supports: false
-  });
-  const [divisionsByRegion, setDivisionsByRegion] = useState<number>(2);
-  const [supportType, setSupportType] = useState<string>('none');
-  const [elementsFaces, setElementsFaces] = useState<number[][]>([]);
-  const [supportedFaces, setSupportedFaces] = useState<number[]>([]);
-  const [periodicity, setPeriodicity] = useState<{ horizontal: boolean; vertical: boolean }>({
-    horizontal: true,
-    vertical: true
-  });
-  const [correctedFacesIds, setCorrectedFacesIds] = useState<number[]>([]);
+function MeshGeneratorController({ page, handleFileRead }: IMeshGeneratorControllerProps) {
+  const {
+    unitCellWidth,
+    setUnitCellWidth,
+    unitCellHeight,
+    setUnitCellHeight,
+    materials,
+    setMaterials,
+    regions,
+    setRegions,
+    nodes,
+    setNodes,
+    elements,
+    setElements,
+    faces,
+    setFaces,
+    stuffToShow,
+    setStuffToShow,
+    divisionsByRegion,
+    setDivisionsByRegion,
+    supportType,
+    setSupportType,
+    elementsFaces,
+    setElementsFaces,
+    supportedFaces,
+    setSupportedFaces,
+    periodicity,
+    setPeriodicity,
+    correctedFacesIds,
+    setCorrectedFacesIds
+  }: IMeshGeneratorContext = useAppContext();
 
   function getMaxWidth(regions: IMeshRegion[], x: number, y: number) {
     if (unitCellWidth === null || unitCellHeight === null) return null;
@@ -362,10 +371,10 @@ function MeshGeneratorController() {
     // Write faces supports
     lines.push('');
     lines.push('%LOAD.CASE.PRESCRIBED.DISPLACEMENT');
-    lines.push((supportedFaces.length * 2).toString());
+    lines.push(supportedFaces.length.toString());
     lines.push('');
     lines.push('%LOAD.CASE.FACE.PRESCRIBED.DISPLACEMENT');
-    lines.push((supportedFaces.length * 2).toString());
+    lines.push(supportedFaces.length.toString());
     const faceSupports: number[] = [];
     for (let i = 1; i < supportedFaces.length + 1; i++) {
       const face = supportedFaces[i - 1];
@@ -384,6 +393,36 @@ function MeshGeneratorController() {
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = 'model.fvt';
+    a.click();
+    handleFileRead(text, true);
+    page.set('fvdam');
+  }
+
+  function generateJsonFile() {
+    const data = {
+      nodes: nodes,
+      faces: faces,
+      elements: elements,
+      supportedFaces: supportedFaces,
+      elementsFaces: elementsFaces,
+      correctedFacesIds: correctedFacesIds,
+      regions: regions,
+      materials: materials,
+      unitCellWidth: unitCellWidth,
+      unitCellHeight: unitCellHeight,
+      divisionsByRegion: divisionsByRegion,
+      supportType: supportType,
+      periodicity: periodicity
+    };
+
+    const jsonData = JSON.stringify(data, null, 2);
+
+    const blob = new Blob([jsonData], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'model.json';
     a.click();
   }
 
@@ -427,6 +466,7 @@ function MeshGeneratorController() {
         set: setDivisionsByRegion
       }}
       generateFvtFile={generateFvtFile}
+      generateJsonFile={generateJsonFile}
       supportType={{
         state: supportType,
         set: setSupportType

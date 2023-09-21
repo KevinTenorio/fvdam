@@ -19,6 +19,7 @@ export interface AppContext {
   setLoading: (loading: string, status?: boolean) => void;
   fvdamFile: any;
   setFvdamFile: (fvdamFile: any) => void;
+  readJsonFile: (file: any) => void;
 }
 
 export interface PortalVars {

@@ -17,7 +17,7 @@ import homogenize from './homogenize';
 import * as math from 'mathjs';
 
 function HomeController() {
-  const { setError, setLoading, fvdamFile }: AppContext = useAppContext();
+  const { setError, setLoading, fvdamFile, readJsonFile }: AppContext = useAppContext();
   const [nodes, setNodes] = useState<Node[]>([]);
   const [nodesInfo, setNodesInfo] = useState<NodesInfo>({
     nodesX: 0,
@@ -31,6 +31,7 @@ function HomeController() {
   const [elements, setElements] = useState<IElement[]>([]);
   const [faces, setFaces] = useState<Face[]>([]);
   const [results, setResults] = useState<Results>();
+  const [page, setPage] = useState<string>('mesh');
 
   useEffect(() => {
     if (!fvdamFile) {
@@ -158,31 +159,52 @@ function HomeController() {
     }, 5);
   }
 
-  async function handleFileRead(file: any) {
+  async function handleFileRead(file: any, textMode = false) {
     setLoading('Reading file...');
-    const fr = new FileReader();
-    fr.onload = (e) => {
-      const text = e.target?.result;
-      if (typeof text !== 'string') {
-        setError('Error reading file');
-        setLoading('Reading file...', false);
-      } else {
-        parseFile(text)
-          .then((res) => {
-            const { nodes, nodesInfo, materials, elements, faces } = res;
-            setNodes(nodes);
-            setMaterials(materials);
-            setNodesInfo(nodesInfo);
-            setElements(elements);
-            setFaces(faces);
-          })
-          .catch((error) => setError(error))
-          .finally(() => {
+    if (!textMode) {
+      if (file.name.split('.').pop() === 'fvt') {
+        const fr = new FileReader();
+        fr.onload = (e) => {
+          const text = e.target?.result;
+          if (typeof text !== 'string') {
+            setError('Error reading file');
             setLoading('Reading file...', false);
-          });
+          } else {
+            parseFile(text)
+              .then((res) => {
+                const { nodes, nodesInfo, materials, elements, faces } = res;
+                setNodes(nodes);
+                setMaterials(materials);
+                setNodesInfo(nodesInfo);
+                setElements(elements);
+                setFaces(faces);
+              })
+              .catch((error) => setError(error))
+              .finally(() => {
+                setLoading('Reading file...', false);
+              });
+          }
+        };
+        fr.readAsText(file);
+      } else if (file.name.split('.').pop() === 'json') {
+        readJsonFile(file);
+        setLoading('Reading file...', false);
       }
-    };
-    fr.readAsText(file);
+    } else {
+      parseFile(file)
+        .then((res) => {
+          const { nodes, nodesInfo, materials, elements, faces } = res;
+          setNodes(nodes);
+          setMaterials(materials);
+          setNodesInfo(nodesInfo);
+          setElements(elements);
+          setFaces(faces);
+        })
+        .catch((error) => setError(error))
+        .finally(() => {
+          setLoading('Reading file...', false);
+        });
+    }
   }
 
   function getPieChartColors(materials: Material[]) {
@@ -219,6 +241,8 @@ function HomeController() {
       getPieChartColors={getPieChartColors}
       results={{ state: results, set: setResults }}
       handleExecuteFvdam={handleExecuteFvdam}
+      page={{ state: page, set: setPage }}
+      parseFile={parseFile}
     />
   );
 }

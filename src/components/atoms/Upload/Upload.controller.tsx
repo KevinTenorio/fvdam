@@ -1,8 +1,8 @@
 import UploadView from './Upload.view';
-import { State } from '/src/index.model';
+import { IState } from '/src/index.model';
 
 interface UploadControllerProps {
-  file: State<any>;
+  file: IState<any>;
   width: string;
   height: string;
 }

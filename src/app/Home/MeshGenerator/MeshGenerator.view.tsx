@@ -19,6 +19,7 @@ function MeshGeneratorView({
   stuffToShow,
   divisionsByRegion,
   generateFvtFile,
+  generateJsonFile,
   supportType,
   supportedFaces,
   periodicity,
@@ -853,26 +854,7 @@ function MeshGeneratorView({
                           position: 'relative'
                         }}
                       >
-                        <div style={{ fontSize: '8px' }}>
-                          {/* {periodicity.state.vertical &&
-                          nodes.state[face[1]][1] === nodes.state[face[0]][1] &&
-                          nodes.state[face[1]][1] === unitCellHeight.state
-                            ? (faces.state.findIndex(
-                                (fce) =>
-                                  nodes.state[fce[0]][0] === nodes.state[face[0]][0] &&
-                                  nodes.state[fce[0]][1] === 0
-                              ) ?? index) + 1
-                            : periodicity.state.horizontal &&
-                              nodes.state[face[1]][0] === nodes.state[face[0]][0] &&
-                              nodes.state[face[1]][0] === unitCellWidth.state
-                            ? (faces.state.findIndex(
-                                (fce) =>
-                                  nodes.state[fce[0]][1] === nodes.state[face[0]][1] &&
-                                  nodes.state[fce[0]][0] === 0
-                              ) ?? index) + 1
-                            : index + 1} */}
-                          {correctedFacesIds.state[index] + 1}
-                        </div>
+                        <div style={{ fontSize: '8px' }}>{correctedFacesIds.state[index] + 1}</div>
                       </div>
                     </div>
                   ))}
@@ -1038,7 +1020,7 @@ function MeshGeneratorView({
                 <label htmlFor="supports">Supports</label>
               </div>
             </div>
-            <div style={{ position: 'absolute', bottom: '5px', right: '5px' }}>
+            <div style={{ position: 'absolute', bottom: '5px', right: '5px', display: 'flex' }}>
               <button
                 style={{ cursor: 'pointer' }}
                 onClick={() => {
@@ -1046,6 +1028,15 @@ function MeshGeneratorView({
                 }}
               >
                 Generate FVT File
+              </button>
+              <div style={{ width: '5px' }} />
+              <button
+                style={{ cursor: 'pointer' }}
+                onClick={() => {
+                  generateJsonFile();
+                }}
+              >
+                Generate JSON File
               </button>
             </div>
           </div>

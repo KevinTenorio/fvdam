@@ -20,6 +20,8 @@ interface HomeViewProps {
   getPieChartColors: (materials: Material[]) => string;
   results: IState<Results | undefined>;
   handleExecuteFvdam: () => void;
+  page: IState<string>;
+  parseFile: (fileStr: string) => void;
 }
 function HomeView({
   handleFileRead,
@@ -30,7 +32,9 @@ function HomeView({
   faces,
   getPieChartColors,
   results,
-  handleExecuteFvdam
+  handleExecuteFvdam,
+  page,
+  parseFile
 }: HomeViewProps) {
   const { setError, fvdamFile, setFvdamFile }: AppContext = useAppContext();
 
@@ -88,6 +92,36 @@ function HomeView({
                   Start
                 </button>
               )}
+              <div style={{ flex: '1' }} />
+              <div>
+                <input
+                  type="radio"
+                  id="meshPage"
+                  name="page"
+                  value="mesh"
+                  style={{ cursor: 'pointer' }}
+                  checked={page.state === 'mesh'}
+                  onClick={() => {
+                    page.set('mesh');
+                  }}
+                />
+                <label htmlFor="meshPage">Mesh</label>
+              </div>
+              <div style={{ width: '5px' }} />
+              <div>
+                <input
+                  type="radio"
+                  id="fvdamPage"
+                  name="page"
+                  value="fvdam"
+                  style={{ cursor: 'pointer' }}
+                  checked={page.state === 'fvdam'}
+                  onClick={() => {
+                    page.set('fvdam');
+                  }}
+                />
+                <label htmlFor="fvdamPage">FVDAM</label>
+              </div>
             </div>
             <div
               style={{
@@ -96,7 +130,7 @@ function HomeView({
                 border: '1px solid var(--off-white)'
               }}
             />
-            {nodes.state.length > 0 ? ( // CONTENT
+            {page.state === 'fvdam' ? ( // CONTENT
               <FvdamContent
                 materials={materials}
                 nodes={nodes}
@@ -107,10 +141,11 @@ function HomeView({
                 handleExecuteFvdam={handleExecuteFvdam}
                 getPieChartColors={getPieChartColors}
               />
+            ) : page.state === 'mesh' ? (
+              <MeshGenerator page={page} handleFileRead={handleFileRead} parseFile={parseFile} />
             ) : (
-              <MeshGenerator />
+              <></>
             )}
-            {/* <div style={{ height: '5px', width: '100%', color: 'transparent' }}>{'.'}</div> */}
           </div>
         </div>
       );
