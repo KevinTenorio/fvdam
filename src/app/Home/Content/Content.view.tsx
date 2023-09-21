@@ -210,10 +210,14 @@ function ContentView({
                   key={element.id}
                   style={{
                     position: 'absolute',
-                    left: `${element.minX + (nodesInfo.state.maxX - nodesInfo.state.minX) / 2}px`,
-                    right: `${element.maxX + (nodesInfo.state.maxX - nodesInfo.state.minX) / 2}px`,
-                    top: `${element.minY + (nodesInfo.state.maxY - nodesInfo.state.minY) / 2}px`,
-                    bottom: `${element.maxY + (nodesInfo.state.maxY - nodesInfo.state.minY) / 2}px`,
+                    // left: `${element.minX + (nodesInfo.state.maxX - nodesInfo.state.minX) / 2}px`,
+                    // right: `${element.maxX + (nodesInfo.state.maxX - nodesInfo.state.minX) / 2}px`,
+                    // top: `${element.minY + (nodesInfo.state.maxY - nodesInfo.state.minY) / 2}px`,
+                    // bottom: `${element.maxY + (nodesInfo.state.maxY - nodesInfo.state.minY) / 2}px`,
+                    left: `${element.minX}px`,
+                    right: `${element.maxX}px`,
+                    top: `${element.minY}px`,
+                    bottom: `${element.maxY}px`,
                     width: `${element.width}px`,
                     height: `${element.height}px`,
                     backgroundColor: `${element.material.color}`

@@ -20,7 +20,9 @@ function MeshGeneratorView({
   divisionsByRegion,
   generateFvtFile,
   supportType,
-  supportedFaces
+  supportedFaces,
+  periodicity,
+  correctedFacesIds
 }: IMeshGeneratorViewProps) {
   const zoom =
     0.6 *
@@ -561,7 +563,7 @@ function MeshGeneratorView({
         >
           <div style={{ fontWeight: 'bold', fontSize: '16px' }}>Add Supports</div>
           <div style={{ height: '10px' }} />
-          {/* <div>
+          <div>
             <input
               type="radio"
               id="centralSupport"
@@ -575,7 +577,7 @@ function MeshGeneratorView({
               }}
             />
             <label htmlFor="centralSupport">Central</label>
-          </div> */}
+          </div>
           <div>
             <input
               type="radio"
@@ -590,6 +592,62 @@ function MeshGeneratorView({
               }}
             />
             <label htmlFor="borderSupport">Border</label>
+          </div>
+          <div>
+            <input
+              type="radio"
+              id="edgesSupport"
+              name="support"
+              value="edges"
+              style={{ cursor: 'pointer' }}
+              checked={supportType.state === 'edges'}
+              onClick={() => {
+                supportType.set('edges');
+                stuffToShow.set({ ...stuffToShow.state, supports: true });
+              }}
+            />
+            <label htmlFor="edgesSupport">Edges</label>
+          </div>
+        </div>
+        <div style={{ height: '20px' }} />
+        <div // Periodicity
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            width: '100%'
+          }}
+        >
+          <div style={{ fontWeight: 'bold', fontSize: '16px' }}>Set Periodicity</div>
+          <div style={{ height: '10px' }} />
+          <div>
+            <input
+              type="checkbox"
+              id="horizontal"
+              name="periodicity"
+              checked={periodicity.state.horizontal}
+              onChange={() => {
+                periodicity.set({
+                  ...periodicity.state,
+                  horizontal: !periodicity.state.horizontal
+                });
+              }}
+            />
+            <label htmlFor="horizontal">Horizontal</label>
+          </div>
+          <div>
+            <input
+              type="checkbox"
+              id="vertical"
+              name="periodicity"
+              checked={periodicity.state.vertical}
+              onChange={() => {
+                periodicity.set({
+                  ...periodicity.state,
+                  vertical: !periodicity.state.vertical
+                });
+              }}
+            />
+            <label htmlFor="vertical">Vertical</label>
           </div>
         </div>
         <div style={{ flex: '1' }} />
@@ -795,7 +853,26 @@ function MeshGeneratorView({
                           position: 'relative'
                         }}
                       >
-                        <div style={{ fontSize: '8px' }}>{index + 1}</div>
+                        <div style={{ fontSize: '8px' }}>
+                          {/* {periodicity.state.vertical &&
+                          nodes.state[face[1]][1] === nodes.state[face[0]][1] &&
+                          nodes.state[face[1]][1] === unitCellHeight.state
+                            ? (faces.state.findIndex(
+                                (fce) =>
+                                  nodes.state[fce[0]][0] === nodes.state[face[0]][0] &&
+                                  nodes.state[fce[0]][1] === 0
+                              ) ?? index) + 1
+                            : periodicity.state.horizontal &&
+                              nodes.state[face[1]][0] === nodes.state[face[0]][0] &&
+                              nodes.state[face[1]][0] === unitCellWidth.state
+                            ? (faces.state.findIndex(
+                                (fce) =>
+                                  nodes.state[fce[0]][1] === nodes.state[face[0]][1] &&
+                                  nodes.state[fce[0]][0] === 0
+                              ) ?? index) + 1
+                            : index + 1} */}
+                          {correctedFacesIds.state[index] + 1}
+                        </div>
                       </div>
                     </div>
                   ))}

@@ -1,6 +1,5 @@
 // No controller fica a lógica do componente
 // Importa o view e o context (se precisar) e é exportado para o index
-
 import { IMeshMaterial, IMeshRegion, IStuffToShow } from './MeshGenerator.model';
 import MeshGeneratorView from './MeshGenerator.view';
 import { useState } from 'react';
@@ -26,6 +25,11 @@ function MeshGeneratorController() {
   const [supportType, setSupportType] = useState<string>('none');
   const [elementsFaces, setElementsFaces] = useState<number[][]>([]);
   const [supportedFaces, setSupportedFaces] = useState<number[]>([]);
+  const [periodicity, setPeriodicity] = useState<{ horizontal: boolean; vertical: boolean }>({
+    horizontal: true,
+    vertical: true
+  });
+  const [correctedFacesIds, setCorrectedFacesIds] = useState<number[]>([]);
 
   function getMaxWidth(regions: IMeshRegion[], x: number, y: number) {
     if (unitCellWidth === null || unitCellHeight === null) return null;
@@ -87,28 +91,7 @@ function MeshGeneratorController() {
     const elementsList = [];
     const elementsFacesList: number[][] = [];
     const supportedFacesList: number[] = [];
-    // let maxWidth = unitCellWidth;
-    // let maxHeight = unitCellHeight;
-    // for (let i = 0; i < regions.length; i++) {
-    //   const region = regions[i];
-    //   const widthGcd = findGcd(region.width / divisionsByRegion, unitCellWidth);
-    //   const heightGcd = findGcd(region.height / divisionsByRegion, unitCellHeight);
-    //   if (widthGcd < maxWidth) {
-    //     maxWidth = widthGcd;
-    //   }
-    //   if (heightGcd < maxHeight) {
-    //     maxHeight = heightGcd;
-    //   }
-    // }
-    // const horizontalElements = Math.ceil(unitCellWidth / maxWidth);
-    // const verticalElements = Math.ceil(unitCellHeight / maxHeight);
-    // const numElements = horizontalElements * verticalElements;
-    // if (numElements > 1000000) {
-    //   setError(
-    //     `The number of elements is too high (${numElements}). For this minimum number of divisions by region (${divisionsByRegion}), the maximum element size must be ${maxHeight} by ${maxWidth}. Please, reduce the number of divisions.`
-    //   );
-    //   return null;
-    // }
+    const periodicFacesList: number[][] = [];
     let x = 0;
     let y = 0;
     let running = true;
@@ -125,15 +108,11 @@ function MeshGeneratorController() {
       const height = getMaxHeight(horizontalRegions, x, y) || 0;
       nodesList.push([x, y]);
       if (x + width <= unitCellWidth) {
-        // if (x + width <= unitCellWidth + 0.1 ** 13) {
         x = x + width;
-        // x = Math.round((x + width) * 10 ** 13) / 10 ** 13;
       } else {
         x = 0;
         if (y + height <= unitCellHeight) {
-          // if (y + height <= unitCellHeight + 0.1 ** 13) {
           y = y + height;
-          // y = Math.round((y + height) * 10 ** 13) / 10 ** 13;
           verticalNodes++;
         } else {
           horizontalNodes = nodesList.length / verticalNodes;
@@ -141,29 +120,24 @@ function MeshGeneratorController() {
         }
       }
     }
-    // for (let j = 0; j <= unitCellHeight; j = j + maxHeight) {
-    //   for (let i = 0; i <= unitCellWidth; i = i + maxWidth) {
-    //     nodesList.push([i, j]);
-    //   }
-    // }
     const horizontalElements = horizontalNodes - 1;
     const verticalElements = verticalNodes - 1;
     const numElements = horizontalElements * verticalElements;
     for (let i = 0; i < numElements + verticalElements; i++) {
       if (i % (horizontalElements + 1) === 0) continue;
-      // const element = [i - 1, i, i + horizontalElements + 1, i + horizontalElements];
       const element = [i + horizontalElements, i + horizontalElements + 1, i, i - 1];
       elementsList.push(element);
     }
     for (let i = 0; i < (horizontalElements + 1) * (verticalElements + 1); i++) {
       // Horizontal faces
-      if (i % (horizontalElements + 1) === 0) continue;
-      // const face = [i - 1, i];
+      if (i % (horizontalElements + 1) === 0) {
+        continue;
+      }
       const face = [i, i - 1];
       facesList.push(face);
     }
     for (let i = 0; i < nodesList.length - horizontalElements - 1; i++) {
-      // Horizontal faces
+      // Vertical faces
       const face = [i, i + horizontalElements + 1];
       facesList.push(face);
     }
@@ -192,24 +166,80 @@ function MeshGeneratorController() {
       elementsFacesList.push([face1, face2, face3, face4]);
     }
 
-    facesList.forEach((_, index) => {
-      let numberOfAppearences = 0;
-      for (let i = 0; i < elementsFacesList.length; i++) {
-        const elementFace = elementsFacesList[i];
-        if (elementFace.includes(index)) {
-          numberOfAppearences++;
+    if (supportType === 'border') {
+      facesList.forEach((_, index) => {
+        let numberOfAppearences = 0;
+        for (let i = 0; i < elementsFacesList.length; i++) {
+          const elementFace = elementsFacesList[i];
+          if (elementFace.includes(index)) {
+            numberOfAppearences++;
+          }
+        }
+        if (numberOfAppearences === 1) {
+          supportedFacesList.push(index);
+        }
+      });
+    } else if (supportType === 'edges') {
+      const edge1 = nodesList.findIndex((node) => node[0] === 0 && node[1] === 0);
+      const edge2 = nodesList.findIndex((node) => node[0] === unitCellWidth && node[1] === 0);
+      const edge3 = nodesList.findIndex(
+        (node) => node[0] === unitCellWidth && node[1] === unitCellHeight
+      );
+      const edge4 = nodesList.findIndex((node) => node[0] === 0 && node[1] === unitCellHeight);
+      facesList.forEach((face, index) => {
+        if (
+          face.includes(edge1) ||
+          face.includes(edge2) ||
+          face.includes(edge3) ||
+          face.includes(edge4)
+        ) {
+          supportedFacesList.push(index);
+        }
+      });
+    } else if (supportType === 'central') {
+      const centralCoordinateX = unitCellWidth / 2;
+
+      for (let i = 0; i < facesList.length; i++) {
+        const face = facesList[i];
+        const node1 = nodesList[face[0]];
+        const node2 = nodesList[face[1]];
+        if (
+          ((centralCoordinateX >= node1[0] && centralCoordinateX <= node2[0]) ||
+            (centralCoordinateX <= node1[0] && centralCoordinateX >= node2[0])) &&
+          (node1[1] === 0 || node1[1] === unitCellHeight)
+        ) {
+          supportedFacesList.push(i);
         }
       }
-      if (numberOfAppearences === 1) {
-        supportedFacesList.push(index);
+    }
+    for (let i = 0; i < facesList.length; i++) {
+      const node1 = nodesList[facesList[i][0]];
+      const node2 = nodesList[facesList[i][1]];
+      if (periodicity.horizontal && node1[0] === node2[0] && node1[0] === unitCellWidth) {
+        periodicFacesList.push([i, i - horizontalElements - periodicFacesList.length]);
       }
-    });
+      if (periodicity.vertical && node1[1] === node2[1] && node1[1] === unitCellHeight) {
+        periodicFacesList.push([i, i - horizontalElements * verticalElements]);
+      }
+    }
+    const correctedFacesIdsList: number[] = [];
+    let faceId = 0;
+    for (let i = 0; i < facesList.length; i++) {
+      if (periodicFacesList.map((face) => face[0]).includes(i)) {
+        // @ts-ignore
+        correctedFacesIdsList.push(periodicFacesList.find((face) => face[0] === i)[1]);
+      } else {
+        correctedFacesIdsList.push(faceId);
+        faceId++;
+      }
+    }
 
     setNodes(nodesList);
     setFaces(facesList);
     setElements(elementsList);
     setSupportedFaces(supportedFacesList);
     setElementsFaces(elementsFacesList);
+    setCorrectedFacesIds(correctedFacesIdsList);
     setStuffToShow({ ...stuffToShow, elements: true });
   }
 
@@ -292,40 +322,40 @@ function MeshGeneratorController() {
     lines.push(elements.length.toString());
     for (let i = 1; i < elements.length + 1; i++) {
       const element = elements[i - 1];
-      const face1 =
-        faces.findIndex(
-          (face) =>
-            (face[0] === element[0] && face[1] === element[1]) ||
-            (face[0] === element[1] && face[1] === element[0])
-        ) + 1;
-      const face2 =
-        faces.findIndex(
-          (face) =>
-            (face[0] === element[1] && face[1] === element[2]) ||
-            (face[0] === element[2] && face[1] === element[1])
-        ) + 1;
-      const face3 =
-        faces.findIndex(
-          (face) =>
-            (face[0] === element[2] && face[1] === element[3]) ||
-            (face[0] === element[3] && face[1] === element[2])
-        ) + 1;
-      const face4 =
-        faces.findIndex(
-          (face) =>
-            (face[0] === element[3] && face[1] === element[0]) ||
-            (face[0] === element[0] && face[1] === element[3])
-        ) + 1;
+      const face1 = faces.findIndex(
+        (face) =>
+          (face[0] === element[0] && face[1] === element[1]) ||
+          (face[0] === element[1] && face[1] === element[0])
+      );
+      const correctedFace1 = correctedFacesIds[face1] + 1;
+      const face2 = faces.findIndex(
+        (face) =>
+          (face[0] === element[1] && face[1] === element[2]) ||
+          (face[0] === element[2] && face[1] === element[1])
+      );
+      const correctedFace2 = correctedFacesIds[face2] + 1;
+      const face3 = faces.findIndex(
+        (face) =>
+          (face[0] === element[2] && face[1] === element[3]) ||
+          (face[0] === element[3] && face[1] === element[2])
+      );
+      const correctedFace3 = correctedFacesIds[face3] + 1;
+      const face4 = faces.findIndex(
+        (face) =>
+          (face[0] === element[3] && face[1] === element[0]) ||
+          (face[0] === element[0] && face[1] === element[3])
+      );
+      const correctedFace4 = correctedFacesIds[face4] + 1;
       lines.push(
         i.toString() +
           '\t' +
-          face1.toString() +
+          correctedFace1.toString() +
           '\t' +
-          face2.toString() +
+          correctedFace2.toString() +
           '\t' +
-          face3.toString() +
+          correctedFace3.toString() +
           '\t' +
-          face4.toString()
+          correctedFace4.toString()
       );
     }
 
@@ -336,10 +366,16 @@ function MeshGeneratorController() {
     lines.push('');
     lines.push('%LOAD.CASE.FACE.PRESCRIBED.DISPLACEMENT');
     lines.push((supportedFaces.length * 2).toString());
+    const faceSupports: number[] = [];
     for (let i = 1; i < supportedFaces.length + 1; i++) {
       const face = supportedFaces[i - 1];
-      lines.push((i * 2 - 1).toString() + '\t' + (face + 1).toString() + '\t' + '1' + '\t' + '0');
-      lines.push((i * 2).toString() + '\t' + (face + 1).toString() + '\t' + '2' + '\t' + '0');
+      const correctedFace = correctedFacesIds[face] + 1;
+      if (faceSupports.includes(correctedFace)) continue;
+      faceSupports.push(correctedFace);
+      lines.push(
+        (i * 2 - 1).toString() + '\t' + correctedFace.toString() + '\t' + '1' + '\t' + '0'
+      );
+      lines.push((i * 2).toString() + '\t' + correctedFace.toString() + '\t' + '2' + '\t' + '0');
     }
 
     const text = lines.join('\n');
@@ -402,6 +438,14 @@ function MeshGeneratorController() {
       supportedFaces={{
         state: supportedFaces,
         set: setSupportedFaces
+      }}
+      periodicity={{
+        state: periodicity,
+        set: setPeriodicity
+      }}
+      correctedFacesIds={{
+        state: correctedFacesIds,
+        set: setCorrectedFacesIds
       }}
     />
   );

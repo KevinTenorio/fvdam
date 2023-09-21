@@ -16,6 +16,11 @@ export interface IMeshGeneratorViewProps {
   supportType: IState<string>;
   elementsFaces: IState<number[][]>;
   supportedFaces: IState<number[]>;
+  periodicity: IState<{
+    horizontal: boolean;
+    vertical: boolean;
+  }>;
+  correctedFacesIds: IState<number[]>;
 }
 
 export interface IMeshMaterial {
