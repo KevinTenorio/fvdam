@@ -15,39 +15,37 @@ function getNodes(nodes: Node[], nodesInfo: NodesInfo, line: string, lines: stri
     let maxX: number | undefined = undefined;
     let minY: number | undefined = undefined;
     let maxY: number | undefined = undefined;
+    let nodeProps = lines[i + 2].replaceAll(' ', '').split('\t');
+    nodes[0].id = Number(nodeProps[0]);
+    nodes[0].x = Number(nodeProps[1]);
+    nodes[0].y = Number(nodeProps[2]);
+    minX = nodes[0].x;
+    maxX = nodes[0].x;
+    minY = nodes[0].y;
+    maxY = nodes[0].y;
     for (let j = 0; j < nodes.length; j++) {
-      const nodeProps = lines[i + j + 2].replaceAll(' ', '').split('\t');
+      nodeProps = lines[i + j + 2].replaceAll(' ', '').split('\t');
       nodes[j].id = Number(nodeProps[0]);
       nodes[j].x = Number(nodeProps[1]);
       nodes[j].y = Number(nodeProps[2]);
-      if (!minX) {
-        minX = nodes[j].x;
-      } else if (nodes[j].x < minX) {
+      if (nodes[j].x < minX) {
         minX = nodes[j].x;
       }
-      if (!maxX) {
-        maxX = nodes[j].x;
-      } else if (nodes[j].x > maxX) {
+      if (nodes[j].x > maxX) {
         maxX = nodes[j].x;
       }
-      if (!minY) {
-        minY = nodes[j].y;
-      } else if (nodes[j].y < minY) {
+      if (nodes[j].y < minY) {
         minY = nodes[j].y;
       }
-      if (!maxY) {
-        maxY = nodes[j].y;
-      } else if (nodes[j].y > maxY) {
+      if (nodes[j].y > maxY) {
         maxY = nodes[j].y;
       }
-      if (maxX && minX && maxY && minY) {
-        nodesInfo.minX = minX;
-        nodesInfo.maxX = maxX;
-        nodesInfo.minY = minY;
-        nodesInfo.maxY = maxY;
-        nodesInfo.nodesX = nodes.length / (maxX - minX);
-        nodesInfo.nodesY = nodes.length / (maxY - minY);
-      }
+      nodesInfo.minX = minX;
+      nodesInfo.maxX = maxX;
+      nodesInfo.minY = minY;
+      nodesInfo.maxY = maxY;
+      nodesInfo.nodesX = nodes.length / (maxX - minX);
+      nodesInfo.nodesY = nodes.length / (maxY - minY);
     }
   }
 }

@@ -3,42 +3,76 @@
 import {
   IMeshGeneratorContext,
   IMeshGeneratorControllerProps,
-  IMeshRegion
+  IMeshRegion,
+  IStuffToShow,
+  IMeshMaterial
 } from './MeshGenerator.model';
 import MeshGeneratorView from './MeshGenerator.view';
 import { useAppContext } from '../../App.context';
+import { useEffect, useState } from 'react';
 
 function MeshGeneratorController({ page, handleFileRead }: IMeshGeneratorControllerProps) {
-  const {
-    unitCellWidth,
-    setUnitCellWidth,
-    unitCellHeight,
-    setUnitCellHeight,
-    materials,
-    setMaterials,
-    regions,
-    setRegions,
-    nodes,
-    setNodes,
-    elements,
-    setElements,
-    faces,
-    setFaces,
-    stuffToShow,
-    setStuffToShow,
-    divisionsByRegion,
-    setDivisionsByRegion,
-    supportType,
-    setSupportType,
-    elementsFaces,
-    setElementsFaces,
-    supportedFaces,
-    setSupportedFaces,
-    periodicity,
-    setPeriodicity,
-    correctedFacesIds,
-    setCorrectedFacesIds
-  }: IMeshGeneratorContext = useAppContext();
+  const [unitCellWidth, setUnitCellWidth] = useState<number | null>(null);
+  const [unitCellHeight, setUnitCellHeight] = useState<number | null>(null);
+  const [materials, setMaterials] = useState<IMeshMaterial[]>([]);
+  const [regions, setRegions] = useState<IMeshRegion[]>([]);
+  const [nodes, setNodes] = useState<number[][]>([]);
+  const [elements, setElements] = useState<number[][]>([]);
+  const [faces, setFaces] = useState<number[][]>([]);
+  const [stuffToShow, setStuffToShow] = useState<IStuffToShow>({
+    elements: false,
+    elementsIds: false,
+    regionsLabels: false,
+    nodesIds: false,
+    facesIds: false,
+    regionsMaterials: true,
+    supports: false
+  });
+  const [divisionsByRegion, setDivisionsByRegion] = useState<number>(2);
+  const [supportType, setSupportType] = useState<string>('none');
+  const [elementsFaces, setElementsFaces] = useState<number[][]>([]);
+  const [supportedFaces, setSupportedFaces] = useState<number[]>([]);
+  const [periodicity, setPeriodicity] = useState<{ horizontal: boolean; vertical: boolean }>({
+    horizontal: true,
+    vertical: true
+  });
+  const [correctedFacesIds, setCorrectedFacesIds] = useState<number[]>([]);
+  const { setMeshData, meshData }: { setMeshData: (data: any) => void; meshData: any } =
+    useAppContext();
+
+  useEffect(() => {
+    if (page.state === 'fvdam') {
+      setMeshData({
+        nodes: nodes,
+        faces: faces,
+        elements: elements,
+        supportedFaces: supportedFaces,
+        elementsFaces: elementsFaces,
+        correctedFacesIds: correctedFacesIds,
+        regions: regions,
+        materials: materials,
+        unitCellWidth: unitCellWidth,
+        unitCellHeight: unitCellHeight,
+        divisionsByRegion: divisionsByRegion,
+        supportType: supportType,
+        periodicity: periodicity
+      });
+    } else if (page.state === 'mesh' && meshData) {
+      setNodes(meshData.nodes);
+      setFaces(meshData.faces);
+      setElements(meshData.elements);
+      setSupportedFaces(meshData.supportedFaces);
+      setElementsFaces(meshData.elementsFaces);
+      setCorrectedFacesIds(meshData.correctedFacesIds);
+      setRegions(meshData.regions);
+      setMaterials(meshData.materials);
+      setUnitCellWidth(meshData.unitCellWidth);
+      setUnitCellHeight(meshData.unitCellHeight);
+      setDivisionsByRegion(meshData.divisionsByRegion);
+      setSupportType(meshData.supportType);
+      setPeriodicity(meshData.periodicity);
+    }
+  }, [page.state, meshData]);
 
   function getMaxWidth(regions: IMeshRegion[], x: number, y: number) {
     if (unitCellWidth === null || unitCellHeight === null) return null;
@@ -371,10 +405,14 @@ function MeshGeneratorController({ page, handleFileRead }: IMeshGeneratorControl
     // Write faces supports
     lines.push('');
     lines.push('%LOAD.CASE.PRESCRIBED.DISPLACEMENT');
-    lines.push(supportedFaces.length.toString());
+    lines.push(
+      ([...new Set(supportedFaces.map((face) => correctedFacesIds[face]))].length * 2).toString()
+    );
     lines.push('');
     lines.push('%LOAD.CASE.FACE.PRESCRIBED.DISPLACEMENT');
-    lines.push(supportedFaces.length.toString());
+    lines.push(
+      ([...new Set(supportedFaces.map((face) => correctedFacesIds[face]))].length * 2).toString()
+    );
     const faceSupports: number[] = [];
     for (let i = 1; i < supportedFaces.length + 1; i++) {
       const face = supportedFaces[i - 1];

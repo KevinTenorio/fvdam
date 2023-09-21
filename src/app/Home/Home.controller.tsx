@@ -17,7 +17,7 @@ import homogenize from './homogenize';
 import * as math from 'mathjs';
 
 function HomeController() {
-  const { setError, setLoading, fvdamFile, readJsonFile }: AppContext = useAppContext();
+  const { setError, setLoading, fvdamFile, setMeshData }: AppContext = useAppContext();
   const [nodes, setNodes] = useState<Node[]>([]);
   const [nodesInfo, setNodesInfo] = useState<NodesInfo>({
     nodesX: 0,
@@ -157,6 +157,16 @@ function HomeController() {
     setTimeout(() => {
       runAlg();
     }, 5);
+  }
+
+  function readJsonFile(file: any) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result;
+      const data = JSON.parse(text as string);
+      setMeshData(data);
+    };
+    reader.readAsText(file);
   }
 
   async function handleFileRead(file: any, textMode = false) {

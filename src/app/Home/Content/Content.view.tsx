@@ -77,10 +77,10 @@ function ContentView({
                   (face) => face.constraints.filter((constraint) => constraint === 1).length > 0
                 ).length
               }`}</div>
-              <div style={{ paddingLeft: '20px', marginBottom: '5px' }}>{`Area: ${elements.state
-                .map((element) => element?.area || 0)
-                .reduce((a, b) => a + b, 0)
-                .toFixed(2)}`}</div>
+              <div style={{ paddingLeft: '20px', marginBottom: '5px' }}>{`Area: ${
+                (nodesInfo.state?.maxX - nodesInfo.state?.minX) *
+                (nodesInfo.state?.maxY - nodesInfo.state?.minY)
+              }`}</div>
               <div style={{ paddingLeft: '20px', marginBottom: '5px' }}>{`Width: ${
                 nodesInfo.state?.maxX - nodesInfo.state?.minX
               }`}</div>
@@ -215,9 +215,9 @@ function ContentView({
                     // top: `${element.minY + (nodesInfo.state.maxY - nodesInfo.state.minY) / 2}px`,
                     // bottom: `${element.maxY + (nodesInfo.state.maxY - nodesInfo.state.minY) / 2}px`,
                     left: `${element.minX}px`,
-                    right: `${element.maxX}px`,
+                    // right: `${element.maxX}px`,
                     top: `${element.minY}px`,
-                    bottom: `${element.maxY}px`,
+                    // bottom: `${element.maxY}px`,
                     width: `${element.width}px`,
                     height: `${element.height}px`,
                     backgroundColor: `${element.material.color}`
@@ -279,7 +279,7 @@ function ContentView({
                 >{`Young: ${material.young}`}</div>
                 <div
                   style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                >{`Area: ${material.area.toFixed(2)}`}</div>
+                >{`Area: ${-material.area.toFixed(2)}`}</div>
                 <div style={{ paddingLeft: '20px', marginBottom: '5px' }}>{`Fraction: ${(
                   (material.area * 100) /
                   elements.state.map((element) => element?.area || 0).reduce((a, b) => a + b, 0)

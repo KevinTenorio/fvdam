@@ -20,6 +20,7 @@ export interface AppContext {
   fvdamFile: any;
   setFvdamFile: (fvdamFile: any) => void;
   readJsonFile: (file: any) => void;
+  setMeshData: (meshData: any) => void;
 }
 
 export interface PortalVars {
