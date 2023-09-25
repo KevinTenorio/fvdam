@@ -1,7 +1,6 @@
 // No controller fica a lógica do componente
 // Importa o view e o context (se precisar) e é exportado para o index
 import {
-  IMeshGeneratorContext,
   IMeshGeneratorControllerProps,
   IMeshRegion,
   IStuffToShow,
@@ -77,13 +76,23 @@ function MeshGeneratorController({ page, handleFileRead }: IMeshGeneratorControl
   function getMaxWidth(regions: IMeshRegion[], x: number, y: number) {
     if (unitCellWidth === null || unitCellHeight === null) return null;
     let maxWidth = unitCellWidth;
-    const nodeRegion = regions.find(
-      (region) =>
-        region.x <= x &&
-        x < region.x + region.width &&
-        region.y <= y &&
-        y < region.y + region.height
-    );
+    const nodeRegion = regions.find((region) => {
+      const decimals = 4;
+      let xEnd = region.x + region.width - 9 * Math.pow(10, -decimals - 4);
+      if (region.x + region.width === unitCellWidth) {
+        xEnd = unitCellWidth + 9 * Math.pow(10, -decimals - 4);
+      }
+      let yEnd = region.y + region.height - 9 * Math.pow(10, -decimals - 4);
+      if (region.y + region.height === unitCellHeight) {
+        yEnd = unitCellHeight + 9 * Math.pow(10, -decimals - 4);
+      }
+      return (
+        region.x - 9 * Math.pow(10, -decimals - 4) <= x &&
+        x < xEnd &&
+        region.y - 9 * Math.pow(10, -decimals - 4) <= y &&
+        y < yEnd
+      );
+    });
     for (let i = 0; i < regions.length; i++) {
       const region = regions[i];
       let regionWidth = region.width;
@@ -103,13 +112,23 @@ function MeshGeneratorController({ page, handleFileRead }: IMeshGeneratorControl
   function getMaxHeight(regions: IMeshRegion[], x: number, y: number) {
     if (unitCellWidth === null || unitCellHeight === null) return null;
     let maxHeight = unitCellHeight;
-    const nodeRegion = regions.find(
-      (region) =>
-        region.x <= x &&
-        x < region.x + region.width &&
-        region.y <= y &&
-        y < region.y + region.height
-    );
+    const nodeRegion = regions.find((region) => {
+      const decimals = 4;
+      let xEnd = region.x + region.width - 9 * Math.pow(10, -decimals - 4);
+      if (region.x + region.width === unitCellWidth) {
+        xEnd = unitCellWidth + 9 * Math.pow(10, -decimals - 4);
+      }
+      let yEnd = region.y + region.height - 9 * Math.pow(10, -decimals - 4);
+      if (region.y + region.height === unitCellHeight) {
+        yEnd = unitCellHeight + 9 * Math.pow(10, -decimals - 4);
+      }
+      return (
+        region.x - 9 * Math.pow(10, -decimals - 4) <= x &&
+        x < xEnd &&
+        region.y - 9 * Math.pow(10, -decimals - 4) <= y &&
+        y < yEnd
+      );
+    });
     for (let i = 0; i < regions.length; i++) {
       const region = regions[i];
       let regionHeight = region.height;
@@ -129,6 +148,10 @@ function MeshGeneratorController({ page, handleFileRead }: IMeshGeneratorControl
 
   function generateMesh() {
     if (unitCellWidth === null || unitCellHeight === null) return null;
+    const decimals = Math.max(
+      unitCellWidth.toString().split('.')[1]?.length ?? 0,
+      unitCellHeight.toString().split('.')[1]?.length ?? 0
+    );
     const nodesList = [];
     const facesList = [];
     const elementsList = [];
@@ -140,27 +163,44 @@ function MeshGeneratorController({ page, handleFileRead }: IMeshGeneratorControl
     let running = true;
     let horizontalNodes = 1;
     let verticalNodes = 1;
+    let trueWidth = unitCellWidth;
+    let trueHeight = unitCellHeight;
     while (running) {
-      const horizontalRegions = regions.filter(
-        (region) => region.y <= y && y < region.y + region.height
-      );
-      const verticalRegions = regions.filter(
-        (region) => region.x <= x && x < region.x + region.width
-      );
+      const horizontalRegions = regions.filter((region) => {
+        const decimals = 4;
+        let yEnd = region.y + region.height - 9 * Math.pow(10, -decimals - 4);
+        if (region.y + region.height === unitCellHeight) {
+          yEnd = unitCellHeight + 9 * Math.pow(10, -decimals - 4);
+        }
+        return region.y - 9 * Math.pow(10, -decimals - 4) <= y && y < yEnd;
+      });
+      const verticalRegions = regions.filter((region) => {
+        const decimals = 4;
+        let xEnd = region.x + region.width - 9 * Math.pow(10, -decimals - 4);
+        if (region.x + region.width === unitCellWidth) {
+          xEnd = unitCellWidth + 9 * Math.pow(10, -decimals - 4);
+        }
+        return region.x - 9 * Math.pow(10, -decimals - 4) <= x && x < xEnd;
+      });
       const width = getMaxWidth(verticalRegions, x, y) || 0;
       const height = getMaxHeight(horizontalRegions, x, y) || 0;
       nodesList.push([x, y]);
-      if (x + width <= unitCellWidth) {
-        x = x + width;
+      if (Number((x + width).toPrecision(15)) <= unitCellWidth + 9 * Math.pow(10, -decimals - 4)) {
+        x = Number((x + width).toPrecision(15));
       } else {
-        x = 0;
-        if (y + height <= unitCellHeight) {
-          y = y + height;
+        if (
+          Number((y + height).toPrecision(15)) <=
+          unitCellHeight + 9 * Math.pow(10, -decimals - 4)
+        ) {
+          y = Number((y + height).toPrecision(15));
           verticalNodes++;
         } else {
           horizontalNodes = nodesList.length / verticalNodes;
+          trueWidth = x;
+          trueHeight = y;
           running = false;
         }
+        x = 0;
       }
     }
     const horizontalElements = horizontalNodes - 1;
@@ -224,11 +264,9 @@ function MeshGeneratorController({ page, handleFileRead }: IMeshGeneratorControl
       });
     } else if (supportType === 'edges') {
       const edge1 = nodesList.findIndex((node) => node[0] === 0 && node[1] === 0);
-      const edge2 = nodesList.findIndex((node) => node[0] === unitCellWidth && node[1] === 0);
-      const edge3 = nodesList.findIndex(
-        (node) => node[0] === unitCellWidth && node[1] === unitCellHeight
-      );
-      const edge4 = nodesList.findIndex((node) => node[0] === 0 && node[1] === unitCellHeight);
+      const edge2 = nodesList.findIndex((node) => node[0] === trueWidth && node[1] === 0);
+      const edge3 = nodesList.findIndex((node) => node[0] === trueWidth && node[1] === trueHeight);
+      const edge4 = nodesList.findIndex((node) => node[0] === 0 && node[1] === trueHeight);
       facesList.forEach((face, index) => {
         if (
           face.includes(edge1) ||
@@ -424,6 +462,8 @@ function MeshGeneratorController({ page, handleFileRead }: IMeshGeneratorControl
       );
       lines.push((i * 2).toString() + '\t' + correctedFace.toString() + '\t' + '2' + '\t' + '0');
     }
+    lines.push('');
+    lines.push('%END');
 
     const text = lines.join('\n');
 
