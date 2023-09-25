@@ -23,7 +23,8 @@ function MeshGeneratorView({
   supportType,
   supportedFaces,
   periodicity,
-  correctedFacesIds
+  correctedFacesIds,
+  maxElemSize
 }: IMeshGeneratorViewProps) {
   const zoom =
     0.6 *
@@ -652,6 +653,18 @@ function MeshGeneratorView({
           </div>
         </div>
         <div style={{ flex: '1' }} />
+        <label htmlFor="regionX">Max Element Size:</label>
+        <input
+          type="text"
+          id="maxElemSize"
+          name="maxElemSize"
+          value={maxElemSize.state}
+          size={5}
+          onChange={(event) => {
+            maxElemSize.set(Number(event.target.value) || 1);
+          }}
+        />
+        <div style={{ height: '5px' }} />
         <label htmlFor="regionX">Divisions:</label>
         <input
           type="text"

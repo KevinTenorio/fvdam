@@ -38,6 +38,7 @@ function MeshGeneratorController({ page, handleFileRead }: IMeshGeneratorControl
   const [correctedFacesIds, setCorrectedFacesIds] = useState<number[]>([]);
   const { setMeshData, meshData }: { setMeshData: (data: any) => void; meshData: any } =
     useAppContext();
+  const [maxElemSize, setMaxElemSize] = useState<number>(1);
 
   useEffect(() => {
     if (page.state === 'fvdam') {
@@ -106,6 +107,9 @@ function MeshGeneratorController({ page, handleFileRead }: IMeshGeneratorControl
         maxWidth = width;
       }
     }
+    if (maxWidth > Math.min(unitCellHeight, unitCellWidth) / maxElemSize) {
+      maxWidth = Math.min(unitCellHeight, unitCellWidth) / maxElemSize;
+    }
     return maxWidth;
   }
 
@@ -142,6 +146,9 @@ function MeshGeneratorController({ page, handleFileRead }: IMeshGeneratorControl
       if (height < maxHeight) {
         maxHeight = height;
       }
+    }
+    if (maxHeight > Math.min(unitCellHeight, unitCellWidth) / maxElemSize) {
+      maxHeight = Math.min(unitCellHeight, unitCellWidth) / maxElemSize;
     }
     return maxHeight;
   }
@@ -564,6 +571,10 @@ function MeshGeneratorController({ page, handleFileRead }: IMeshGeneratorControl
       correctedFacesIds={{
         state: correctedFacesIds,
         set: setCorrectedFacesIds
+      }}
+      maxElemSize={{
+        state: maxElemSize,
+        set: setMaxElemSize
       }}
     />
   );

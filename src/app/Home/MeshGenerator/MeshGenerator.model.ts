@@ -22,6 +22,7 @@ export interface IMeshGeneratorViewProps {
     vertical: boolean;
   }>;
   correctedFacesIds: IState<number[]>;
+  maxElemSize: IState<number>;
 }
 
 export interface IMeshGeneratorContext {
