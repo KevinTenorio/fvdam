@@ -653,7 +653,7 @@ function MeshGeneratorView({
           </div>
         </div>
         <div style={{ flex: '1' }} />
-        <label htmlFor="regionX">Max Element Size:</label>
+        <label htmlFor="regionX">Max Element Fraction:</label>
         <input
           type="text"
           id="maxElemSize"

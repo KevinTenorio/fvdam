@@ -107,8 +107,13 @@ function MeshGeneratorController({ page, handleFileRead }: IMeshGeneratorControl
         maxWidth = width;
       }
     }
-    if (maxWidth > Math.min(unitCellHeight, unitCellWidth) / maxElemSize) {
-      maxWidth = Math.min(unitCellHeight, unitCellWidth) / maxElemSize;
+    if (maxWidth > Math.min(unitCellHeight, unitCellWidth) / maxElemSize && nodeRegion) {
+      let divisor = 1;
+      while (nodeRegion?.width / divisor > Math.min(unitCellHeight, unitCellWidth) / maxElemSize) {
+        divisor++;
+      }
+      // maxHeight = Math.min(unitCellHeight, unitCellWidth) / maxElemSize;
+      maxWidth = nodeRegion?.width / divisor ?? maxWidth;
     }
     return maxWidth;
   }
@@ -147,8 +152,12 @@ function MeshGeneratorController({ page, handleFileRead }: IMeshGeneratorControl
         maxHeight = height;
       }
     }
-    if (maxHeight > Math.min(unitCellHeight, unitCellWidth) / maxElemSize) {
-      maxHeight = Math.min(unitCellHeight, unitCellWidth) / maxElemSize;
+    if (maxHeight > Math.min(unitCellHeight, unitCellWidth) / maxElemSize && nodeRegion) {
+      let divisor = 1;
+      while (nodeRegion?.height / divisor > Math.min(unitCellHeight, unitCellWidth) / maxElemSize) {
+        divisor++;
+      }
+      maxHeight = nodeRegion?.height / divisor ?? maxHeight;
     }
     return maxHeight;
   }
