@@ -39,6 +39,7 @@ function MeshGeneratorController({ page, handleFileRead }: IMeshGeneratorControl
   const { setMeshData, meshData }: { setMeshData: (data: any) => void; meshData: any } =
     useAppContext();
   const [maxElemSize, setMaxElemSize] = useState<number>(1);
+  const [minElemSize, setMinElemSize] = useState<number>(0);
 
   useEffect(() => {
     if (page.state === 'fvdam') {
@@ -74,6 +75,14 @@ function MeshGeneratorController({ page, handleFileRead }: IMeshGeneratorControl
     }
   }, [page.state, meshData]);
 
+  useEffect(() => {
+    if (unitCellWidth !== null && unitCellHeight !== null) {
+      if (Math.max(unitCellWidth, unitCellHeight) / divisionsByRegion > maxElemSize) {
+        setMaxElemSize(Math.max(unitCellWidth, unitCellHeight) / divisionsByRegion);
+      }
+    }
+  }, [unitCellHeight, unitCellWidth]);
+
   function getMaxWidth(regions: IMeshRegion[], x: number, y: number) {
     if (unitCellWidth === null || unitCellHeight === null) return null;
     let maxWidth = unitCellWidth;
@@ -107,13 +116,17 @@ function MeshGeneratorController({ page, handleFileRead }: IMeshGeneratorControl
         maxWidth = width;
       }
     }
-    if (maxWidth > Math.min(unitCellHeight, unitCellWidth) / maxElemSize && nodeRegion) {
+    if (maxWidth < minElemSize && nodeRegion && minElemSize < nodeRegion?.width) {
+      maxWidth = minElemSize;
+    }
+    if (maxWidth > maxElemSize && nodeRegion) {
       let divisor = 1;
-      while (nodeRegion?.width / divisor > Math.min(unitCellHeight, unitCellWidth) / maxElemSize) {
+      while (nodeRegion?.width / divisor > maxElemSize) {
         divisor++;
       }
-      // maxHeight = Math.min(unitCellHeight, unitCellWidth) / maxElemSize;
-      maxWidth = nodeRegion?.width / divisor ?? maxWidth;
+      if (nodeRegion?.width / divisor >= minElemSize) {
+        maxWidth = nodeRegion?.width / divisor ?? maxWidth;
+      }
     }
     return maxWidth;
   }
@@ -152,13 +165,19 @@ function MeshGeneratorController({ page, handleFileRead }: IMeshGeneratorControl
         maxHeight = height;
       }
     }
-    if (maxHeight > Math.min(unitCellHeight, unitCellWidth) / maxElemSize && nodeRegion) {
+    if (maxHeight < minElemSize && nodeRegion && minElemSize < nodeRegion?.height) {
+      maxHeight = minElemSize;
+    }
+    if (maxHeight > maxElemSize && nodeRegion) {
       let divisor = 1;
-      while (nodeRegion?.height / divisor > Math.min(unitCellHeight, unitCellWidth) / maxElemSize) {
+      while (nodeRegion?.height / divisor > maxElemSize) {
         divisor++;
       }
-      maxHeight = nodeRegion?.height / divisor ?? maxHeight;
+      if (nodeRegion?.height / divisor >= minElemSize) {
+        maxHeight = nodeRegion?.height / divisor ?? maxHeight;
+      }
     }
+
     return maxHeight;
   }
 
@@ -584,6 +603,10 @@ function MeshGeneratorController({ page, handleFileRead }: IMeshGeneratorControl
       maxElemSize={{
         state: maxElemSize,
         set: setMaxElemSize
+      }}
+      minElemSize={{
+        state: minElemSize,
+        set: setMinElemSize
       }}
     />
   );
