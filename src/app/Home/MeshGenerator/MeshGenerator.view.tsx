@@ -1046,24 +1046,58 @@ function MeshGeneratorView({
                 <label htmlFor="supports">Supports</label>
               </div>
             </div>
-            <div style={{ position: 'absolute', bottom: '5px', right: '5px', display: 'flex' }}>
-              <button
-                style={{ cursor: 'pointer' }}
-                onClick={() => {
-                  generateFvtFile();
-                }}
-              >
-                Generate FVT File
-              </button>
-              <div style={{ width: '5px' }} />
-              <button
-                style={{ cursor: 'pointer' }}
-                onClick={() => {
-                  generateJsonFile();
-                }}
-              >
-                Generate JSON File
-              </button>
+            <div
+              style={{
+                position: 'absolute',
+                bottom: '5px',
+                right: '5px',
+                display: 'flex',
+                flexDirection: 'column'
+              }}
+            >
+              <div style={{ display: 'flex' }}>
+                <label htmlFor="faceSupport">Edit Face Support:</label>
+                <input type="text" id="faceSupport" name="faceSupport" size={5} />
+                <div style={{ width: '5px' }} />
+                <button
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => {
+                    const faceIndex =
+                      Number((document.getElementById('faceSupport') as HTMLInputElement).value) -
+                      1;
+                    if (faceIndex < 0 || faceIndex >= faces.state.length) return;
+                    const newSupportedFaces = [...supportedFaces.state];
+                    if (newSupportedFaces.includes(faceIndex)) {
+                      newSupportedFaces.splice(newSupportedFaces.indexOf(faceIndex), 1);
+                    } else {
+                      newSupportedFaces.push(faceIndex);
+                    }
+                    supportedFaces.set(newSupportedFaces);
+                  }}
+                >
+                  Change
+                </button>
+              </div>
+              <div style={{ height: '5px' }} />
+              <div style={{ display: 'flex' }}>
+                <button
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => {
+                    generateFvtFile();
+                  }}
+                >
+                  Generate FVT File
+                </button>
+                <div style={{ width: '5px' }} />
+                <button
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => {
+                    generateJsonFile();
+                  }}
+                >
+                  Generate JSON File
+                </button>
+              </div>
             </div>
           </div>
         </div>
