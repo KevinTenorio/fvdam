@@ -272,7 +272,7 @@ function MeshGeneratorView({
         >
           <div style={{ fontWeight: 'bold', fontSize: '16px' }}>Create Regions</div>
           <div style={{ height: '10px' }} />
-          <div style={{ maxHeight: '15vh', overflowY: 'auto' }}>
+          <div style={{ maxHeight: '20vh', overflowY: 'auto' }}>
             {regions.state.length > 0 &&
               regions.state.map((region) => (
                 <div
@@ -403,88 +403,106 @@ function MeshGeneratorView({
                       )}
 
                       <div style={{ height: '5px' }} />
-                      <label htmlFor="regionWidth">Width:</label>
-                      <input
-                        type="text"
-                        id="regionWidth"
-                        name="regionWidth"
-                        value={region.width}
-                        size={5}
-                        onChange={(event) => {
-                          let value: number;
-                          if (event.target.value.includes('.')) {
-                            value = Number(event.target.value + '0');
-                          } else {
-                            value = Number(event.target.value);
-                          }
+                      <div style={{ display: 'flex' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <label htmlFor="regionWidth">Width:</label>
+                          <input
+                            type="text"
+                            id="regionWidth"
+                            name="regionWidth"
+                            value={region.width}
+                            size={5}
+                            onChange={(event) => {
+                              let value: number;
+                              if (event.target.value.includes('.')) {
+                                value = Number(event.target.value + '0');
+                              } else {
+                                value = Number(event.target.value);
+                              }
 
-                          if (unitCellWidth.state && region.x + value > unitCellWidth.state) {
-                            value = unitCellWidth.state - region.x;
-                          }
-                          regions.set(
-                            regions.state.map((reg) =>
-                              reg.id === region.id ? { ...reg, width: value } : reg
-                            )
-                          );
-                        }}
-                      />
+                              if (unitCellWidth.state && region.x + value > unitCellWidth.state) {
+                                value = unitCellWidth.state - region.x;
+                              }
+                              regions.set(
+                                regions.state.map((reg) =>
+                                  reg.id === region.id ? { ...reg, width: value } : reg
+                                )
+                              );
+                            }}
+                          />
+                        </div>
+                        <div style={{ width: '5px' }} />
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <label htmlFor="regionHeight">Height:</label>
+                          <input
+                            type="text"
+                            id="regionHeight"
+                            name="regionHeight"
+                            value={region.height}
+                            size={5}
+                            onChange={(event) => {
+                              let value: number;
+                              if (
+                                event.target.value.includes('.') &&
+                                !event.target.value.split('.')[1]
+                              ) {
+                                value = Number(event.target.value + '5');
+                              } else {
+                                value = Number(event.target.value);
+                              }
+                              regions.set(
+                                regions.state.map((reg) =>
+                                  reg.id === region.id ? { ...reg, height: value } : reg
+                                )
+                              );
+                            }}
+                          />
+                        </div>
+                      </div>
                       <div style={{ height: '5px' }} />
-                      <label htmlFor="regionHeight">Height:</label>
-                      <input
-                        type="text"
-                        id="regionHeight"
-                        name="regionHeight"
-                        value={region.height}
-                        size={5}
-                        onChange={(event) => {
-                          let value: number;
-                          if (
-                            event.target.value.includes('.') &&
-                            !event.target.value.split('.')[1]
-                          ) {
-                            value = Number(event.target.value + '5');
-                          } else {
-                            value = Number(event.target.value);
-                          }
-                          regions.set(
-                            regions.state.map((reg) =>
-                              reg.id === region.id ? { ...reg, height: value } : reg
-                            )
-                          );
-                        }}
-                      />
-                      <div style={{ height: '5px' }} />
-                      <label htmlFor="regionX">X:</label>
-                      <input
-                        type="text"
-                        id="regionX"
-                        name="regionX"
-                        value={region.x}
-                        size={5}
-                        onChange={(event) => {
-                          regions.set(
-                            regions.state.map((reg) =>
-                              reg.id === region.id ? { ...reg, x: Number(event.target.value) } : reg
-                            )
-                          );
-                        }}
-                      />
-                      <div style={{ height: '5px' }} />
-                      <label htmlFor="regionY">Y:</label>
-                      <input
-                        type="text"
-                        id="regionY"
-                        name="regionY"
-                        value={region.y}
-                        size={5}
-                        onChange={(event) => {
-                          regions.set(
-                            regions.state.map((reg) =>
-                              reg.id === region.id ? { ...reg, y: Number(event.target.value) } : reg
-                            )
-                          );
-                        }}
-                      />
+
+                      <div style={{ display: 'flex' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <label htmlFor="regionX">X:</label>
+                          <input
+                            type="text"
+                            id="regionX"
+                            name="regionX"
+                            value={region.x}
+                            size={5}
+                            onChange={(event) => {
+                              regions.set(
+                                regions.state.map((reg) =>
+                                  reg.id === region.id
+                                    ? { ...reg, x: Number(event.target.value) }
+                                    : reg
+                                )
+                              );
+                            }}
+                          />
+                        </div>
+                        <div style={{ width: '5px' }} />
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <label htmlFor="regionY">Y:</label>
+                          <input
+                            type="text"
+                            id="regionY"
+                            name="regionY"
+                            value={region.y}
+                            size={5}
+                            onChange={(event) => {
+                              regions.set(
+                                regions.state.map((reg) =>
+                                  reg.id === region.id
+                                    ? { ...reg, y: Number(event.target.value) }
+                                    : reg
+                                )
+                              );
+                            }}
+                          />
+                        </div>
+                      </div>
+
                       <div style={{ height: '5px' }} />
                       <div
                         className="zoom-btns"
@@ -1020,6 +1038,7 @@ function MeshGeneratorView({
             )}
             <div style={{ position: 'absolute', top: '5px', left: '5px' }}>
               <div // Filter Visualization
+                style={{ display: 'flex', justifyContent: 'start', alignItems: 'center' }}
               >
                 <input
                   type="checkbox"
@@ -1035,7 +1054,7 @@ function MeshGeneratorView({
                 />
                 <label htmlFor="elements">Elements</label>
               </div>
-              <div>
+              <div style={{ display: 'flex', justifyContent: 'start', alignItems: 'center' }}>
                 <input
                   type="checkbox"
                   id="elementsIds"
@@ -1050,7 +1069,7 @@ function MeshGeneratorView({
                 />
                 <label htmlFor="elementsIds">Elements Ids</label>
               </div>
-              <div>
+              <div style={{ display: 'flex', justifyContent: 'start', alignItems: 'center' }}>
                 <input
                   type="checkbox"
                   id="regionsMaterials"
@@ -1065,7 +1084,7 @@ function MeshGeneratorView({
                 />
                 <label htmlFor="regionsMaterials">Materials</label>
               </div>
-              <div>
+              <div style={{ display: 'flex', justifyContent: 'start', alignItems: 'center' }}>
                 <input
                   type="checkbox"
                   id="regionsLabels"
@@ -1080,7 +1099,7 @@ function MeshGeneratorView({
                 />
                 <label htmlFor="regionsLabels">Regions</label>
               </div>
-              <div>
+              <div style={{ display: 'flex', justifyContent: 'start', alignItems: 'center' }}>
                 <input
                   type="checkbox"
                   id="nodesIds"
@@ -1095,7 +1114,7 @@ function MeshGeneratorView({
                 />
                 <label htmlFor="nodesIds">Nodes</label>
               </div>
-              <div>
+              <div style={{ display: 'flex', justifyContent: 'start', alignItems: 'center' }}>
                 <input
                   type="checkbox"
                   id="facesIds"
@@ -1110,7 +1129,7 @@ function MeshGeneratorView({
                 />
                 <label htmlFor="facesIds">Faces</label>
               </div>
-              <div>
+              <div style={{ display: 'flex', justifyContent: 'start', alignItems: 'center' }}>
                 <input
                   type="checkbox"
                   id="supports"
@@ -1132,11 +1151,13 @@ function MeshGeneratorView({
                 bottom: '5px',
                 right: '5px',
                 display: 'flex',
-                flexDirection: 'column'
+                flexDirection: 'column',
+                alignItems: 'end'
               }}
             >
-              <div style={{ display: 'flex' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                 <label htmlFor="faceSupport">Edit Face Support:</label>
+                <div style={{ width: '5px' }} />
                 <input type="text" id="faceSupport" name="faceSupport" size={5} />
                 <div style={{ width: '5px' }} />
                 <button
@@ -1158,8 +1179,8 @@ function MeshGeneratorView({
                   Change
                 </button>
               </div>
-              <div style={{ height: '5px' }} />
-              <div style={{ display: 'flex' }}>
+              <div style={{ height: '10px' }} />
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                 <button
                   style={{ cursor: 'pointer' }}
                   onClick={() => {
@@ -1177,15 +1198,14 @@ function MeshGeneratorView({
                 >
                   Download Model
                 </button>
-              </div>
-              <div style={{ display: 'flex' }}>
+                <div style={{ width: '15px' }} />
                 <button
-                  style={{ cursor: 'pointer' }}
+                  style={{ cursor: 'pointer', fontWeight: 'bold' }}
                   onClick={() => {
                     generateFvtFile(false);
                   }}
                 >
-                  Start
+                  START
                 </button>
               </div>
             </div>
