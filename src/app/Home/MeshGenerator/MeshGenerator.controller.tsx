@@ -321,7 +321,10 @@ function MeshGeneratorController({ page, handleFileRead }: IMeshGeneratorControl
         if (
           ((centralCoordinateX >= node1[0] && centralCoordinateX <= node2[0]) ||
             (centralCoordinateX <= node1[0] && centralCoordinateX >= node2[0])) &&
-          (node1[1] === 0 || node1[1] === unitCellHeight)
+          (node1[1] === 0 ||
+            (node1[1] >= unitCellHeight - 9 * Math.pow(10, -decimals - 4) &&
+              node1[1] <= unitCellHeight + 9 * Math.pow(10, -decimals - 4))) &&
+          node1[0] !== node2[0]
         ) {
           supportedFacesList.push(i);
         }
