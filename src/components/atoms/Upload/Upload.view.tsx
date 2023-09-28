@@ -1,9 +1,9 @@
 import Icon from '/src/components/atoms/Icon';
-import { State } from '/src/index.model';
+import { IState } from '/src/index.model';
 import './Upload.style.css';
 
 interface UploadViewProps {
-  file: State<any>;
+  file: IState<any>;
   width: string;
   height: string;
 }
