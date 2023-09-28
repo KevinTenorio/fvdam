@@ -25,10 +25,12 @@ function MeshGeneratorView({
   periodicity,
   correctedFacesIds,
   maxElemSize,
-  minElemSize
+  minElemSize,
+  extraZoom
 }: IMeshGeneratorViewProps) {
   const zoom =
     0.6 *
+    extraZoom.state *
     Math.min(
       window.innerWidth / (unitCellWidth.state || 1),
       window.innerHeight / (unitCellHeight.state || 1)
@@ -212,12 +214,31 @@ function MeshGeneratorView({
                     />
                     <div style={{ height: '5px' }} />
                     <div
+                      className="zoom-btns"
                       style={{ cursor: 'pointer', position: 'absolute', top: '5px', right: '0px' }}
                       onClick={() => {
                         materials.set(materials.state.filter((mat) => mat.id !== material.id));
                       }}
                     >
                       <Icon icon="trash" color="white" size="14px" />
+                    </div>
+                    <div
+                      className="zoom-btns"
+                      style={{
+                        cursor: 'pointer',
+                        position: 'absolute',
+                        bottom: '25px',
+                        left: '45px'
+                      }}
+                      onClick={() => {
+                        materials.set(
+                          materials.state.map((mat) =>
+                            mat.id === material.id ? { ...mat, color: generateColor() } : mat
+                          )
+                        );
+                      }}
+                    >
+                      <Icon icon="refresh" color="white" size="14px" />
                     </div>
                   </div>
                 )}
@@ -251,265 +272,285 @@ function MeshGeneratorView({
         >
           <div style={{ fontWeight: 'bold', fontSize: '16px' }}>Create Regions</div>
           <div style={{ height: '10px' }} />
-          {regions.state.length > 0 &&
-            regions.state.map((region) => (
-              <div
-                key={region.id}
-                style={{
-                  marginBottom: '5px',
-                  border: region.collapsed ? 'none' : '1px solid var(--off-white)',
-                  width: '100%',
-                  padding: region.collapsed ? '0px' : '5px',
-                  boxSizing: 'border-box'
-                }}
-              >
+          <div style={{ maxHeight: '15vh', overflowY: 'auto' }}>
+            {regions.state.length > 0 &&
+              regions.state.map((region) => (
                 <div
-                  className="materialItem"
-                  onClick={() =>
-                    regions.set(
-                      regions.state.map((reg) =>
-                        reg.id === region.id ? { ...reg, collapsed: !reg.collapsed } : reg
-                      )
-                    )
-                  }
+                  key={region.id}
+                  style={{
+                    marginBottom: '5px',
+                    border: region.collapsed ? 'none' : '1px solid var(--off-white)',
+                    width: '100%',
+                    padding: region.collapsed ? '0px' : '5px',
+                    boxSizing: 'border-box'
+                  }}
                 >
-                  {region.label}
                   <div
-                    style={{
-                      transform: region.collapsed ? 'rotate(0deg)' : 'rotate(90deg)',
-                      width: '21px',
-                      height: '21px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
+                    className="materialItem"
+                    onClick={() =>
+                      regions.set(
+                        regions.state.map((reg) =>
+                          reg.id === region.id ? { ...reg, collapsed: !reg.collapsed } : reg
+                        )
+                      )
+                    }
                   >
-                    <Icon icon="chevron" color="white" />
+                    {region.label}
+                    <div
+                      style={{
+                        transform: region.collapsed ? 'rotate(0deg)' : 'rotate(90deg)',
+                        width: '21px',
+                        height: '21px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      <Icon icon="chevron" color="white" />
+                    </div>
                   </div>
-                </div>
-                {!region.collapsed && (
-                  <div style={{ display: 'flex', flexDirection: 'column', position: 'relative' }}>
-                    <div style={{ height: '5px' }} />
-                    <label htmlFor="regionLabel">Label:</label>
-                    <input
-                      type="text"
-                      id="regionLabel"
-                      name="regionLabel"
-                      value={region.label}
-                      size={5}
-                      onChange={(event) => {
-                        regions.set(
-                          regions.state.map((reg) =>
-                            reg.id === region.id ? { ...reg, label: event.target.value } : reg
-                          )
-                        );
-                      }}
-                    />
-                    <div style={{ height: '5px' }} />
-                    <label htmlFor="regionMaterial">Material:</label>
-                    <input
-                      type="text"
-                      id="regionMaterial"
-                      name="regionMaterial"
-                      value={materials.state.find((mat) => mat.id === region.materialId)?.label}
-                      size={5}
-                      onChange={(event) => {
-                        regions.set(
-                          regions.state.map((reg) =>
-                            reg.id === region.id ? { ...reg, materialId: event.target.value } : reg
-                          )
-                        );
-                      }}
-                      onClick={() => {
-                        regions.set(
-                          regions.state.map((reg) =>
-                            reg.id === region.id
-                              ? { ...reg, showMaterialsDropdown: !region.showMaterialsDropdown }
-                              : reg
-                          )
-                        );
-                      }}
-                    />
+                  {!region.collapsed && (
+                    <div style={{ display: 'flex', flexDirection: 'column', position: 'relative' }}>
+                      <div style={{ height: '5px' }} />
+                      <label htmlFor="regionLabel">Label:</label>
+                      <input
+                        type="text"
+                        id="regionLabel"
+                        name="regionLabel"
+                        value={region.label}
+                        size={5}
+                        onChange={(event) => {
+                          regions.set(
+                            regions.state.map((reg) =>
+                              reg.id === region.id ? { ...reg, label: event.target.value } : reg
+                            )
+                          );
+                        }}
+                      />
+                      <div style={{ height: '5px' }} />
+                      <label htmlFor="regionMaterial">Material:</label>
+                      <input
+                        type="text"
+                        id="regionMaterial"
+                        name="regionMaterial"
+                        value={materials.state.find((mat) => mat.id === region.materialId)?.label}
+                        size={5}
+                        onChange={(event) => {
+                          regions.set(
+                            regions.state.map((reg) =>
+                              reg.id === region.id
+                                ? { ...reg, materialId: event.target.value }
+                                : reg
+                            )
+                          );
+                        }}
+                        onClick={() => {
+                          regions.set(
+                            regions.state.map((reg) =>
+                              reg.id === region.id
+                                ? { ...reg, showMaterialsDropdown: !region.showMaterialsDropdown }
+                                : reg
+                            )
+                          );
+                        }}
+                      />
 
-                    {region.showMaterialsDropdown && (
+                      {region.showMaterialsDropdown && (
+                        <div
+                          style={{
+                            border: '2px solid var(--off-white)',
+                            position: 'absolute',
+                            top: '90px',
+                            backgroundColor: 'grey',
+                            width: '100%'
+                          }}
+                        >
+                          {materials.state.map((material) => (
+                            <div
+                              className="materialItem"
+                              key={material.id}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between'
+                              }}
+                              onClick={() => {
+                                regions.set(
+                                  regions.state.map((reg) =>
+                                    reg.id === region.id
+                                      ? {
+                                          ...reg,
+                                          materialId: material.id,
+                                          showMaterialsDropdown: false
+                                        }
+                                      : reg
+                                  )
+                                );
+                              }}
+                            >
+                              {material.label}
+                              <div
+                                style={{
+                                  width: '14px',
+                                  height: '14px',
+                                  backgroundColor: material.color,
+                                  marginLeft: '5px'
+                                }}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      <div style={{ height: '5px' }} />
+                      <label htmlFor="regionWidth">Width:</label>
+                      <input
+                        type="text"
+                        id="regionWidth"
+                        name="regionWidth"
+                        value={region.width}
+                        size={5}
+                        onChange={(event) => {
+                          let value: number;
+                          if (event.target.value.includes('.')) {
+                            value = Number(event.target.value + '0');
+                          } else {
+                            value = Number(event.target.value);
+                          }
+
+                          if (unitCellWidth.state && region.x + value > unitCellWidth.state) {
+                            value = unitCellWidth.state - region.x;
+                          }
+                          regions.set(
+                            regions.state.map((reg) =>
+                              reg.id === region.id ? { ...reg, width: value } : reg
+                            )
+                          );
+                        }}
+                      />
+                      <div style={{ height: '5px' }} />
+                      <label htmlFor="regionHeight">Height:</label>
+                      <input
+                        type="text"
+                        id="regionHeight"
+                        name="regionHeight"
+                        value={region.height}
+                        size={5}
+                        onChange={(event) => {
+                          let value: number;
+                          if (
+                            event.target.value.includes('.') &&
+                            !event.target.value.split('.')[1]
+                          ) {
+                            value = Number(event.target.value + '5');
+                          } else {
+                            value = Number(event.target.value);
+                          }
+                          regions.set(
+                            regions.state.map((reg) =>
+                              reg.id === region.id ? { ...reg, height: value } : reg
+                            )
+                          );
+                        }}
+                      />
+                      <div style={{ height: '5px' }} />
+                      <label htmlFor="regionX">X:</label>
+                      <input
+                        type="text"
+                        id="regionX"
+                        name="regionX"
+                        value={region.x}
+                        size={5}
+                        onChange={(event) => {
+                          regions.set(
+                            regions.state.map((reg) =>
+                              reg.id === region.id ? { ...reg, x: Number(event.target.value) } : reg
+                            )
+                          );
+                        }}
+                      />
+                      <div style={{ height: '5px' }} />
+                      <label htmlFor="regionY">Y:</label>
+                      <input
+                        type="text"
+                        id="regionY"
+                        name="regionY"
+                        value={region.y}
+                        size={5}
+                        onChange={(event) => {
+                          regions.set(
+                            regions.state.map((reg) =>
+                              reg.id === region.id ? { ...reg, y: Number(event.target.value) } : reg
+                            )
+                          );
+                        }}
+                      />
+                      <div style={{ height: '5px' }} />
                       <div
+                        className="zoom-btns"
                         style={{
-                          border: '2px solid var(--off-white)',
+                          cursor: 'pointer',
                           position: 'absolute',
-                          top: '90px',
-                          backgroundColor: 'grey',
-                          width: '100%'
+                          top: '5px',
+                          right: '0px'
+                        }}
+                        onClick={() => {
+                          regions.set(regions.state.filter((reg) => reg.id !== region.id));
                         }}
                       >
-                        {materials.state.map((material) => (
-                          <div
-                            className="materialItem"
-                            key={material.id}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'space-between'
-                            }}
-                            onClick={() => {
-                              regions.set(
-                                regions.state.map((reg) =>
-                                  reg.id === region.id
-                                    ? {
-                                        ...reg,
-                                        materialId: material.id,
-                                        showMaterialsDropdown: false
-                                      }
-                                    : reg
-                                )
-                              );
-                            }}
-                          >
-                            {material.label}
-                            <div
-                              style={{
-                                width: '14px',
-                                height: '14px',
-                                backgroundColor: material.color,
-                                marginLeft: '5px'
-                              }}
-                            />
-                          </div>
-                        ))}
+                        <Icon icon="trash" color="white" size="14px" />
                       </div>
-                    )}
-
-                    <div style={{ height: '5px' }} />
-                    <label htmlFor="regionWidth">Width:</label>
-                    <input
-                      type="text"
-                      id="regionWidth"
-                      name="regionWidth"
-                      value={region.width}
-                      size={5}
-                      onChange={(event) => {
-                        let value: number;
-                        if (event.target.value.includes('.')) {
-                          value = Number(event.target.value + '0');
-                        } else {
-                          value = Number(event.target.value);
-                        }
-
-                        if (unitCellWidth.state && region.x + value > unitCellWidth.state) {
-                          value = unitCellWidth.state - region.x;
-                        }
-                        regions.set(
-                          regions.state.map((reg) =>
-                            reg.id === region.id ? { ...reg, width: value } : reg
+                      <div
+                        className="zoom-btns"
+                        style={{
+                          cursor: 'pointer',
+                          position: 'absolute',
+                          top: '5px',
+                          right: '20px'
+                        }}
+                        onClick={() => {
+                          if (
+                            !unitCellWidth.state ||
+                            !unitCellHeight.state ||
+                            !regions.state.find((reg) => reg.id === region.id)
                           )
-                        );
-                      }}
-                    />
-                    <div style={{ height: '5px' }} />
-                    <label htmlFor="regionHeight">Height:</label>
-                    <input
-                      type="text"
-                      id="regionHeight"
-                      name="regionHeight"
-                      value={region.height}
-                      size={5}
-                      onChange={(event) => {
-                        let value: number;
-                        if (event.target.value.includes('.') && !event.target.value.split('.')[1]) {
-                          value = Number(event.target.value + '5');
-                        } else {
-                          value = Number(event.target.value);
-                        }
-                        regions.set(
-                          regions.state.map((reg) =>
-                            reg.id === region.id ? { ...reg, height: value } : reg
-                          )
-                        );
-                      }}
-                    />
-                    <div style={{ height: '5px' }} />
-                    <label htmlFor="regionX">X:</label>
-                    <input
-                      type="text"
-                      id="regionX"
-                      name="regionX"
-                      value={region.x}
-                      size={5}
-                      onChange={(event) => {
-                        regions.set(
-                          regions.state.map((reg) =>
-                            reg.id === region.id ? { ...reg, x: Number(event.target.value) } : reg
-                          )
-                        );
-                      }}
-                    />
-                    <div style={{ height: '5px' }} />
-                    <label htmlFor="regionY">Y:</label>
-                    <input
-                      type="text"
-                      id="regionY"
-                      name="regionY"
-                      value={region.y}
-                      size={5}
-                      onChange={(event) => {
-                        regions.set(
-                          regions.state.map((reg) =>
-                            reg.id === region.id ? { ...reg, y: Number(event.target.value) } : reg
-                          )
-                        );
-                      }}
-                    />
-                    <div style={{ height: '5px' }} />
-                    <div
-                      style={{ cursor: 'pointer', position: 'absolute', top: '5px', right: '0px' }}
-                      onClick={() => {
-                        regions.set(regions.state.filter((reg) => reg.id !== region.id));
-                      }}
-                    >
-                      <Icon icon="trash" color="white" size="14px" />
+                            return;
+                          const newRegions = [...regions.state];
+                          newRegions.push({
+                            id: generateUuid(),
+                            label: 'Region ' + (newRegions.length + 1),
+                            collapsed: true,
+                            showMaterialsDropdown: false,
+                            width: regions.state.find((reg) => reg.id === region.id)?.width || 0,
+                            height: regions.state.find((reg) => reg.id === region.id)?.height || 0,
+                            x:
+                              (newRegions[newRegions.length - 1]?.x +
+                                newRegions[newRegions.length - 1]?.width >=
+                              unitCellWidth.state
+                                ? 0
+                                : newRegions[newRegions.length - 1]?.x +
+                                  newRegions[newRegions.length - 1]?.width) || 0,
+                            y:
+                              (newRegions[newRegions.length - 1]?.x +
+                                newRegions[newRegions.length - 1]?.width >=
+                              unitCellWidth.state
+                                ? newRegions[newRegions.length - 1]?.y +
+                                  newRegions[newRegions.length - 1]?.height
+                                : newRegions[newRegions.length - 1]?.y) || 0,
+                            materialId:
+                              regions.state.find((reg) => reg.id === region.id)?.materialId || ''
+                          });
+                          regions.set(newRegions);
+                        }}
+                      >
+                        <Icon icon="copy" color="white" size="14px" />
+                      </div>
                     </div>
-                    <div
-                      style={{ cursor: 'pointer', position: 'absolute', top: '5px', right: '20px' }}
-                      onClick={() => {
-                        if (
-                          !unitCellWidth.state ||
-                          !unitCellHeight.state ||
-                          !regions.state.find((reg) => reg.id === region.id)
-                        )
-                          return;
-                        const newRegions = [...regions.state];
-                        newRegions.push({
-                          id: generateUuid(),
-                          label: 'Region ' + (newRegions.length + 1),
-                          collapsed: true,
-                          showMaterialsDropdown: false,
-                          width: regions.state.find((reg) => reg.id === region.id)?.width || 0,
-                          height: regions.state.find((reg) => reg.id === region.id)?.height || 0,
-                          x:
-                            (newRegions[newRegions.length - 1]?.x +
-                              newRegions[newRegions.length - 1]?.width >=
-                            unitCellWidth.state
-                              ? 0
-                              : newRegions[newRegions.length - 1]?.x +
-                                newRegions[newRegions.length - 1]?.width) || 0,
-                          y:
-                            (newRegions[newRegions.length - 1]?.x +
-                              newRegions[newRegions.length - 1]?.width >=
-                            unitCellWidth.state
-                              ? newRegions[newRegions.length - 1]?.y +
-                                newRegions[newRegions.length - 1]?.height
-                              : newRegions[newRegions.length - 1]?.y) || 0,
-                          materialId:
-                            regions.state.find((reg) => reg.id === region.id)?.materialId || ''
-                        });
-                        regions.set(newRegions);
-                      }}
-                    >
-                      <Icon icon="copy" color="white" size="14px" />
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
+                  )}
+                </div>
+              ))}
+          </div>
+
           <div style={{ height: '5px' }} />
           <button
             style={{ cursor: 'pointer' }}
@@ -654,6 +695,7 @@ function MeshGeneratorView({
           </div>
         </div>
         <div style={{ flex: '1' }} />
+        <div style={{ height: '20px' }} />
         <label htmlFor="maxElemSize">Max Element Size:</label>
         <input
           type="text"
@@ -739,6 +781,44 @@ function MeshGeneratorView({
               position: 'relative'
             }}
           >
+            <div // Zoom Buttons
+              className="zoom-btns"
+              style={{
+                position: 'absolute',
+                top: '10px',
+                right: '10px',
+                display: 'flex',
+                flexDirection: 'row'
+              }}
+            >
+              <div
+                className="icon"
+                style={{ cursor: 'pointer', marginRight: '10px' }}
+                onClick={() => {
+                  extraZoom.set(1);
+                }}
+              >
+                <Icon icon="refresh" size="18px" color="white" />
+              </div>
+              <div
+                className="icon"
+                style={{ cursor: 'pointer', marginRight: '10px' }}
+                onClick={() => {
+                  extraZoom.set(extraZoom.state / 1.1);
+                }}
+              >
+                <Icon icon="zoom-out" size="18px" color="white" />
+              </div>
+              <div
+                className="icon"
+                style={{ cursor: 'pointer' }}
+                onClick={() => {
+                  extraZoom.set(extraZoom.state * 1.1);
+                }}
+              >
+                <Icon icon="zoom-in" size="18px" color="white" />
+              </div>
+            </div>
             {unitCellWidth.state || unitCellHeight.state ? (
               <div
                 style={{
@@ -938,7 +1018,7 @@ function MeshGeneratorView({
             ) : (
               <>No data.</>
             )}
-            <div style={{ position: 'absolute', top: '5px', right: '5px' }}>
+            <div style={{ position: 'absolute', top: '5px', left: '5px' }}>
               <div // Filter Visualization
               >
                 <input
@@ -1086,7 +1166,7 @@ function MeshGeneratorView({
                     generateFvtFile();
                   }}
                 >
-                  Generate FVT File
+                  Download FVT File
                 </button>
                 <div style={{ width: '5px' }} />
                 <button
@@ -1095,7 +1175,17 @@ function MeshGeneratorView({
                     generateJsonFile();
                   }}
                 >
-                  Generate JSON File
+                  Download Model
+                </button>
+              </div>
+              <div style={{ display: 'flex' }}>
+                <button
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => {
+                    generateFvtFile(false);
+                  }}
+                >
+                  Start
                 </button>
               </div>
             </div>

@@ -19,12 +19,12 @@ function MeshGeneratorController({ page, handleFileRead }: IMeshGeneratorControl
   const [elements, setElements] = useState<number[][]>([]);
   const [faces, setFaces] = useState<number[][]>([]);
   const [stuffToShow, setStuffToShow] = useState<IStuffToShow>({
-    elements: false,
+    elements: true,
     elementsIds: false,
     regionsLabels: false,
     nodesIds: false,
     facesIds: false,
-    regionsMaterials: true,
+    regionsMaterials: false,
     supports: false
   });
   const [divisionsByRegion, setDivisionsByRegion] = useState<number>(2);
@@ -36,29 +36,13 @@ function MeshGeneratorController({ page, handleFileRead }: IMeshGeneratorControl
     vertical: true
   });
   const [correctedFacesIds, setCorrectedFacesIds] = useState<number[]>([]);
-  const { setMeshData, meshData }: { setMeshData: (data: any) => void; meshData: any } =
-    useAppContext();
+  const { meshData }: { meshData: any } = useAppContext();
   const [maxElemSize, setMaxElemSize] = useState<number>(1);
   const [minElemSize, setMinElemSize] = useState<number>(0);
+  const [extraZoom, setExtraZoom] = useState<number>(1);
 
   useEffect(() => {
-    if (page.state === 'fvdam') {
-      setMeshData({
-        nodes: nodes,
-        faces: faces,
-        elements: elements,
-        supportedFaces: supportedFaces,
-        elementsFaces: elementsFaces,
-        correctedFacesIds: correctedFacesIds,
-        regions: regions,
-        materials: materials,
-        unitCellWidth: unitCellWidth,
-        unitCellHeight: unitCellHeight,
-        divisionsByRegion: divisionsByRegion,
-        supportType: supportType,
-        periodicity: periodicity
-      });
-    } else if (page.state === 'mesh' && meshData) {
+    if (meshData) {
       setNodes(meshData.nodes);
       setFaces(meshData.faces);
       setElements(meshData.elements);
@@ -72,8 +56,23 @@ function MeshGeneratorController({ page, handleFileRead }: IMeshGeneratorControl
       setDivisionsByRegion(meshData.divisionsByRegion);
       setSupportType(meshData.supportType);
       setPeriodicity(meshData.periodicity);
+    } else {
+      setNodes([]);
+      setFaces([]);
+      setElements([]);
+      setSupportedFaces([]);
+      setElementsFaces([]);
+      setCorrectedFacesIds([]);
+      setRegions([]);
+      setMaterials([]);
+      setUnitCellWidth(null);
+      setUnitCellHeight(null);
+      setDivisionsByRegion(2);
+      setSupportType('none');
+      setPeriodicity({ horizontal: true, vertical: true });
+      page.set('mesh');
     }
-  }, [page.state, meshData]);
+  }, [meshData]);
 
   useEffect(() => {
     if (unitCellWidth !== null && unitCellHeight !== null) {
@@ -359,7 +358,7 @@ function MeshGeneratorController({ page, handleFileRead }: IMeshGeneratorControl
     setStuffToShow({ ...stuffToShow, elements: true });
   }
 
-  function generateFvtFile() {
+  function generateFvtFile(isDownload = true) {
     const lines: string[] = [];
 
     // Write nodes
@@ -383,7 +382,7 @@ function MeshGeneratorController({ page, handleFileRead }: IMeshGeneratorControl
     lines.push(materials.length.toString());
     for (let i = 1; i < materials.length + 1; i++) {
       const material = materials[i - 1];
-      lines.push(i.toString() + '\t' + material.label);
+      lines.push(i.toString() + '\t' + "'" + material.label + "'");
     }
     lines.push('');
     lines.push('%MATERIAL.ISOTROPIC');
@@ -502,13 +501,16 @@ function MeshGeneratorController({ page, handleFileRead }: IMeshGeneratorControl
 
     const text = lines.join('\n');
 
-    const blob = new Blob([text], { type: 'text/plain' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'model.fvt';
-    a.click();
-    handleFileRead(text, true);
-    page.set('fvdam');
+    if (isDownload) {
+      const blob = new Blob([text], { type: 'text/plain' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'model.fvt';
+      a.click();
+    } else {
+      handleFileRead(text, true);
+      page.set('fvdam');
+    }
   }
 
   function generateJsonFile() {
@@ -607,6 +609,10 @@ function MeshGeneratorController({ page, handleFileRead }: IMeshGeneratorControl
       minElemSize={{
         state: minElemSize,
         set: setMinElemSize
+      }}
+      extraZoom={{
+        state: extraZoom,
+        set: setExtraZoom
       }}
     />
   );

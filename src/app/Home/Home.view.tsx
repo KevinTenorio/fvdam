@@ -22,6 +22,7 @@ interface HomeViewProps {
   handleExecuteFvdam: () => void;
   page: IState<string>;
   parseFile: (fileStr: string) => void;
+  elapsedTime: IState<number>;
 }
 function HomeView({
   handleFileRead,
@@ -34,128 +35,96 @@ function HomeView({
   results,
   handleExecuteFvdam,
   page,
-  parseFile
+  parseFile,
+  elapsedTime
 }: HomeViewProps) {
-  const { setError, fvdamFile, setFvdamFile }: AppContext = useAppContext();
+  const { fvdamFile, setFvdamFile }: AppContext = useAppContext();
 
-  const Content = () => {
-    try {
-      return (
-        <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
+  return (
+    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <div
+        style={{
+          padding: '20px',
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          flexDirection: 'column'
+        }}
+      >
+        <div // HEADER
+          style={{
+            width: '100%',
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center'
+          }}
+        >
           <div
             style={{
-              padding: '20px',
-              width: '100%',
-              height: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              flexDirection: 'column'
+              marginRight: '20px',
+              marginLeft: '10px',
+              color: 'white',
+              fontWeight: 'bold',
+              fontSize: '22px'
             }}
           >
-            <div // HEADER
-              style={{
-                width: '100%',
-                display: 'flex',
-                flexDirection: 'row',
-                alignItems: 'center'
-              }}
-            >
-              <div
-                style={{
-                  marginRight: '20px',
-                  marginLeft: '10px',
-                  color: 'white',
-                  fontWeight: 'bold',
-                  fontSize: '22px'
-                }}
-              >
-                FVDAM
-              </div>
-              <Upload file={{ state: fvdamFile, set: setFvdamFile }} width="200px" height="50px" />
-              {fvdamFile && (
-                <button
-                  className="button"
-                  style={{
-                    marginLeft: '20px',
-                    cursor: 'pointer',
-                    backgroundColor: 'rgba(0, 0, 0, 0.08)',
-                    border: '1px solid var(--off-white)',
-                    color: 'white',
-                    padding: '10px',
-                    borderRadius: '5px',
-                    fontWeight: 'bold',
-                    fontSize: '16px',
-                    width: '80px'
-                  }}
-                  onClick={() => handleFileRead(fvdamFile)}
-                >
-                  Start
-                </button>
-              )}
-              <div style={{ flex: '1' }} />
-              <div>
-                <input
-                  type="radio"
-                  id="meshPage"
-                  name="page"
-                  value="mesh"
-                  style={{ cursor: 'pointer' }}
-                  checked={page.state === 'mesh'}
-                  onClick={() => {
-                    page.set('mesh');
-                  }}
-                />
-                <label htmlFor="meshPage">Mesh</label>
-              </div>
-              <div style={{ width: '5px' }} />
-              <div>
-                <input
-                  type="radio"
-                  id="fvdamPage"
-                  name="page"
-                  value="fvdam"
-                  style={{ cursor: 'pointer' }}
-                  checked={page.state === 'fvdam'}
-                  onClick={() => {
-                    page.set('fvdam');
-                  }}
-                />
-                <label htmlFor="fvdamPage">FVDAM</label>
-              </div>
-            </div>
-            <div
-              style={{
-                marginTop: '20px',
-                width: '100%',
-                border: '1px solid var(--off-white)'
-              }}
-            />
-            {page.state === 'fvdam' ? ( // CONTENT
-              <FvdamContent
-                materials={materials}
-                nodes={nodes}
-                elements={elements}
-                faces={faces}
-                nodesInfo={nodesInfo}
-                results={results}
-                handleExecuteFvdam={handleExecuteFvdam}
-                getPieChartColors={getPieChartColors}
-              />
-            ) : page.state === 'mesh' ? (
-              <MeshGenerator page={page} handleFileRead={handleFileRead} parseFile={parseFile} />
-            ) : (
-              <></>
-            )}
+            FVDAM
           </div>
+          <Upload file={{ state: fvdamFile, set: setFvdamFile }} width="200px" height="50px" />
+          {fvdamFile && (
+            <button
+              className="button"
+              style={{
+                marginLeft: '20px',
+                cursor: 'pointer',
+                backgroundColor: 'rgba(0, 0, 0, 0.08)',
+                border: '1px solid var(--off-white)',
+                color: 'white',
+                padding: '10px',
+                borderRadius: '5px',
+                fontWeight: 'bold',
+                fontSize: '16px',
+                width: '80px'
+              }}
+              onClick={() => handleFileRead(fvdamFile)}
+            >
+              Start
+            </button>
+          )}
+          <div style={{ flex: '1' }} />
         </div>
-      );
-    } catch (error) {
-      setError(error);
-      return <></>;
-    }
-  };
-
-  return <Content />;
+        <div
+          style={{
+            marginTop: '20px',
+            width: '100%',
+            border: '1px solid var(--off-white)'
+          }}
+        />
+        <MeshGenerator page={page} handleFileRead={handleFileRead} parseFile={parseFile} />
+        {page.state === 'fvdam' && (
+          <FvdamContent
+            materials={materials}
+            nodes={nodes}
+            elements={elements}
+            faces={faces}
+            nodesInfo={nodesInfo}
+            results={results}
+            elapsedTime={elapsedTime}
+            handleExecuteFvdam={handleExecuteFvdam}
+            getPieChartColors={getPieChartColors}
+          />
+        )}
+        <div
+          style={{
+            marginTop: '10px',
+            width: '100%',
+            border: '1px solid var(--off-white)'
+          }}
+        />
+      </div>
+    </div>
+  );
 }
 
 export default HomeView;

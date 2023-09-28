@@ -17,7 +17,7 @@ import homogenize from './homogenize';
 import * as math from 'mathjs';
 
 function HomeController() {
-  const { setError, setLoading, fvdamFile, setMeshData }: AppContext = useAppContext();
+  const { setError, setLoading, fvdamFile, setMeshData, meshData }: AppContext = useAppContext();
   const [nodes, setNodes] = useState<Node[]>([]);
   const [nodesInfo, setNodesInfo] = useState<NodesInfo>({
     nodesX: 0,
@@ -32,6 +32,7 @@ function HomeController() {
   const [faces, setFaces] = useState<Face[]>([]);
   const [results, setResults] = useState<Results>();
   const [page, setPage] = useState<string>('mesh');
+  const [elapsedTime, setElapsedTime] = useState<number>(0);
 
   useEffect(() => {
     if (!fvdamFile) {
@@ -48,6 +49,7 @@ function HomeController() {
       setElements([]);
       setFaces([]);
       setResults(undefined);
+      setMeshData(undefined);
     }
   }, [fvdamFile]);
 
@@ -152,7 +154,7 @@ function HomeController() {
           setLoading('Executing FVDAM algorithm. This may take a while...', false);
         });
       const end = performance.now();
-      console.log(`Execution time: ${end - start}ms`);
+      setElapsedTime(end - start);
     };
     setTimeout(() => {
       runAlg();
@@ -221,9 +223,9 @@ function HomeController() {
     let totalArea = 0;
     const colors: string[] = [];
     const percentages: number[] = [0];
-    materials.forEach((material) => {
+    materials.forEach((material, materialIndex) => {
       totalArea += material.area;
-      colors.push(material.color);
+      colors.push(meshData.materials[materialIndex].color);
     });
     let cumulativeArea = 0;
     materials.forEach((material) => {
@@ -253,6 +255,7 @@ function HomeController() {
       handleExecuteFvdam={handleExecuteFvdam}
       page={{ state: page, set: setPage }}
       parseFile={parseFile}
+      elapsedTime={{ state: elapsedTime, set: setElapsedTime }}
     />
   );
 }

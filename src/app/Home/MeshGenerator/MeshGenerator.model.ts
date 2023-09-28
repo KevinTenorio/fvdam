@@ -12,7 +12,7 @@ export interface IMeshGeneratorViewProps {
   generateMesh: () => void;
   stuffToShow: IState<IStuffToShow>;
   divisionsByRegion: IState<number>;
-  generateFvtFile: () => void;
+  generateFvtFile: (isDownload?: boolean) => void;
   generateJsonFile: () => void;
   supportType: IState<string>;
   elementsFaces: IState<number[][]>;
@@ -24,6 +24,7 @@ export interface IMeshGeneratorViewProps {
   correctedFacesIds: IState<number[]>;
   maxElemSize: IState<number>;
   minElemSize: IState<number>;
+  extraZoom: IState<number>;
 }
 
 export interface IMeshGeneratorContext {

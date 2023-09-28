@@ -11,6 +11,7 @@ export interface IContentControllerProps {
   getPieChartColors: (materials: Material[]) => string;
   results: IState<Results | undefined>;
   handleExecuteFvdam: () => void;
+  elapsedTime: IState<number>;
 }
 export interface IContentViewProps {
   nodes: IState<Node[]>;
@@ -21,4 +22,6 @@ export interface IContentViewProps {
   getPieChartColors: (materials: Material[]) => string;
   results: IState<Results | undefined>;
   handleExecuteFvdam: () => void;
+  elapsedTime: IState<number>;
+  meshData: any;
 }
