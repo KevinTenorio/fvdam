@@ -1204,6 +1204,7 @@ function MeshGeneratorView({
                   style={{ cursor: 'pointer', fontWeight: 'bold' }}
                   onClick={() => {
                     page.set('mesh');
+                    generateJsonFile(false);
                     generateFvtFile(false);
                   }}
                 >

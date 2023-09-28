@@ -9,6 +9,7 @@ import {
 import MeshGeneratorView from './MeshGenerator.view';
 import { useAppContext } from '../../App.context';
 import { useEffect, useState } from 'react';
+import { AppContext } from '../../App.model';
 
 function MeshGeneratorController({ page, handleFileRead }: IMeshGeneratorControllerProps) {
   const [unitCellWidth, setUnitCellWidth] = useState<number | null>(null);
@@ -36,7 +37,7 @@ function MeshGeneratorController({ page, handleFileRead }: IMeshGeneratorControl
     vertical: true
   });
   const [correctedFacesIds, setCorrectedFacesIds] = useState<number[]>([]);
-  const { meshData }: { meshData: any } = useAppContext();
+  const { meshData, setMeshData }: AppContext = useAppContext();
   const [maxElemSize, setMaxElemSize] = useState<number>(1);
   const [minElemSize, setMinElemSize] = useState<number>(0);
   const [extraZoom, setExtraZoom] = useState<number>(1);
@@ -516,7 +517,7 @@ function MeshGeneratorController({ page, handleFileRead }: IMeshGeneratorControl
     }
   }
 
-  function generateJsonFile() {
+  function generateJsonFile(isDownload = true) {
     const data = {
       nodes: nodes,
       faces: faces,
@@ -532,16 +533,19 @@ function MeshGeneratorController({ page, handleFileRead }: IMeshGeneratorControl
       supportType: supportType,
       periodicity: periodicity
     };
+    setMeshData(data);
 
-    const jsonData = JSON.stringify(data, null, 2);
+    if (isDownload) {
+      const jsonData = JSON.stringify(data, null, 2);
 
-    const blob = new Blob([jsonData], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
+      const blob = new Blob([jsonData], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
 
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'model.json';
-    a.click();
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'model.json';
+      a.click();
+    }
   }
 
   return (

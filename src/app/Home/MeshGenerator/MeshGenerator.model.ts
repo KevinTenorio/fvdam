@@ -13,7 +13,7 @@ export interface IMeshGeneratorViewProps {
   stuffToShow: IState<IStuffToShow>;
   divisionsByRegion: IState<number>;
   generateFvtFile: (isDownload?: boolean) => void;
-  generateJsonFile: () => void;
+  generateJsonFile: (isDownload?: boolean) => void;
   supportType: IState<string>;
   elementsFaces: IState<number[][]>;
   supportedFaces: IState<number[]>;
