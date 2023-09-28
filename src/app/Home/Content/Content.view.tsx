@@ -165,7 +165,7 @@ function ContentView({
                   >{`Young: ${material.young}`}</div>
                   <div
                     style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                  >{`Area: ${-material.area.toFixed(2)}`}</div>
+                  >{`Area: ${material.area.toFixed(2)}`}</div>
                   <div style={{ paddingLeft: '20px', marginBottom: '5px' }}>{`Fraction: ${(
                     (material.area * 100) /
                     elements.state.map((element) => element?.area || 0).reduce((a, b) => a + b, 0)

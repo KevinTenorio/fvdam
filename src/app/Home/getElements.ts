@@ -5,13 +5,13 @@ import * as math from 'mathjs';
 function calcDB(nodes: Node[]) {
   // Coords
   const x1 = nodes[0].x;
-  const y1 = nodes[0].y;
+  const y1 = -nodes[0].y;
   const x2 = nodes[1].x;
-  const y2 = nodes[1].y;
+  const y2 = -nodes[1].y;
   const x3 = nodes[2].x;
-  const y3 = nodes[2].y;
+  const y3 = -nodes[2].y;
   const x4 = nodes[3].x;
-  const y4 = nodes[3].y;
+  const y4 = -nodes[3].y;
 
   // Jacobian
   const a1 = (1 / 4) * (-x1 + x2 + x3 - x4);
