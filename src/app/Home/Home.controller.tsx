@@ -35,7 +35,7 @@ function HomeController() {
   const [elapsedTime, setElapsedTime] = useState<number>(0);
 
   useEffect(() => {
-    if (!fvdamFile) {
+    if (!fvdamFile || page === 'mesh') {
       setNodes([]);
       setNodesInfo({
         nodesX: 0,
@@ -51,7 +51,7 @@ function HomeController() {
       setResults(undefined);
       setMeshData(undefined);
     }
-  }, [fvdamFile]);
+  }, [fvdamFile, page]);
 
   async function parseFile(fileStr: string) {
     const lines = fileStr.replaceAll('\r\n', '\n').replaceAll('\r', '\n').split('\n');
@@ -88,8 +88,8 @@ function HomeController() {
     elements: IElement[],
     faces: Face[]
   ) {
-    const { AIn, EIn, MIn, NIn, PIn, AOut, EOut, MOut, NOut, POut } = calcConsts();
-    const { dofAOut, dofBOut, dofAIn, dofBIn } = calcDof(faces);
+    const { AIn, EIn, MIn, NIn, PIn, AOut, MOut, NOut, POut } = calcConsts();
+    const { dofAOut, dofAIn } = calcDof(faces);
     const { KgIn, KgOut } = calcStiffness(
       faces,
       elements,
@@ -190,6 +190,7 @@ function HomeController() {
                 setNodesInfo(nodesInfo);
                 setElements(elements);
                 setFaces(faces);
+                setResults(undefined);
               })
               .catch((error) => setError(error))
               .finally(() => {
@@ -211,6 +212,7 @@ function HomeController() {
           setNodesInfo(nodesInfo);
           setElements(elements);
           setFaces(faces);
+          setResults(undefined);
         })
         .catch((error) => setError(error))
         .finally(() => {

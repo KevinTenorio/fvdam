@@ -26,7 +26,8 @@ function MeshGeneratorView({
   correctedFacesIds,
   maxElemSize,
   minElemSize,
-  extraZoom
+  extraZoom,
+  page
 }: IMeshGeneratorViewProps) {
   const zoom =
     0.6 *
@@ -1202,6 +1203,7 @@ function MeshGeneratorView({
                 <button
                   style={{ cursor: 'pointer', fontWeight: 'bold' }}
                   onClick={() => {
+                    page.set('mesh');
                     generateFvtFile(false);
                   }}
                 >

@@ -25,6 +25,7 @@ export interface IMeshGeneratorViewProps {
   maxElemSize: IState<number>;
   minElemSize: IState<number>;
   extraZoom: IState<number>;
+  page: IState<string>;
 }
 
 export interface IMeshGeneratorContext {

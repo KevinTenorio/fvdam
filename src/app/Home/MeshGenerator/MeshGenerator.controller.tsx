@@ -614,6 +614,7 @@ function MeshGeneratorController({ page, handleFileRead }: IMeshGeneratorControl
         state: extraZoom,
         set: setExtraZoom
       }}
+      page={page}
     />
   );
 }
