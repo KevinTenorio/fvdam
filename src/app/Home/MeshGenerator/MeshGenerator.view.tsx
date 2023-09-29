@@ -65,7 +65,7 @@ function MeshGeneratorView({
           <div style={{ height: '10px' }} />
           <label htmlFor="unitCellWidth">Width:</label>
           <input
-            type="text"
+            type="number"
             id="unitCellWidth"
             name="unitCellWidth"
             value={unitCellWidth.state || ''}
@@ -76,7 +76,7 @@ function MeshGeneratorView({
           <div style={{ height: '10px' }} />
           <label htmlFor="unitCellHeight">Height:</label>
           <input
-            type="text"
+            type="number"
             id="unitCellHeight"
             name="unitCellHeight"
             value={unitCellHeight.state || ''}
@@ -163,11 +163,10 @@ function MeshGeneratorView({
                     <div style={{ height: '5px' }} />
                     <label htmlFor="materialYoung">Young:</label>
                     <input
-                      type="text"
+                      type="number"
                       id="materialYoung"
                       name="materialYoung"
-                      value={material.young}
-                      size={5}
+                      value={material.young || ''}
                       onChange={(event) => {
                         materials.set(
                           materials.state.map((mat) =>
@@ -181,11 +180,10 @@ function MeshGeneratorView({
                     <div style={{ height: '5px' }} />
                     <label htmlFor="materialPoisson">Poisson:</label>
                     <input
-                      type="text"
+                      type="number"
                       id="materialPoisson"
                       name="materialPoisson"
-                      size={5}
-                      value={material.poisson}
+                      value={material.poisson || ''}
                       onChange={(event) => {
                         materials.set(
                           materials.state.map((mat) =>
@@ -405,21 +403,15 @@ function MeshGeneratorView({
 
                       <div style={{ height: '5px' }} />
                       <div style={{ display: 'flex' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', width: '48%' }}>
                           <label htmlFor="regionWidth">Width:</label>
                           <input
-                            type="text"
+                            type="number"
                             id="regionWidth"
                             name="regionWidth"
-                            value={region.width}
-                            size={5}
+                            value={region.width || ''}
                             onChange={(event) => {
-                              let value: number;
-                              if (event.target.value.includes('.')) {
-                                value = Number(event.target.value + '0');
-                              } else {
-                                value = Number(event.target.value);
-                              }
+                              let value = Number(event.target.value);
 
                               if (unitCellWidth.state && region.x + value > unitCellWidth.state) {
                                 value = unitCellWidth.state - region.x;
@@ -433,24 +425,15 @@ function MeshGeneratorView({
                           />
                         </div>
                         <div style={{ width: '5px' }} />
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', width: '48%' }}>
                           <label htmlFor="regionHeight">Height:</label>
                           <input
-                            type="text"
+                            type="number"
                             id="regionHeight"
                             name="regionHeight"
-                            value={region.height}
-                            size={5}
+                            value={region.height || ''}
                             onChange={(event) => {
-                              let value: number;
-                              if (
-                                event.target.value.includes('.') &&
-                                !event.target.value.split('.')[1]
-                              ) {
-                                value = Number(event.target.value + '5');
-                              } else {
-                                value = Number(event.target.value);
-                              }
+                              const value = Number(event.target.value);
                               regions.set(
                                 regions.state.map((reg) =>
                                   reg.id === region.id ? { ...reg, height: value } : reg
@@ -463,13 +446,13 @@ function MeshGeneratorView({
                       <div style={{ height: '5px' }} />
 
                       <div style={{ display: 'flex' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', width: '48%' }}>
                           <label htmlFor="regionX">X:</label>
                           <input
-                            type="text"
+                            type="number"
                             id="regionX"
                             name="regionX"
-                            value={region.x}
+                            value={region.x || ''}
                             size={5}
                             onChange={(event) => {
                               regions.set(
@@ -483,13 +466,13 @@ function MeshGeneratorView({
                           />
                         </div>
                         <div style={{ width: '5px' }} />
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', width: '50%' }}>
                           <label htmlFor="regionY">Y:</label>
                           <input
-                            type="text"
+                            type="number"
                             id="regionY"
                             name="regionY"
-                            value={region.y}
+                            value={region.y || ''}
                             size={5}
                             onChange={(event) => {
                               regions.set(
@@ -717,25 +700,25 @@ function MeshGeneratorView({
         <div style={{ height: '20px' }} />
         <label htmlFor="maxElemSize">Max Element Size:</label>
         <input
-          type="text"
+          type="number"
           id="maxElemSize"
           name="maxElemSize"
-          value={maxElemSize.state}
+          value={maxElemSize.state || ''}
           size={5}
           onChange={(event) => {
-            maxElemSize.set(Number(event.target.value) || 1);
+            maxElemSize.set(Number(event.target.value));
           }}
         />
         <div style={{ height: '5px' }} />
         <label htmlFor="minElemSize">Min Element Size:</label>
         <input
-          type="text"
+          type="number"
           id="minElemSize"
           name="minElemSize"
-          value={minElemSize.state}
+          value={minElemSize.state || ''}
           size={5}
           onChange={(event) => {
-            minElemSize.set(Number(event.target.value) || 0);
+            minElemSize.set(Number(event.target.value));
           }}
         />
         <div style={{ height: '5px' }} />
