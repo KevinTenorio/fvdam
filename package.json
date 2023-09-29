@@ -7,6 +7,8 @@
   "scripts": {
     "dev": "vite",
     "start": "npm run dev",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build",
     "build": "tsc && vite build --base=/app/fvdam/ --outDir build",
     "preview": "vite preview",
     "test": "echo \"Error: no test specified\"",
@@ -39,6 +41,7 @@
     "eslint-plugin-prettier": "^4.2.1",
     "eslint-plugin-promise": "^6.1.1",
     "eslint-plugin-react": "^7.32.2",
+    "gh-pages": "^6.0.0",
     "prettier": "^2.8.8",
     "typescript": "^5.0.4",
     "vite": "^4.2.0"
