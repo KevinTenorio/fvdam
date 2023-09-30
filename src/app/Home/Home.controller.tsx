@@ -35,7 +35,8 @@ function HomeController() {
   const [elapsedTime, setElapsedTime] = useState<number>(0);
 
   useEffect(() => {
-    if (!fvdamFile || page === 'mesh') {
+    // if (!fvdamFile || page === 'mesh') {
+    if (!fvdamFile) {
       setNodes([]);
       setNodesInfo({
         nodesX: 0,
@@ -51,7 +52,7 @@ function HomeController() {
       setResults(undefined);
       setMeshData(undefined);
     }
-  }, [fvdamFile, page]);
+  }, [fvdamFile]);
 
   async function parseFile(fileStr: string) {
     const lines = fileStr.replaceAll('\r\n', '\n').replaceAll('\r', '\n').split('\n');
@@ -227,7 +228,9 @@ function HomeController() {
     const percentages: number[] = [0];
     materials.forEach((material, materialIndex) => {
       totalArea += material.area;
-      colors.push(meshData.materials[materialIndex].color);
+      if (meshData) {
+        colors.push(meshData.materials[materialIndex].color);
+      }
     });
     let cumulativeArea = 0;
     materials.forEach((material) => {

@@ -179,13 +179,15 @@ function ContentView({
                     }}
                   >
                     {`Color: `}
-                    <div
-                      style={{
-                        paddingLeft: '5px',
-                        color: meshData.materials[materialIndex].color,
-                        fontWeight: 'bold'
-                      }}
-                    >{`${meshData.materials[materialIndex].color}`}</div>
+                    {meshData && (
+                      <div
+                        style={{
+                          paddingLeft: '5px',
+                          color: meshData.materials[materialIndex].color,
+                          fontWeight: 'bold'
+                        }}
+                      >{`${meshData.materials[materialIndex].color}`}</div>
+                    )}
                   </div>
                 </div>
               ))}
