@@ -9,7 +9,7 @@
     "start": "npm run dev",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d build",
-    "build": "tsc && vite build --base=/app/fvdam/ --outDir build",
+    "build": "tsc && vite build",
     "preview": "vite preview",
     "test": "echo \"Error: no test specified\"",
     "lint": "eslint . --ext .ts,.tsx",
