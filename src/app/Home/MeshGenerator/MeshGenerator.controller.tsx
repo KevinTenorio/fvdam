@@ -337,10 +337,20 @@ function MeshGeneratorController({ page, handleFileRead }: IMeshGeneratorControl
     for (let i = 0; i < facesList.length; i++) {
       const node1 = nodesList[facesList[i][0]];
       const node2 = nodesList[facesList[i][1]];
-      if (periodicity.horizontal && node1[0] === node2[0] && node1[0] === unitCellWidth) {
+      if (
+        periodicity.horizontal &&
+        node1[0] === node2[0] &&
+        node1[0] >= unitCellWidth - 9 * Math.pow(10, -decimals - 4) &&
+        node1[0] <= unitCellWidth + 9 * Math.pow(10, -decimals - 4)
+      ) {
         periodicFacesList.push([i, i - horizontalElements - periodicFacesList.length]);
       }
-      if (periodicity.vertical && node1[1] === node2[1] && node1[1] === unitCellHeight) {
+      if (
+        periodicity.vertical &&
+        node1[1] === node2[1] &&
+        node1[1] >= unitCellHeight - 9 * Math.pow(10, -decimals - 4) &&
+        node1[1] <= unitCellHeight + 9 * Math.pow(10, -decimals - 4)
+      ) {
         periodicFacesList.push([i, i - horizontalElements * verticalElements]);
       }
     }
