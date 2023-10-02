@@ -321,8 +321,10 @@ function MeshGeneratorController({ page, handleFileRead }: IMeshGeneratorControl
         const node1 = nodesList[face[0]];
         const node2 = nodesList[face[1]];
         if (
-          ((centralCoordinateX >= node1[0] && centralCoordinateX <= node2[0]) ||
-            (centralCoordinateX <= node1[0] && centralCoordinateX >= node2[0])) &&
+          ((centralCoordinateX + 9 * Math.pow(10, -decimals - 4) >= node1[0] &&
+            centralCoordinateX - 9 * Math.pow(10, -decimals - 4) <= node2[0]) ||
+            (centralCoordinateX - 9 * Math.pow(10, -decimals - 4) <= node1[0] &&
+              centralCoordinateX + 9 * Math.pow(10, -decimals - 4) >= node2[0])) &&
           (node1[1] === 0 ||
             (node1[1] >= unitCellHeight - 9 * Math.pow(10, -decimals - 4) &&
               node1[1] <= unitCellHeight + 9 * Math.pow(10, -decimals - 4))) &&
