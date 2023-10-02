@@ -14,6 +14,7 @@ function MeshGeneratorView({
   regions,
   nodes,
   faces,
+  elementsFaces,
   elements,
   generateMesh,
   stuffToShow,
@@ -966,6 +967,54 @@ function MeshGeneratorView({
                       </div>
                     </div>
                   ))}
+                {stuffToShow.state.borderFacesIds &&
+                  faces.state.length > 0 &&
+                  faces.state.map((face, index) => {
+                    let numberOfAppearences = 0;
+                    for (let i = 0; i < elementsFaces.state.length; i++) {
+                      const elementFace = elementsFaces.state[i];
+                      if (elementFace.includes(index)) {
+                        numberOfAppearences++;
+                      }
+                    }
+                    if (numberOfAppearences === 1) {
+                      return (
+                        <div
+                          key={index}
+                          style={{
+                            position: 'absolute',
+                            boxSizing: 'border-box',
+                            left:
+                              ((nodes.state[face[1]][0] + nodes.state[face[0]][0]) / 2) * zoom -
+                              (nodes.state[face[1]][0] === nodes.state[face[0]][0] ? 10 : 0),
+                            top:
+                              ((nodes.state[face[1]][1] + nodes.state[face[0]][1]) / 2) * zoom -
+                              (nodes.state[face[1]][1] === nodes.state[face[0]][1] ? 10 : 0),
+                            width: '4px',
+                            height: '4px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}
+                        >
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              position: 'relative'
+                            }}
+                          >
+                            <div style={{ fontSize: '8px' }}>
+                              {correctedFacesIds.state[index] + 1}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    } else {
+                      return <></>;
+                    }
+                  })}
                 {stuffToShow.state.supports &&
                   supportedFaces.state.map((faceIndex) => (
                     <div
@@ -1112,6 +1161,21 @@ function MeshGeneratorView({
                   }}
                 />
                 <label htmlFor="facesIds">Faces</label>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'start', alignItems: 'center' }}>
+                <input
+                  type="checkbox"
+                  id="borderFacesIds"
+                  name="borderFacesIds"
+                  checked={stuffToShow.state.borderFacesIds}
+                  onChange={() => {
+                    stuffToShow.set({
+                      ...stuffToShow.state,
+                      borderFacesIds: !stuffToShow.state.borderFacesIds
+                    });
+                  }}
+                />
+                <label htmlFor="borderFacesIds">Border Faces</label>
               </div>
               <div style={{ display: 'flex', justifyContent: 'start', alignItems: 'center' }}>
                 <input

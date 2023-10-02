@@ -95,6 +95,7 @@ export interface IStuffToShow {
   regionsLabels: boolean;
   nodesIds: boolean;
   facesIds: boolean;
+  borderFacesIds: boolean;
   regionsMaterials: boolean;
   supports: boolean;
 }

@@ -25,6 +25,7 @@ function MeshGeneratorController({ page, handleFileRead }: IMeshGeneratorControl
     regionsLabels: false,
     nodesIds: false,
     facesIds: false,
+    borderFacesIds: false,
     regionsMaterials: false,
     supports: false
   });
