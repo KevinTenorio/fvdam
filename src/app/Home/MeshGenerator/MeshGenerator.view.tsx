@@ -28,7 +28,9 @@ function MeshGeneratorView({
   maxElemSize,
   minElemSize,
   extraZoom,
-  page
+  page,
+  circle,
+  generateCircle
 }: IMeshGeneratorViewProps) {
   const zoom =
     0.6 *
@@ -274,6 +276,7 @@ function MeshGeneratorView({
           <div style={{ height: '10px' }} />
           <div style={{ maxHeight: '20vh', overflowY: 'auto' }}>
             {regions.state.length > 0 &&
+              !circle.state.showCircleInputs &&
               regions.state.map((region) => (
                 <div
                   key={region.id}
@@ -553,52 +556,223 @@ function MeshGeneratorView({
                 </div>
               ))}
           </div>
+          <div style={{ height: '5px' }} />
+          {!circle.state.showCircleInputs && (
+            <button
+              style={{ cursor: 'pointer' }}
+              disabled={
+                !unitCellWidth.state || !unitCellHeight.state || materials.state.length === 0
+              }
+              onClick={() => {
+                circle.set({ ...circle.state, showCircleInputs: true });
+              }}
+            >
+              Add Circle
+            </button>
+          )}
+
+          {circle.state.showCircleInputs && (
+            <div style={{ display: 'flex', flexDirection: 'column', position: 'relative' }}>
+              <label htmlFor="radius">Fraction:</label>
+              <input
+                type="number"
+                id="radius"
+                name="radius"
+                onChange={(event) => {
+                  circle.set({
+                    ...circle.state,
+                    radius:
+                      Math.sqrt(Number(event.target.value) / Math.PI) *
+                      Math.min(unitCellHeight.state || 0, unitCellWidth.state || 0),
+                    fraction: Number(event.target.value)
+                  });
+                }}
+                value={circle.state.fraction || ''}
+              />
+              <div style={{ height: '5px' }} />
+              <label htmlFor="edges">Edges:</label>
+              <input
+                type="number"
+                id="edges"
+                name="edges"
+                onChange={(event) => {
+                  circle.set({ ...circle.state, edges: Number(event.target.value) });
+                }}
+                value={circle.state.edges || ''}
+              />
+              <div style={{ height: '5px' }} />
+              <label htmlFor="circleMaterial">Circle Material:</label>
+              <input
+                id="circleMaterial"
+                name="circleMaterial"
+                type="text"
+                value={
+                  materials.state.find((mat) => mat.id === circle.state.circleMaterialId)?.label
+                }
+                size={5}
+                onClick={() => {
+                  circle.set({
+                    ...circle.state,
+                    showCircleMaterials: !circle.state.showCircleMaterials
+                  });
+                }}
+              />
+              {circle.state.showCircleMaterials && (
+                <div
+                  style={{
+                    border: '2px solid var(--off-white)',
+                    position: 'absolute',
+                    top: '130px',
+                    backgroundColor: 'grey',
+                    width: '100%'
+                  }}
+                >
+                  {materials.state.map((material) => (
+                    <div
+                      className="materialItem"
+                      key={material.id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between'
+                      }}
+                      onClick={() => {
+                        circle.set({
+                          ...circle.state,
+                          circleMaterialId: material.id,
+                          showCircleMaterials: false
+                        });
+                      }}
+                    >
+                      {material.label}
+                      <div
+                        style={{
+                          width: '14px',
+                          height: '14px',
+                          backgroundColor: material.color,
+                          marginLeft: '5px'
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div style={{ height: '5px' }} />
+              <label htmlFor="rectangleMaterial">Rectangle Material:</label>
+              <input
+                id="rectangleMaterial"
+                name="rectangleMaterial"
+                type="text"
+                value={
+                  materials.state.find((mat) => mat.id === circle.state.rectangleMaterialId)?.label
+                }
+                size={5}
+                onClick={() => {
+                  circle.set({
+                    ...circle.state,
+                    showRectangleMaterials: !circle.state.showRectangleMaterials
+                  });
+                }}
+              />
+              {circle.state.showRectangleMaterials && (
+                <div
+                  style={{
+                    border: '2px solid var(--off-white)',
+                    position: 'absolute',
+                    top: '170px',
+                    backgroundColor: 'grey',
+                    width: '100%'
+                  }}
+                >
+                  {materials.state.map((material) => (
+                    <div
+                      className="materialItem"
+                      key={material.id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between'
+                      }}
+                      onClick={() => {
+                        circle.set({
+                          ...circle.state,
+                          rectangleMaterialId: material.id,
+                          showRectangleMaterials: false
+                        });
+                      }}
+                    >
+                      {material.label}
+                      <div
+                        style={{
+                          width: '14px',
+                          height: '14px',
+                          backgroundColor: material.color,
+                          marginLeft: '5px'
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div style={{ height: '10px' }} />
+              <button
+                style={{ cursor: 'pointer' }}
+                onClick={() => {
+                  generateCircle();
+                }}
+              >
+                Generate Circle
+              </button>
+            </div>
+          )}
 
           <div style={{ height: '5px' }} />
-          <button
-            style={{ cursor: 'pointer' }}
-            onClick={() => {
-              if (!unitCellWidth.state || !unitCellHeight.state) return;
-              const newRegions = [...regions.state];
-              newRegions.push({
-                id: generateUuid(),
-                label: 'Region ' + (newRegions.length + 1),
-                collapsed: false,
-                showMaterialsDropdown: false,
-                width: 0,
-                height:
-                  (newRegions[newRegions.length - 1]?.x +
-                    newRegions[newRegions.length - 1]?.width >=
-                    unitCellWidth.state &&
-                  2 * newRegions[newRegions.length - 1]?.height +
-                    newRegions[newRegions.length - 1]?.y >=
-                    unitCellHeight.state
-                    ? unitCellHeight.state -
-                      newRegions[newRegions.length - 1]?.y -
-                      newRegions[newRegions.length - 1]?.height
-                    : newRegions[newRegions.length - 1]?.height) || 0,
-                x:
-                  (newRegions[newRegions.length - 1]?.x +
-                    newRegions[newRegions.length - 1]?.width >=
-                  unitCellWidth.state
-                    ? 0
-                    : newRegions[newRegions.length - 1]?.x +
-                      newRegions[newRegions.length - 1]?.width) || 0,
-                y:
-                  (newRegions[newRegions.length - 1]?.x +
-                    newRegions[newRegions.length - 1]?.width >=
-                  unitCellWidth.state
-                    ? newRegions[newRegions.length - 1]?.y +
-                      newRegions[newRegions.length - 1]?.height
-                    : newRegions[newRegions.length - 1]?.y) || 0,
-                materialId: ''
-              });
-              regions.set(newRegions);
-            }}
-            disabled={!unitCellWidth.state || !unitCellHeight.state}
-          >
-            Add Region
-          </button>
+          {!circle.state.showCircleInputs && (
+            <button
+              style={{ cursor: 'pointer' }}
+              onClick={() => {
+                if (!unitCellWidth.state || !unitCellHeight.state) return;
+                const newRegions = [...regions.state];
+                newRegions.push({
+                  id: generateUuid(),
+                  label: 'Region ' + (newRegions.length + 1),
+                  collapsed: false,
+                  showMaterialsDropdown: false,
+                  width: 0,
+                  height:
+                    (newRegions[newRegions.length - 1]?.x +
+                      newRegions[newRegions.length - 1]?.width >=
+                      unitCellWidth.state &&
+                    2 * newRegions[newRegions.length - 1]?.height +
+                      newRegions[newRegions.length - 1]?.y >=
+                      unitCellHeight.state
+                      ? unitCellHeight.state -
+                        newRegions[newRegions.length - 1]?.y -
+                        newRegions[newRegions.length - 1]?.height
+                      : newRegions[newRegions.length - 1]?.height) || 0,
+                  x:
+                    (newRegions[newRegions.length - 1]?.x +
+                      newRegions[newRegions.length - 1]?.width >=
+                    unitCellWidth.state
+                      ? 0
+                      : newRegions[newRegions.length - 1]?.x +
+                        newRegions[newRegions.length - 1]?.width) || 0,
+                  y:
+                    (newRegions[newRegions.length - 1]?.x +
+                      newRegions[newRegions.length - 1]?.width >=
+                    unitCellWidth.state
+                      ? newRegions[newRegions.length - 1]?.y +
+                        newRegions[newRegions.length - 1]?.height
+                      : newRegions[newRegions.length - 1]?.y) || 0,
+                  materialId: ''
+                });
+                regions.set(newRegions);
+              }}
+              disabled={!unitCellWidth.state || !unitCellHeight.state}
+            >
+              Add Region
+            </button>
+          )}
         </div>
         <div style={{ height: '20px' }} />
         <div // Supports

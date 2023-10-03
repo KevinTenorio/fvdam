@@ -26,6 +26,17 @@ export interface IMeshGeneratorViewProps {
   minElemSize: IState<number>;
   extraZoom: IState<number>;
   page: IState<string>;
+  circle: IState<{
+    radius: number;
+    edges: number;
+    showCircleInputs: boolean;
+    showCircleMaterials: boolean;
+    showRectangleMaterials: boolean;
+    circleMaterialId: string;
+    rectangleMaterialId: string;
+    fraction: number;
+  }>;
+  generateCircle: () => void;
 }
 
 export interface IMeshGeneratorContext {

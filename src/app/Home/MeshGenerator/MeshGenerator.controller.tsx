@@ -10,6 +10,7 @@ import MeshGeneratorView from './MeshGenerator.view';
 import { useAppContext } from '../../App.context';
 import { useEffect, useState } from 'react';
 import { AppContext } from '../../App.model';
+import generateUuid from '/src/commons/generateUuid';
 
 function MeshGeneratorController({ page, handleFileRead }: IMeshGeneratorControllerProps) {
   const [unitCellWidth, setUnitCellWidth] = useState<number | null>(null);
@@ -38,10 +39,29 @@ function MeshGeneratorController({ page, handleFileRead }: IMeshGeneratorControl
     vertical: true
   });
   const [correctedFacesIds, setCorrectedFacesIds] = useState<number[]>([]);
-  const { meshData, setMeshData }: AppContext = useAppContext();
+  const { meshData, setMeshData, setError }: AppContext = useAppContext();
   const [maxElemSize, setMaxElemSize] = useState<number>(1);
   const [minElemSize, setMinElemSize] = useState<number>(0);
   const [extraZoom, setExtraZoom] = useState<number>(1);
+  const [circle, setCircle] = useState<{
+    radius: number;
+    edges: number;
+    circleMaterialId: string;
+    rectangleMaterialId: string;
+    showCircleMaterials: boolean;
+    showRectangleMaterials: boolean;
+    showCircleInputs: boolean;
+    fraction: number;
+  }>({
+    radius: 0,
+    edges: 0,
+    circleMaterialId: '',
+    rectangleMaterialId: '',
+    showCircleMaterials: false,
+    showRectangleMaterials: false,
+    showCircleInputs: false,
+    fraction: 0
+  });
 
   useEffect(() => {
     if (meshData) {
@@ -83,6 +103,118 @@ function MeshGeneratorController({ page, handleFileRead }: IMeshGeneratorControl
       }
     }
   }, [unitCellHeight, unitCellWidth]);
+
+  function generateCircle() {
+    if (unitCellWidth === null || unitCellHeight === null) return null;
+    const regionsList = [];
+    const measuresList = [];
+    let y = unitCellHeight / 2 - circle.radius;
+    const angle = Math.PI / 2 / circle.edges;
+    for (let i = 0; i <= 2 * circle.edges; i++) {
+      const x = Math.sqrt(Math.pow(circle.radius, 2) - Math.pow(y - unitCellHeight / 2, 2)) || 0;
+      measuresList.push({ x: x, y: unitCellHeight - y });
+      y = unitCellHeight / 2 - circle.radius * Math.sin(Math.PI / 2 - angle * (i + 1));
+    }
+    measuresList.reverse();
+    let area = 0;
+    for (let i = 0; i < measuresList.length - 1; i++) {
+      const measure = measuresList[i];
+      const nextMeasure = measuresList[i + 1];
+      area = area + (measure.x + nextMeasure.x) * (nextMeasure.y - measure.y);
+    }
+    if (
+      Math.abs((area / (unitCellHeight * unitCellWidth) - circle.fraction) / circle.fraction) > 0.05
+    ) {
+      setError(
+        `The mesh to be generated has an area too different from the fraction provided (${Math.abs(
+          (100 * (area / (unitCellHeight * unitCellWidth) - circle.fraction)) / circle.fraction
+        ).toFixed(1)}% difference). Try increasing the number of edges in the circle.`
+      );
+    }
+    const region0 = {
+      id: generateUuid(),
+      label: `Row 0 Rectangle 0`,
+      materialId: circle.rectangleMaterialId,
+      x: 0,
+      y: 0,
+      height: unitCellHeight / 2 - circle.radius,
+      width: unitCellWidth,
+      collapsed: true,
+      showMaterialsDropdown: false
+    };
+    regionsList.push(region0);
+    for (let i = 0; i < measuresList.length - 1; i++) {
+      const measure = measuresList[i];
+      const nextMeasure = measuresList[i + 1];
+      const width = (nextMeasure.x + measure.x) / 2;
+      const height = nextMeasure.y - measure.y;
+      if (width < 0.5) {
+        const region1 = {
+          id: generateUuid(),
+          label: `Row ${i + 1} Rectangle 1`,
+          materialId: circle.rectangleMaterialId,
+          x: 0,
+          y: measure.y,
+          height: height,
+          width: 0.5 * unitCellWidth - width,
+          collapsed: true,
+          showMaterialsDropdown: false
+        };
+        regionsList.push(region1);
+        const region4 = {
+          id: generateUuid(),
+          label: `Row ${i + 1} Rectangle 1`,
+          materialId: circle.rectangleMaterialId,
+          x: 0.5 * unitCellWidth + width,
+          y: measure.y,
+          height: height,
+          width: 0.5 * unitCellWidth - width,
+          collapsed: true,
+          showMaterialsDropdown: false
+        };
+        regionsList.push(region4);
+      }
+      if (width > 0) {
+        const region2 = {
+          id: generateUuid(),
+          label: `Row ${i + 1} Circle 1`,
+          materialId: circle.circleMaterialId,
+          x: 0.5 * unitCellWidth - width,
+          y: measure.y,
+          height: height,
+          width: width,
+          collapsed: true,
+          showMaterialsDropdown: false
+        };
+        regionsList.push(region2);
+        const region3 = {
+          id: generateUuid(),
+          label: `Row ${i + 1} Circle 2`,
+          materialId: circle.circleMaterialId,
+          x: 0.5 * unitCellWidth,
+          y: measure.y,
+          height: height,
+          width: width,
+          collapsed: true,
+          showMaterialsDropdown: false
+        };
+        regionsList.push(region3);
+      }
+    }
+    const regionN = {
+      id: generateUuid(),
+      label: `Row N Rectangle 0`,
+      materialId: circle.rectangleMaterialId,
+      x: 0,
+      y: unitCellHeight / 2 + circle.radius,
+      height: unitCellHeight / 2 - circle.radius,
+      width: unitCellWidth,
+      collapsed: true,
+      showMaterialsDropdown: false
+    };
+    regionsList.push(regionN);
+    setRegions(regionsList);
+  }
 
   function getMaxWidth(regions: IMeshRegion[], x: number, y: number) {
     if (unitCellWidth === null || unitCellHeight === null) return null;
@@ -201,25 +333,103 @@ function MeshGeneratorController({ page, handleFileRead }: IMeshGeneratorControl
     let verticalNodes = 1;
     let trueWidth = unitCellWidth;
     let trueHeight = unitCellHeight;
+    const regionsAuxList = regions;
+
     while (running) {
-      const horizontalRegions = regions.filter((region) => {
+      for (let i = 0; i < regions.length; i++) {
+        const verticalLine = regions[i].x + regions[i].width;
+        const horizontalLine = regions[i].y + regions[i].height;
+        for (let j = 0; j < regionsAuxList.length; j++) {
+          const region = regionsAuxList[j];
+          if (
+            verticalLine > region.x &&
+            verticalLine < region.x + region.width &&
+            region.x + region.width - verticalLine > 9 * Math.pow(10, -decimals - 4) &&
+            verticalLine - region.x > 9 * Math.pow(10, -decimals - 4)
+          ) {
+            const region1 = {
+              id: generateUuid(),
+              label: region.label + '.1',
+              materialId: region.materialId,
+              x: verticalLine,
+              y: region.y,
+              height: region.height,
+              width: region.x + region.width - verticalLine,
+              collapsed: true,
+              showMaterialsDropdown: false
+            };
+            const region2 = {
+              id: generateUuid(),
+              label: region.label + '.2',
+              materialId: region.materialId,
+              x: region.x,
+              y: region.y,
+              height: region.height,
+              width: verticalLine - region.x,
+              collapsed: true,
+              showMaterialsDropdown: false
+            };
+            regionsAuxList.splice(j, 1, region1, region2);
+          }
+          if (
+            horizontalLine > region.y &&
+            horizontalLine < region.y + region.height &&
+            region.y + region.height - horizontalLine > 9 * Math.pow(10, -decimals - 4) &&
+            horizontalLine - region.y > 9 * Math.pow(10, -decimals - 4)
+          ) {
+            const region1 = {
+              id: generateUuid(),
+              label: region.label + '.1',
+              materialId: region.materialId,
+              x: region.x,
+              y: horizontalLine,
+              height: region.y + region.height - horizontalLine,
+              width: region.width,
+              collapsed: true,
+              showMaterialsDropdown: false
+            };
+            const region2 = {
+              id: generateUuid(),
+              label: region.label + '.2',
+              materialId: region.materialId,
+              x: region.x,
+              y: region.y,
+              height: horizontalLine - region.y,
+              width: region.width,
+              collapsed: true,
+              showMaterialsDropdown: false
+            };
+            regionsAuxList.splice(j, 1, region1, region2);
+          }
+        }
+      }
+      const presentRegion = regionsAuxList.find((region) => {
         const decimals = 4;
         let yEnd = region.y + region.height - 9 * Math.pow(10, -decimals - 4);
         if (region.y + region.height === unitCellHeight) {
           yEnd = unitCellHeight + 9 * Math.pow(10, -decimals - 4);
         }
-        return region.y - 9 * Math.pow(10, -decimals - 4) <= y && y < yEnd;
-      });
-      const verticalRegions = regions.filter((region) => {
-        const decimals = 4;
         let xEnd = region.x + region.width - 9 * Math.pow(10, -decimals - 4);
         if (region.x + region.width === unitCellWidth) {
           xEnd = unitCellWidth + 9 * Math.pow(10, -decimals - 4);
         }
-        return region.x - 9 * Math.pow(10, -decimals - 4) <= x && x < xEnd;
+        return (
+          region.y - 9 * Math.pow(10, -decimals - 4) <= y &&
+          y < yEnd &&
+          region.x - 9 * Math.pow(10, -decimals - 4) <= x &&
+          x < xEnd
+        );
       });
-      const width = getMaxWidth(verticalRegions, x, y) || 0;
-      const height = getMaxHeight(horizontalRegions, x, y) || 0;
+      let width: number;
+      let height: number;
+      if (!presentRegion) {
+        width = 0;
+        height = 0;
+      } else {
+        width = getMaxWidth([presentRegion], x, y) || 0;
+        height = getMaxHeight([presentRegion], x, y) || 0;
+      }
+
       nodesList.push([x, y]);
       if (Number((x + width).toPrecision(15)) <= unitCellWidth + 9 * Math.pow(10, -decimals - 4)) {
         x = Number((x + width).toPrecision(15));
@@ -260,24 +470,24 @@ function MeshGeneratorController({ page, handleFileRead }: IMeshGeneratorControl
       const face = [i, i + horizontalElements + 1];
       facesList.push(face);
     }
-    for (let i = 0; i < elements.length; i++) {
-      const element = elements[i];
-      const face1 = faces.findIndex(
+    for (let i = 0; i < elementsList.length; i++) {
+      const element = elementsList[i];
+      const face1 = facesList.findIndex(
         (face) =>
           (face[0] === element[0] && face[1] === element[1]) ||
           (face[0] === element[1] && face[1] === element[0])
       );
-      const face2 = faces.findIndex(
+      const face2 = facesList.findIndex(
         (face) =>
           (face[0] === element[1] && face[1] === element[2]) ||
           (face[0] === element[2] && face[1] === element[1])
       );
-      const face3 = faces.findIndex(
+      const face3 = facesList.findIndex(
         (face) =>
           (face[0] === element[2] && face[1] === element[3]) ||
           (face[0] === element[3] && face[1] === element[2])
       );
-      const face4 = faces.findIndex(
+      const face4 = facesList.findIndex(
         (face) =>
           (face[0] === element[3] && face[1] === element[0]) ||
           (face[0] === element[0] && face[1] === element[3])
@@ -366,6 +576,7 @@ function MeshGeneratorController({ page, handleFileRead }: IMeshGeneratorControl
       }
     }
 
+    setRegions(regionsAuxList);
     setNodes(nodesList);
     setFaces(facesList);
     setElements(elementsList);
@@ -420,12 +631,24 @@ function MeshGeneratorController({ page, handleFileRead }: IMeshGeneratorControl
     lines.push(elements.length.toString());
     for (let i = 1; i < elements.length + 1; i++) {
       const element = elements[i - 1];
+      const elementCenter = [
+        (nodes[element[0]][0] +
+          nodes[element[1]][0] +
+          nodes[element[2]][0] +
+          nodes[element[3]][0]) /
+          4,
+        (nodes[element[0]][1] +
+          nodes[element[1]][1] +
+          nodes[element[2]][1] +
+          nodes[element[3]][1]) /
+          4
+      ];
       const region = regions.find(
         (region) =>
-          nodes[element[3]][0] >= region.x &&
-          nodes[element[3]][0] < region.x + region.width &&
-          nodes[element[3]][1] >= region.y &&
-          nodes[element[3]][1] < region.y + region.height
+          elementCenter[0] >= region.x - 9 * Math.pow(10, -9) &&
+          elementCenter[0] < region.x + region.width &&
+          elementCenter[1] >= region.y - 9 * Math.pow(10, -9) &&
+          elementCenter[1] < region.y + region.height
       );
       const materialNumber =
         materials.findIndex((material) => material.id === region?.materialId) + 1;
@@ -635,6 +858,11 @@ function MeshGeneratorController({ page, handleFileRead }: IMeshGeneratorControl
         set: setExtraZoom
       }}
       page={page}
+      circle={{
+        state: circle,
+        set: setCircle
+      }}
+      generateCircle={generateCircle}
     />
   );
 }
