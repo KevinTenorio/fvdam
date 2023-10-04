@@ -406,11 +406,11 @@ function MeshGeneratorController({ page, handleFileRead }: IMeshGeneratorControl
       const presentRegion = regionsAuxList.find((region) => {
         const decimals = 4;
         let yEnd = region.y + region.height - 9 * Math.pow(10, -decimals - 4);
-        if (region.y + region.height === unitCellHeight) {
+        if (region.y + region.height >= unitCellHeight - 9 * Math.pow(10, -decimals - 4)) {
           yEnd = unitCellHeight + 9 * Math.pow(10, -decimals - 4);
         }
         let xEnd = region.x + region.width - 9 * Math.pow(10, -decimals - 4);
-        if (region.x + region.width === unitCellWidth) {
+        if (region.x + region.width >= unitCellWidth - 9 * Math.pow(10, -decimals - 4)) {
           xEnd = unitCellWidth + 9 * Math.pow(10, -decimals - 4);
         }
         return (
