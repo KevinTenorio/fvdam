@@ -148,7 +148,7 @@ function MeshGeneratorController({ page, handleFileRead }: IMeshGeneratorControl
       const nextMeasure = measuresList[i + 1];
       const width = (nextMeasure.x + measure.x) / 2;
       const height = nextMeasure.y - measure.y;
-      if (width < 0.5) {
+      if (width < unitCellWidth / 2) {
         const region1 = {
           id: generateUuid(),
           label: `Row ${i + 1} Rectangle 1`,
