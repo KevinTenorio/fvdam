@@ -35,6 +35,8 @@ export interface IMeshGeneratorViewProps {
     circleMaterialId: string;
     rectangleMaterialId: string;
     fraction: number;
+    type: 'grid' | 'radial';
+    circleDivisions: number;
   }>;
   generateCircle: () => void;
 }

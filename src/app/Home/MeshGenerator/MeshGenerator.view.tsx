@@ -573,6 +573,40 @@ function MeshGeneratorView({
 
           {circle.state.showCircleInputs && (
             <div style={{ display: 'flex', flexDirection: 'column', position: 'relative' }}>
+              <div style={{ display: 'flex' }}>
+                <div style={{ display: 'flex', flexDirection: 'row', width: '48%' }}>
+                  <label htmlFor="gridRadio">Grid:</label>
+                  <input
+                    type="radio"
+                    id="gridRadio"
+                    name="circleType"
+                    checked={circle.state.type === 'grid'}
+                    onChange={() => {
+                      circle.set({
+                        ...circle.state,
+                        type: circle.state.type === 'grid' ? 'radial' : 'grid'
+                      });
+                    }}
+                  />
+                </div>
+                <div style={{ width: '5px' }} />
+                <div style={{ display: 'flex', flexDirection: 'row', width: '50%' }}>
+                  <label htmlFor="radialRadio">Radial:</label>
+                  <input
+                    type="radio"
+                    id="radialRadio"
+                    name="circleType"
+                    checked={circle.state.type === 'radial'}
+                    onChange={() => {
+                      circle.set({
+                        ...circle.state,
+                        type: circle.state.type === 'radial' ? 'grid' : 'radial'
+                      });
+                    }}
+                  />
+                </div>
+              </div>
+              <div style={{ height: '5px' }} />
               <label htmlFor="radius">Fraction:</label>
               <input
                 type="number"
@@ -589,17 +623,39 @@ function MeshGeneratorView({
                 }}
                 value={circle.state.fraction || ''}
               />
-              <div style={{ height: '5px' }} />
-              <label htmlFor="edges">Edges:</label>
-              <input
-                type="number"
-                id="edges"
-                name="edges"
-                onChange={(event) => {
-                  circle.set({ ...circle.state, edges: Number(event.target.value) });
-                }}
-                value={circle.state.edges || ''}
-              />
+              {circle.state.type === 'grid' ? (
+                <>
+                  <div style={{ height: '5px' }} />
+                  <label htmlFor="circleDivisions">Division:</label>
+                  <input
+                    type="number"
+                    id="circleDivisions"
+                    name="circleDivisions"
+                    onChange={(event) => {
+                      circle.set({
+                        ...circle.state,
+                        circleDivisions: Number(event.target.value)
+                      });
+                    }}
+                    value={circle.state.circleDivisions || ''}
+                  />
+                </>
+              ) : (
+                <>
+                  <div style={{ height: '5px' }} />
+                  <label htmlFor="edges">Edges:</label>
+                  <input
+                    type="number"
+                    id="edges"
+                    name="edges"
+                    onChange={(event) => {
+                      circle.set({ ...circle.state, edges: Number(event.target.value) });
+                    }}
+                    value={circle.state.edges || ''}
+                  />
+                </>
+              )}
+
               <div style={{ height: '5px' }} />
               <label htmlFor="circleMaterial">Circle Material:</label>
               <input

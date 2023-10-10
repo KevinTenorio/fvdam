@@ -52,6 +52,8 @@ function MeshGeneratorController({ page, handleFileRead }: IMeshGeneratorControl
     showRectangleMaterials: boolean;
     showCircleInputs: boolean;
     fraction: number;
+    type: 'grid' | 'radial';
+    circleDivisions: number;
   }>({
     radius: 0,
     edges: 0,
@@ -60,7 +62,9 @@ function MeshGeneratorController({ page, handleFileRead }: IMeshGeneratorControl
     showCircleMaterials: false,
     showRectangleMaterials: false,
     showCircleInputs: false,
-    fraction: 0
+    fraction: 0,
+    type: 'grid',
+    circleDivisions: 0
   });
 
   useEffect(() => {
@@ -106,114 +110,162 @@ function MeshGeneratorController({ page, handleFileRead }: IMeshGeneratorControl
 
   function generateCircle() {
     if (unitCellWidth === null || unitCellHeight === null) return null;
-    const regionsList = [];
-    const measuresList = [];
-    let y = unitCellHeight / 2 - circle.radius;
-    const angle = Math.PI / 2 / circle.edges;
-    for (let i = 0; i <= 2 * circle.edges; i++) {
-      const x = Math.sqrt(Math.pow(circle.radius, 2) - Math.pow(y - unitCellHeight / 2, 2)) || 0;
-      measuresList.push({ x: x, y: unitCellHeight - y });
-      y = unitCellHeight / 2 - circle.radius * Math.sin(Math.PI / 2 - angle * (i + 1));
-    }
-    measuresList.reverse();
-    let area = 0;
-    for (let i = 0; i < measuresList.length - 1; i++) {
-      const measure = measuresList[i];
-      const nextMeasure = measuresList[i + 1];
-      area = area + (measure.x + nextMeasure.x) * (nextMeasure.y - measure.y);
-    }
-    if (
-      Math.abs((area / (unitCellHeight * unitCellWidth) - circle.fraction) / circle.fraction) > 0.05
-    ) {
-      setError(
-        `The mesh to be generated has an area too different from the fraction provided (${Math.abs(
-          (100 * (area / (unitCellHeight * unitCellWidth) - circle.fraction)) / circle.fraction
-        ).toFixed(1)}% difference). Try increasing the number of edges in the circle.`
-      );
-    }
-    const region0 = {
-      id: generateUuid(),
-      label: `Row 0 Rectangle 0`,
-      materialId: circle.rectangleMaterialId,
-      x: 0,
-      y: 0,
-      height: unitCellHeight / 2 - circle.radius,
-      width: unitCellWidth,
-      collapsed: true,
-      showMaterialsDropdown: false
-    };
-    regionsList.push(region0);
-    for (let i = 0; i < measuresList.length - 1; i++) {
-      const measure = measuresList[i];
-      const nextMeasure = measuresList[i + 1];
-      const width = (nextMeasure.x + measure.x) / 2;
-      const height = nextMeasure.y - measure.y;
-      if (width < unitCellWidth / 2) {
-        const region1 = {
-          id: generateUuid(),
-          label: `Row ${i + 1} Rectangle 1`,
-          materialId: circle.rectangleMaterialId,
-          x: 0,
-          y: measure.y,
-          height: height,
-          width: 0.5 * unitCellWidth - width,
-          collapsed: true,
-          showMaterialsDropdown: false
-        };
-        regionsList.push(region1);
-        const region4 = {
-          id: generateUuid(),
-          label: `Row ${i + 1} Rectangle 1`,
-          materialId: circle.rectangleMaterialId,
-          x: 0.5 * unitCellWidth + width,
-          y: measure.y,
-          height: height,
-          width: 0.5 * unitCellWidth - width,
-          collapsed: true,
-          showMaterialsDropdown: false
-        };
-        regionsList.push(region4);
+    if (circle.type === 'radial') {
+      const regionsList = [];
+      const measuresList = [];
+      let y = unitCellHeight / 2 - circle.radius;
+      const angle = Math.PI / 2 / circle.edges;
+      for (let i = 0; i <= 2 * circle.edges; i++) {
+        const x = Math.sqrt(Math.pow(circle.radius, 2) - Math.pow(y - unitCellHeight / 2, 2)) || 0;
+        measuresList.push({ x: x, y: unitCellHeight - y });
+        y = unitCellHeight / 2 - circle.radius * Math.sin(Math.PI / 2 - angle * (i + 1));
       }
-      if (width > 0) {
-        const region2 = {
-          id: generateUuid(),
-          label: `Row ${i + 1} Circle 1`,
-          materialId: circle.circleMaterialId,
-          x: 0.5 * unitCellWidth - width,
-          y: measure.y,
-          height: height,
-          width: width,
-          collapsed: true,
-          showMaterialsDropdown: false
-        };
-        regionsList.push(region2);
-        const region3 = {
-          id: generateUuid(),
-          label: `Row ${i + 1} Circle 2`,
-          materialId: circle.circleMaterialId,
-          x: 0.5 * unitCellWidth,
-          y: measure.y,
-          height: height,
-          width: width,
-          collapsed: true,
-          showMaterialsDropdown: false
-        };
-        regionsList.push(region3);
+      measuresList.reverse();
+      let area = 0;
+      for (let i = 0; i < measuresList.length - 1; i++) {
+        const measure = measuresList[i];
+        const nextMeasure = measuresList[i + 1];
+        area = area + (measure.x + nextMeasure.x) * (nextMeasure.y - measure.y);
       }
+      if (
+        Math.abs((area / (unitCellHeight * unitCellWidth) - circle.fraction) / circle.fraction) >
+        0.05
+      ) {
+        setError(
+          `The mesh to be generated has an area too different from the fraction provided (${Math.abs(
+            (100 * (area / (unitCellHeight * unitCellWidth) - circle.fraction)) / circle.fraction
+          ).toFixed(1)}% difference). Try increasing the number of edges in the circle.`
+        );
+      }
+      const region0 = {
+        id: generateUuid(),
+        label: `Row 0 Rectangle 0`,
+        materialId: circle.rectangleMaterialId,
+        x: 0,
+        y: 0,
+        height: unitCellHeight / 2 - circle.radius,
+        width: unitCellWidth,
+        collapsed: true,
+        showMaterialsDropdown: false
+      };
+      regionsList.push(region0);
+      for (let i = 0; i < measuresList.length - 1; i++) {
+        const measure = measuresList[i];
+        const nextMeasure = measuresList[i + 1];
+        const width = (nextMeasure.x + measure.x) / 2;
+        const height = nextMeasure.y - measure.y;
+        if (width < unitCellWidth / 2) {
+          const region1 = {
+            id: generateUuid(),
+            label: `Row ${i + 1} Rectangle 1`,
+            materialId: circle.rectangleMaterialId,
+            x: 0,
+            y: measure.y,
+            height: height,
+            width: 0.5 * unitCellWidth - width,
+            collapsed: true,
+            showMaterialsDropdown: false
+          };
+          regionsList.push(region1);
+          const region4 = {
+            id: generateUuid(),
+            label: `Row ${i + 1} Rectangle 1`,
+            materialId: circle.rectangleMaterialId,
+            x: 0.5 * unitCellWidth + width,
+            y: measure.y,
+            height: height,
+            width: 0.5 * unitCellWidth - width,
+            collapsed: true,
+            showMaterialsDropdown: false
+          };
+          regionsList.push(region4);
+        }
+        if (width > 0) {
+          const region2 = {
+            id: generateUuid(),
+            label: `Row ${i + 1} Circle 1`,
+            materialId: circle.circleMaterialId,
+            x: 0.5 * unitCellWidth - width,
+            y: measure.y,
+            height: height,
+            width: width,
+            collapsed: true,
+            showMaterialsDropdown: false
+          };
+          regionsList.push(region2);
+          const region3 = {
+            id: generateUuid(),
+            label: `Row ${i + 1} Circle 2`,
+            materialId: circle.circleMaterialId,
+            x: 0.5 * unitCellWidth,
+            y: measure.y,
+            height: height,
+            width: width,
+            collapsed: true,
+            showMaterialsDropdown: false
+          };
+          regionsList.push(region3);
+        }
+      }
+      const regionN = {
+        id: generateUuid(),
+        label: `Row N Rectangle 0`,
+        materialId: circle.rectangleMaterialId,
+        x: 0,
+        y: unitCellHeight / 2 + circle.radius,
+        height: unitCellHeight / 2 - circle.radius,
+        width: unitCellWidth,
+        collapsed: true,
+        showMaterialsDropdown: false
+      };
+      regionsList.push(regionN);
+      setRegions(regionsList);
+    } else if (circle.type === 'grid') {
+      const regionsList = [];
+      const regionWidth = unitCellWidth / circle.circleDivisions;
+      const regionHeight = unitCellHeight / circle.circleDivisions;
+      const numberOfRegions = Math.pow(circle.circleDivisions, 2);
+      const circleCenter = [unitCellWidth / 2, unitCellHeight / 2];
+      let circleArea = 0;
+      for (let i = 0; i < numberOfRegions; i++) {
+        const regionX = (i % circle.circleDivisions) * regionWidth;
+        const regionY = Math.floor(i / circle.circleDivisions) * regionHeight;
+        const regionCenter = [regionX + regionWidth / 2, regionY + regionHeight / 2];
+        const distance = Math.sqrt(
+          Math.pow(regionCenter[0] - circleCenter[0], 2) +
+            Math.pow(regionCenter[1] - circleCenter[1], 2)
+        );
+        const region = {
+          id: generateUuid(),
+          label: `Region ${i}`,
+          materialId:
+            distance <= circle.radius ? circle.circleMaterialId : circle.rectangleMaterialId,
+          x: regionX,
+          y: regionY,
+          height: regionHeight,
+          width: regionWidth,
+          collapsed: true,
+          showMaterialsDropdown: false
+        };
+        regionsList.push(region);
+        if (distance <= circle.radius) {
+          circleArea = circleArea + regionHeight * regionWidth;
+        }
+      }
+      if (
+        Math.abs(
+          (circleArea / (unitCellHeight * unitCellWidth) - circle.fraction) / circle.fraction
+        ) > 0.05
+      ) {
+        setError(
+          `The mesh to be generated has an area too different from the fraction provided (${Math.abs(
+            (100 * (circleArea / (unitCellHeight * unitCellWidth) - circle.fraction)) /
+              circle.fraction
+          ).toFixed(1)}% difference). Try increasing the number of divisions.`
+        );
+      }
+      setRegions(regionsList);
     }
-    const regionN = {
-      id: generateUuid(),
-      label: `Row N Rectangle 0`,
-      materialId: circle.rectangleMaterialId,
-      x: 0,
-      y: unitCellHeight / 2 + circle.radius,
-      height: unitCellHeight / 2 - circle.radius,
-      width: unitCellWidth,
-      collapsed: true,
-      showMaterialsDropdown: false
-    };
-    regionsList.push(regionN);
-    setRegions(regionsList);
   }
 
   function getMaxWidth(regions: IMeshRegion[], x: number, y: number) {
