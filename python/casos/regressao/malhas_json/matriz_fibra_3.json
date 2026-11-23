@@ -1,0 +1,397 @@
+{
+  "nodes": [
+    [
+      0,
+      0
+    ],
+    [
+      0.2262,
+      0
+    ],
+    [
+      0.7738,
+      0
+    ],
+    [
+      1,
+      0
+    ],
+    [
+      0,
+      0.2262
+    ],
+    [
+      0.2262,
+      0.2262
+    ],
+    [
+      0.7738,
+      0.2262
+    ],
+    [
+      1,
+      0.2262
+    ],
+    [
+      0,
+      0.7738
+    ],
+    [
+      0.2262,
+      0.7738
+    ],
+    [
+      0.7738,
+      0.7738
+    ],
+    [
+      1,
+      0.7738
+    ],
+    [
+      0,
+      1
+    ],
+    [
+      0.2262,
+      1
+    ],
+    [
+      0.7738,
+      1
+    ],
+    [
+      1,
+      1
+    ]
+  ],
+  "faces": [
+    [
+      1,
+      0
+    ],
+    [
+      2,
+      1
+    ],
+    [
+      3,
+      2
+    ],
+    [
+      5,
+      4
+    ],
+    [
+      6,
+      5
+    ],
+    [
+      7,
+      6
+    ],
+    [
+      9,
+      8
+    ],
+    [
+      10,
+      9
+    ],
+    [
+      11,
+      10
+    ],
+    [
+      13,
+      12
+    ],
+    [
+      14,
+      13
+    ],
+    [
+      15,
+      14
+    ],
+    [
+      0,
+      4
+    ],
+    [
+      1,
+      5
+    ],
+    [
+      2,
+      6
+    ],
+    [
+      3,
+      7
+    ],
+    [
+      4,
+      8
+    ],
+    [
+      5,
+      9
+    ],
+    [
+      6,
+      10
+    ],
+    [
+      7,
+      11
+    ],
+    [
+      8,
+      12
+    ],
+    [
+      9,
+      13
+    ],
+    [
+      10,
+      14
+    ],
+    [
+      11,
+      15
+    ]
+  ],
+  "elements": [
+    [
+      4,
+      5,
+      1,
+      0
+    ],
+    [
+      5,
+      6,
+      2,
+      1
+    ],
+    [
+      6,
+      7,
+      3,
+      2
+    ],
+    [
+      8,
+      9,
+      5,
+      4
+    ],
+    [
+      9,
+      10,
+      6,
+      5
+    ],
+    [
+      10,
+      11,
+      7,
+      6
+    ],
+    [
+      12,
+      13,
+      9,
+      8
+    ],
+    [
+      13,
+      14,
+      10,
+      9
+    ],
+    [
+      14,
+      15,
+      11,
+      10
+    ]
+  ],
+  "supportedFaces": [
+    0,
+    2,
+    9,
+    11,
+    12,
+    15,
+    20,
+    23
+  ],
+  "elementsFaces": [
+    [
+      3,
+      13,
+      0,
+      12
+    ],
+    [
+      4,
+      14,
+      1,
+      13
+    ],
+    [
+      5,
+      15,
+      2,
+      14
+    ],
+    [
+      6,
+      17,
+      3,
+      16
+    ],
+    [
+      7,
+      18,
+      4,
+      17
+    ],
+    [
+      8,
+      19,
+      5,
+      18
+    ],
+    [
+      9,
+      21,
+      6,
+      20
+    ],
+    [
+      10,
+      22,
+      7,
+      21
+    ],
+    [
+      11,
+      23,
+      8,
+      22
+    ]
+  ],
+  "correctedFacesIds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    0,
+    1,
+    2,
+    9,
+    10,
+    11,
+    9,
+    12,
+    13,
+    14,
+    12,
+    15,
+    16,
+    17,
+    15
+  ],
+  "regions": [
+    {
+      "id": "ec49fe96-e227-4cb8-b068-542257ff22e2",
+      "label": "Region 1",
+      "collapsed": true,
+      "showMaterialsDropdown": false,
+      "width": 1,
+      "height": 0.2262,
+      "x": 0,
+      "y": 0,
+      "materialId": "efb6bef4-a805-40f2-be8a-3ab23166e80f"
+    },
+    {
+      "id": "38cdd822-7590-4bc8-991b-24da6ca6004d",
+      "label": "Region 2",
+      "collapsed": true,
+      "showMaterialsDropdown": false,
+      "width": 0.2262,
+      "height": 0.5476,
+      "x": 0,
+      "y": 0.2262,
+      "materialId": "efb6bef4-a805-40f2-be8a-3ab23166e80f"
+    },
+    {
+      "id": "664d2b08-2ddc-4ad7-8825-b4244ed8ee85",
+      "label": "Region 3",
+      "collapsed": true,
+      "showMaterialsDropdown": false,
+      "width": 0.5476,
+      "height": 0.5476,
+      "x": 0.2262,
+      "y": 0.2262,
+      "materialId": "ed10053f-b95d-4d3e-96ea-c1589ad4cd3c"
+    },
+    {
+      "id": "1343ef7b-5a70-4a17-9e20-4d3debca68a5",
+      "label": "Region 4",
+      "collapsed": true,
+      "showMaterialsDropdown": false,
+      "width": 0.2262,
+      "height": 0.5476,
+      "x": 0.7738,
+      "y": 0.2262,
+      "materialId": "efb6bef4-a805-40f2-be8a-3ab23166e80f"
+    },
+    {
+      "id": "53fefa01-3ded-4407-810c-2285e18bff7e",
+      "label": "Region 5",
+      "collapsed": true,
+      "showMaterialsDropdown": false,
+      "width": 1,
+      "height": 0.2262,
+      "x": 0,
+      "y": 0.7738,
+      "materialId": "efb6bef4-a805-40f2-be8a-3ab23166e80f"
+    }
+  ],
+  "materials": [
+    {
+      "id": "efb6bef4-a805-40f2-be8a-3ab23166e80f",
+      "label": "Matrix",
+      "color": "#595959",
+      "poisson": 0,
+      "young": 52,
+      "collapsed": true
+    },
+    {
+      "id": "ed10053f-b95d-4d3e-96ea-c1589ad4cd3c",
+      "label": "Fiber",
+      "color": "#2f8077",
+      "poisson": 0,
+      "young": 100,
+      "collapsed": true
+    }
+  ],
+  "unitCellWidth": 1,
+  "unitCellHeight": 1,
+  "divisionsByRegion": 1,
+  "supportType": "edges",
+  "periodicity": {
+    "horizontal": true,
+    "vertical": true
+  }
+}

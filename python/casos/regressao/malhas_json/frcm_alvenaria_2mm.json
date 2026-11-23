@@ -1,0 +1,387 @@
+{
+  "nodes": [
+    [
+      0,
+      0
+    ],
+    [
+      270,
+      0
+    ],
+    [
+      0,
+      4
+    ],
+    [
+      270,
+      4
+    ],
+    [
+      0,
+      6
+    ],
+    [
+      270,
+      6
+    ],
+    [
+      0,
+      10
+    ],
+    [
+      270,
+      10
+    ],
+    [
+      0,
+      260
+    ],
+    [
+      270,
+      260
+    ],
+    [
+      0,
+      264
+    ],
+    [
+      270,
+      264
+    ],
+    [
+      0,
+      266
+    ],
+    [
+      270,
+      266
+    ],
+    [
+      0,
+      270
+    ],
+    [
+      270,
+      270
+    ]
+  ],
+  "faces": [
+    [
+      1,
+      0
+    ],
+    [
+      3,
+      2
+    ],
+    [
+      5,
+      4
+    ],
+    [
+      7,
+      6
+    ],
+    [
+      9,
+      8
+    ],
+    [
+      11,
+      10
+    ],
+    [
+      13,
+      12
+    ],
+    [
+      15,
+      14
+    ],
+    [
+      0,
+      2
+    ],
+    [
+      1,
+      3
+    ],
+    [
+      2,
+      4
+    ],
+    [
+      3,
+      5
+    ],
+    [
+      4,
+      6
+    ],
+    [
+      5,
+      7
+    ],
+    [
+      6,
+      8
+    ],
+    [
+      7,
+      9
+    ],
+    [
+      8,
+      10
+    ],
+    [
+      9,
+      11
+    ],
+    [
+      10,
+      12
+    ],
+    [
+      11,
+      13
+    ],
+    [
+      12,
+      14
+    ],
+    [
+      13,
+      15
+    ]
+  ],
+  "elements": [
+    [
+      2,
+      3,
+      1,
+      0
+    ],
+    [
+      4,
+      5,
+      3,
+      2
+    ],
+    [
+      6,
+      7,
+      5,
+      4
+    ],
+    [
+      8,
+      9,
+      7,
+      6
+    ],
+    [
+      10,
+      11,
+      9,
+      8
+    ],
+    [
+      12,
+      13,
+      11,
+      10
+    ],
+    [
+      14,
+      15,
+      13,
+      12
+    ]
+  ],
+  "supportedFaces": [
+    0,
+    7
+  ],
+  "elementsFaces": [
+    [
+      1,
+      9,
+      0,
+      8
+    ],
+    [
+      2,
+      11,
+      1,
+      10
+    ],
+    [
+      3,
+      13,
+      2,
+      12
+    ],
+    [
+      4,
+      15,
+      3,
+      14
+    ],
+    [
+      5,
+      17,
+      4,
+      16
+    ],
+    [
+      6,
+      19,
+      5,
+      18
+    ],
+    [
+      7,
+      21,
+      6,
+      20
+    ]
+  ],
+  "correctedFacesIds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    8,
+    9,
+    9,
+    10,
+    10,
+    11,
+    11,
+    12,
+    12,
+    13,
+    13,
+    14,
+    14
+  ],
+  "regions": [
+    {
+      "id": "fd6747db-8406-4039-b135-c958568e517a",
+      "label": "Region 1",
+      "collapsed": true,
+      "showMaterialsDropdown": false,
+      "width": 270,
+      "height": 4,
+      "x": 0,
+      "y": 0,
+      "materialId": "8e647de6-8977-4c4f-8bda-7c478d8e5da4"
+    },
+    {
+      "id": "3686ed7a-6d8c-48dd-9a8d-6fa2bdb558e0",
+      "label": "Region 2",
+      "collapsed": true,
+      "showMaterialsDropdown": false,
+      "width": 270,
+      "height": 2,
+      "x": 0,
+      "y": 4,
+      "materialId": "13795cf4-d5f1-4e21-a76e-167523737c73"
+    },
+    {
+      "id": "4bfc1cc8-b50a-458c-ba0a-16f4a12fbaca",
+      "label": "Region 3",
+      "collapsed": true,
+      "showMaterialsDropdown": false,
+      "width": 270,
+      "height": 4,
+      "x": 0,
+      "y": 6,
+      "materialId": "8e647de6-8977-4c4f-8bda-7c478d8e5da4"
+    },
+    {
+      "id": "b3d6d3e2-0046-4a9c-9b4c-965048dec244",
+      "label": "Region 4",
+      "collapsed": true,
+      "showMaterialsDropdown": false,
+      "width": 270,
+      "height": 250,
+      "x": 0,
+      "y": 10,
+      "materialId": "e7993574-4d29-40e7-a0fc-e9bfca047ac5"
+    },
+    {
+      "id": "03a4fa96-7ac4-4c42-9802-d574db2c1b71",
+      "label": "Region 5",
+      "collapsed": true,
+      "showMaterialsDropdown": false,
+      "width": 270,
+      "height": 4,
+      "x": 0,
+      "y": 260,
+      "materialId": "8e647de6-8977-4c4f-8bda-7c478d8e5da4"
+    },
+    {
+      "id": "5286c2e0-f342-49a1-903e-3b346cb3a04b",
+      "label": "Region 6",
+      "collapsed": true,
+      "showMaterialsDropdown": false,
+      "width": 270,
+      "height": 2,
+      "x": 0,
+      "y": 264,
+      "materialId": "13795cf4-d5f1-4e21-a76e-167523737c73"
+    },
+    {
+      "id": "c44031e1-3f9a-4f96-93e6-ab5859609728",
+      "label": "Region 7",
+      "collapsed": true,
+      "showMaterialsDropdown": false,
+      "width": 270,
+      "height": 4,
+      "x": 0,
+      "y": 266,
+      "materialId": "8e647de6-8977-4c4f-8bda-7c478d8e5da4"
+    }
+  ],
+  "materials": [
+    {
+      "id": "e7993574-4d29-40e7-a0fc-e9bfca047ac5",
+      "label": "Alvenaria",
+      "color": "green",
+      "poisson": 0.15,
+      "young": 3570,
+      "collapsed": true
+    },
+    {
+      "id": "8e647de6-8977-4c4f-8bda-7c478d8e5da4",
+      "label": "Matriz",
+      "color": "#c431bd",
+      "poisson": 0.2,
+      "young": 13000,
+      "collapsed": true
+    },
+    {
+      "id": "13795cf4-d5f1-4e21-a76e-167523737c73",
+      "label": "Fibra",
+      "color": "blue",
+      "poisson": 0.2,
+      "young": 3145,
+      "collapsed": true
+    }
+  ],
+  "unitCellWidth": 270,
+  "unitCellHeight": 270,
+  "divisionsByRegion": 1,
+  "supportType": "central",
+  "periodicity": {
+    "horizontal": true,
+    "vertical": false
+  }
+}
