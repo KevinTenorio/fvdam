@@ -4,7 +4,7 @@ import { useAppContext } from '../App.context';
 import { AppContext } from '../App.model';
 import HomeView from './Home.view';
 import { useEffect, useState } from 'react';
-import { NodesInfo, Node, Material, IElement, Face, Results } from './Home.model';
+import { NodesInfo, Node, Material, IElement, Face, Results, FvdamCore } from './Home.model';
 import getNodes from './getNodes';
 import getMaterials from './getMaterials';
 import getElements from './getElements';
@@ -15,6 +15,7 @@ import calcStiffness from './calcStiffness';
 import calcConc from './calcConc';
 import homogenize from './homogenize';
 import * as math from 'mathjs';
+import { executarFvdamPython } from './python/fvdamPython';
 
 function HomeController() {
   const { setError, setLoading, fvdamFile, setMeshData, meshData }: AppContext = useAppContext();
@@ -33,6 +34,8 @@ function HomeController() {
   const [results, setResults] = useState<Results>();
   const [page, setPage] = useState<string>('mesh');
   const [elapsedTime, setElapsedTime] = useState<number>(0);
+  // texto .fvt da célula carregada (entrada do núcleo Python)
+  const [inputText, setInputText] = useState<string>();
 
   useEffect(() => {
     // if (!fvdamFile || page === 'mesh') {
@@ -50,6 +53,7 @@ function HomeController() {
       setElements([]);
       setFaces([]);
       setResults(undefined);
+      setInputText(undefined);
       setMeshData(undefined);
     }
   }, [fvdamFile]);
@@ -110,7 +114,7 @@ function HomeController() {
     return Ch;
   }
 
-  function handleEffectiveStiffness(Ch: math.MathCollection) {
+  function handleEffectiveStiffness(Ch: math.MathCollection, core: FvdamCore = 'typescript') {
     const S = math.inv(Ch);
     // @ts-ignore
     const E11 = 1 / S.get([0, 0]);
@@ -141,18 +145,59 @@ function HomeController() {
       G23,
       G13,
       G12,
-      Ch
+      Ch,
+      core,
+      coreDetails: 'mathjs (dense algebra)'
     });
   }
 
-  async function handleExecuteFvdam() {
+  const PYTHON_LOADING = 'Loading Python in the browser (first run only)...';
+  const EXECUTING = 'Executing FVDAM algorithm. This may take a while...';
+
+  async function handleExecuteFvdamPython() {
+    if (!inputText) {
+      setError('No unit cell loaded.');
+      setLoading(EXECUTING, false);
+      return;
+    }
+    try {
+      const res = await executarFvdamPython(inputText, 'fvt', (etapa) => {
+        if (etapa === 'carregando') setLoading(PYTHON_LOADING);
+        else setLoading(PYTHON_LOADING, false);
+      });
+      const v = res.versoes;
+      setResults({
+        ...res.propriedades,
+        Ch: math.matrix(res.C),
+        core: 'python',
+        coreDetails:
+          `fvdam ${v.fvdam} · Python ${v.python} · NumPy ${v.numpy} · SciPy ${v.scipy} · Pyodide ${res.pyodide}` +
+          (res.tempo_carga_ms > 0
+            ? ` · runtime loaded in ${(res.tempo_carga_ms / 1000).toFixed(1)} s`
+            : '')
+      });
+      setElapsedTime(res.tempo_total_ms);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setLoading(PYTHON_LOADING, false);
+      setLoading(EXECUTING, false);
+    }
+  }
+
+  async function handleExecuteFvdam(core: FvdamCore = 'typescript') {
+    setResults(undefined);
+    if (core === 'python') {
+      handleExecuteFvdamPython();
+      return;
+    }
     const runAlg = async () => {
       const start = performance.now();
       await fvdamAlg(nodes, nodesInfo, materials, elements, faces)
         .then((res) => handleEffectiveStiffness(res))
         .catch((error) => setError(error))
         .finally(() => {
-          setLoading('Executing FVDAM algorithm. This may take a while...', false);
+          setLoading(EXECUTING, false);
         });
       const end = performance.now();
       setElapsedTime(end - start);
@@ -192,6 +237,7 @@ function HomeController() {
                 setElements(elements);
                 setFaces(faces);
                 setResults(undefined);
+                setInputText(text);
               })
               .catch((error) => setError(error))
               .finally(() => {
@@ -214,6 +260,7 @@ function HomeController() {
           setElements(elements);
           setFaces(faces);
           setResults(undefined);
+          setInputText(file);
         })
         .catch((error) => setError(error))
         .finally(() => {

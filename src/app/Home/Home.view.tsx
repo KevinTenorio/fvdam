@@ -5,7 +5,7 @@ import { useAppContext } from '../App.context';
 import { AppContext } from '../App.model';
 import Upload from '/src/components/atoms/Upload';
 import { IState } from '/src/index.model';
-import { Node, NodesInfo, Material, IElement, Face, Results } from './Home.model';
+import { Node, NodesInfo, Material, IElement, Face, Results, FvdamCore } from './Home.model';
 import './Home.style.css';
 import MeshGenerator from './MeshGenerator';
 import FvdamContent from './Content';
@@ -19,7 +19,7 @@ interface HomeViewProps {
   faces: IState<Face[]>;
   getPieChartColors: (materials: Material[]) => string;
   results: IState<Results | undefined>;
-  handleExecuteFvdam: () => void;
+  handleExecuteFvdam: (core: FvdamCore) => void;
   page: IState<string>;
   parseFile: (fileStr: string) => void;
   elapsedTime: IState<number>;

@@ -5,6 +5,10 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   base: './',
   plugins: [react()],
+  // o worker do núcleo Python é um módulo ES (o Pyodide exige worker do tipo module)
+  worker: {
+    format: 'es'
+  },
   server: {
     port: 3000
   }

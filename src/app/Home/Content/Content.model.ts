@@ -1,6 +1,14 @@
 // No model ficam as definições de types e interfaces do componente
 import { IState } from '/src/index.model';
-import { Material, NodesInfo, IElement, Face, Results, Node } from '/src/app/Home/Home.model';
+import {
+  Material,
+  NodesInfo,
+  IElement,
+  Face,
+  Results,
+  Node,
+  FvdamCore
+} from '/src/app/Home/Home.model';
 
 export interface IContentControllerProps {
   nodes: IState<Node[]>;
@@ -10,7 +18,7 @@ export interface IContentControllerProps {
   faces: IState<Face[]>;
   getPieChartColors: (materials: Material[]) => string;
   results: IState<Results | undefined>;
-  handleExecuteFvdam: () => void;
+  handleExecuteFvdam: (core: FvdamCore) => void;
   elapsedTime: IState<number>;
 }
 export interface IContentViewProps {
@@ -21,7 +29,7 @@ export interface IContentViewProps {
   faces: IState<Face[]>;
   getPieChartColors: (materials: Material[]) => string;
   results: IState<Results | undefined>;
-  handleExecuteFvdam: () => void;
+  handleExecuteFvdam: (core: FvdamCore) => void;
   elapsedTime: IState<number>;
   meshData: any;
 }

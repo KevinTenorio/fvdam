@@ -41,7 +41,11 @@ export interface Results {
   G13: number;
   G12: number;
   Ch: math.MathCollection;
+  core?: FvdamCore;
+  coreDetails?: string;
 }
+
+export type FvdamCore = 'typescript' | 'python';
 
 export interface NodesInfo {
   nodesX: number;
