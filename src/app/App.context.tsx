@@ -22,14 +22,11 @@ export function AppProvider({ children }: any) {
     if (status) {
       setLoadingMessages((prev: string[]) => [...prev, message]);
     } else {
-      setLoadingMessages((prev: string[]) =>
-        prev
-          .slice(
-            0,
-            prev.findIndex((item) => item === message)
-          )
-          .concat(prev.slice(prev.findIndex((item) => item === message) + 1, prev.length))
-      );
+      setLoadingMessages((prev: string[]) => {
+        const i = prev.findIndex((item) => item === message);
+        // mensagem que não está na fila: nada a remover (antes duplicava a fila)
+        return i === -1 ? prev : prev.slice(0, i).concat(prev.slice(i + 1));
+      });
     }
   };
 
@@ -38,14 +35,10 @@ export function AppProvider({ children }: any) {
     if (status) {
       setErrorMessages((prev: any[]) => [...prev, message]);
     } else {
-      setErrorMessages((prev: any[]) =>
-        prev
-          .slice(
-            0,
-            prev.findIndex((item) => item === message)
-          )
-          .concat(prev.slice(prev.findIndex((item) => item === message) + 1, prev.length))
-      );
+      setErrorMessages((prev: any[]) => {
+        const i = prev.findIndex((item) => item === message);
+        return i === -1 ? prev : prev.slice(0, i).concat(prev.slice(i + 1));
+      });
     }
   };
 

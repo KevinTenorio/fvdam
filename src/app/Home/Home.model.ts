@@ -47,6 +47,9 @@ export interface Results {
 
 export type FvdamCore = 'typescript' | 'python';
 
+// estado do runtime Python no navegador (baixado ao abrir o app)
+export type PythonRuntimeStatus = 'loading' | 'ready' | 'error';
+
 export interface NodesInfo {
   nodesX: number;
   nodesY: number;

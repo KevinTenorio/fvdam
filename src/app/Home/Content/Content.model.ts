@@ -7,7 +7,8 @@ import {
   Face,
   Results,
   Node,
-  FvdamCore
+  FvdamCore,
+  PythonRuntimeStatus
 } from '/src/app/Home/Home.model';
 
 export interface IContentControllerProps {
@@ -20,6 +21,7 @@ export interface IContentControllerProps {
   results: IState<Results | undefined>;
   handleExecuteFvdam: (core: FvdamCore) => void;
   elapsedTime: IState<number>;
+  pythonStatus: PythonRuntimeStatus;
 }
 export interface IContentViewProps {
   nodes: IState<Node[]>;
@@ -32,4 +34,5 @@ export interface IContentViewProps {
   handleExecuteFvdam: (core: FvdamCore) => void;
   elapsedTime: IState<number>;
   meshData: any;
+  pythonStatus: PythonRuntimeStatus;
 }

@@ -5,7 +5,16 @@ import { useAppContext } from '../App.context';
 import { AppContext } from '../App.model';
 import Upload from '/src/components/atoms/Upload';
 import { IState } from '/src/index.model';
-import { Node, NodesInfo, Material, IElement, Face, Results, FvdamCore } from './Home.model';
+import {
+  Node,
+  NodesInfo,
+  Material,
+  IElement,
+  Face,
+  Results,
+  FvdamCore,
+  PythonRuntimeStatus
+} from './Home.model';
 import './Home.style.css';
 import MeshGenerator from './MeshGenerator';
 import FvdamContent from './Content';
@@ -23,6 +32,7 @@ interface HomeViewProps {
   page: IState<string>;
   parseFile: (fileStr: string) => void;
   elapsedTime: IState<number>;
+  pythonStatus: PythonRuntimeStatus;
 }
 function HomeView({
   handleFileRead,
@@ -36,7 +46,8 @@ function HomeView({
   handleExecuteFvdam,
   page,
   parseFile,
-  elapsedTime
+  elapsedTime,
+  pythonStatus
 }: HomeViewProps) {
   const { fvdamFile, setFvdamFile }: AppContext = useAppContext();
 
@@ -113,6 +124,7 @@ function HomeView({
             elapsedTime={elapsedTime}
             handleExecuteFvdam={handleExecuteFvdam}
             getPieChartColors={getPieChartColors}
+            pythonStatus={pythonStatus}
           />
         )}
         <div

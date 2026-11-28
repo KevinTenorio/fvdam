@@ -47,7 +47,7 @@ res.propriedades   # E11, E22, E33, v12, v13, v23, G12, G13, G23
 
 ## No navegador (Pyodide)
 
-O app da raiz do repositório roda este mesmo núcleo no navegador. No botão **Execute FVDAM**, escolha o núcleo **Python (in browser)** ou **TypeScript**. O núcleo Python roda num Web Worker com [Pyodide](https://pyodide.org) 314.0.8 (Python 3.14, NumPy 2.4, SciPy 1.18), carregado do CDN jsDelivr na primeira execução (alguns segundos; depois fica em cache). O código Python é embutido no build a partir de `python/src/fvdam/`, então o app e o pacote usam sempre a mesma versão do núcleo. A tela de resultados mostra qual núcleo e quais versões foram usados.
+O app da raiz do repositório roda este mesmo núcleo no navegador. No botão **Execute FVDAM**, escolha o núcleo **Python (in browser)** ou **TypeScript**. O núcleo Python roda num Web Worker com [Pyodide](https://pyodide.org) 314.0.8 (Python 3.14, NumPy 2.4, SciPy 1.18), baixado do CDN jsDelivr em segundo plano assim que o app abre (alguns segundos na primeira visita; depois fica em cache). O estado do download aparece abaixo do seletor de núcleo; quem executar antes de terminar espera o mesmo download. O código Python é embutido no build a partir de `python/src/fvdam/`, então o app e o pacote usam sempre a mesma versão do núcleo. A tela de resultados mostra qual núcleo e quais versões foram usados.
 
 Arquivos: `src/app/Home/python/fvdamPython.worker.ts` (worker) e `src/app/Home/python/fvdamPython.ts` (cliente).
 
