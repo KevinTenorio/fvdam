@@ -929,7 +929,7 @@ function MeshGeneratorView({
         </div>
         <div style={{ flex: '1' }} />
         <div style={{ height: '20px' }} />
-        <label htmlFor="maxElemSize">Max Element Size:</label>
+        <label htmlFor="maxElemSize">Max Subvolume Size:</label>
         <input
           type="number"
           id="maxElemSize"
@@ -941,7 +941,7 @@ function MeshGeneratorView({
           }}
         />
         <div style={{ height: '5px' }} />
-        <label htmlFor="minElemSize">Min Element Size:</label>
+        <label htmlFor="minElemSize">Min Subvolume Size:</label>
         <input
           type="number"
           id="minElemSize"
@@ -1315,7 +1315,7 @@ function MeshGeneratorView({
                     });
                   }}
                 />
-                <label htmlFor="elements">Elements</label>
+                <label htmlFor="elements">Subvolumes</label>
               </div>
               <div style={{ display: 'flex', justifyContent: 'start', alignItems: 'center' }}>
                 <input
@@ -1330,7 +1330,7 @@ function MeshGeneratorView({
                     });
                   }}
                 />
-                <label htmlFor="elementsIds">Elements Ids</label>
+                <label htmlFor="elementsIds">Subvolume Ids</label>
               </div>
               <div style={{ display: 'flex', justifyContent: 'start', alignItems: 'center' }}>
                 <input
