@@ -16,6 +16,8 @@ export function AppProvider({ children }: any) {
   const [errorMessages, setErrorMessages] = useState<any[]>([]);
   const [fvdamFile, setFvdamFile] = useState<any>();
   const [meshData, setMeshData] = useState<any>();
+  // ação opcional de cancelar a tarefa que está na tela de carga
+  const [cancelLoading, setCancelLoading] = useState<(() => void) | undefined>();
 
   // Function to manage the global loading state. To start loading pass the message you want to display. To finish loading pass the same message and the false status.
   const setLoading = (message: string, status = true) => {
@@ -52,9 +54,11 @@ export function AppProvider({ children }: any) {
       fvdamFile,
       setFvdamFile,
       meshData,
-      setMeshData
+      setMeshData,
+      cancelLoading,
+      setCancelLoading
     }),
-    [loadingMessages, errorMessages, fvdamFile, meshData]
+    [loadingMessages, errorMessages, fvdamFile, meshData, cancelLoading]
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

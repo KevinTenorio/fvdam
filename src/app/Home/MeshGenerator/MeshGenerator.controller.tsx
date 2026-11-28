@@ -8,7 +8,7 @@ import {
 } from './MeshGenerator.model';
 import MeshGeneratorView from './MeshGenerator.view';
 import { useAppContext } from '../../App.context';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { AppContext } from '../../App.model';
 import generateUuid from '/src/commons/generateUuid';
 
@@ -67,8 +67,31 @@ function MeshGeneratorController({ page, handleFileRead }: IMeshGeneratorControl
     circleDivisions: 0
   });
 
+  // Assinatura das entradas que definem a malha. Se mudar depois de gerar a malha,
+  // a malha fica desatualizada e não pode ser enviada à FVDAM sem regerar.
+  const LOADED = '__loaded__';
+  const [meshSignature, setMeshSignature] = useState<string | null>(null);
+  const signatureOf = (regionsList: IMeshRegion[]) =>
+    JSON.stringify([
+      unitCellWidth,
+      unitCellHeight,
+      regionsList.map((r) => [r.x, r.y, r.width, r.height, r.materialId]),
+      divisionsByRegion,
+      maxElemSize,
+      minElemSize,
+      supportType,
+      periodicity.horizontal,
+      periodicity.vertical
+    ]);
+  const currentSignature = signatureOf(regions);
+  // modelo aberto de arquivo: a malha dele vale para as entradas carregadas
+  useEffect(() => {
+    if (meshSignature === LOADED) setMeshSignature(currentSignature);
+  });
+
   useEffect(() => {
     if (meshData) {
+      setMeshSignature(meshData.elements?.length > 0 ? LOADED : null);
       setNodes(meshData.nodes);
       setFaces(meshData.faces);
       setElements(meshData.elements);
@@ -96,6 +119,7 @@ function MeshGeneratorController({ page, handleFileRead }: IMeshGeneratorControl
       setDivisionsByRegion(2);
       setSupportType('none');
       setPeriodicity({ horizontal: true, vertical: true });
+      setMeshSignature(null);
       page.set('mesh');
     }
   }, [meshData]);
@@ -103,7 +127,16 @@ function MeshGeneratorController({ page, handleFileRead }: IMeshGeneratorControl
   useEffect(() => {
     if (unitCellWidth !== null && unitCellHeight !== null) {
       if (Math.max(unitCellWidth, unitCellHeight) / divisionsByRegion > maxElemSize) {
-        setMaxElemSize(Math.max(unitCellWidth, unitCellHeight) / divisionsByRegion);
+        const newMax = Math.max(unitCellWidth, unitCellHeight) / divisionsByRegion;
+        setMaxElemSize(newMax);
+        // ajuste automático, não edição do usuário: não deixa a malha desatualizada
+        setMeshSignature((prev) => {
+          if (prev === null || prev === LOADED) return prev;
+          const parsed = JSON.parse(prev);
+          if (parsed[4] !== maxElemSize) return prev;
+          parsed[4] = newMax;
+          return JSON.stringify(parsed);
+        });
       }
     }
   }, [unitCellHeight, unitCellWidth]);
@@ -629,6 +662,8 @@ function MeshGeneratorController({ page, handleFileRead }: IMeshGeneratorControl
     }
 
     setRegions(regionsAuxList);
+    // a geração divide as regiões nas linhas da malha: a assinatura vale para as regiões divididas
+    setMeshSignature(signatureOf(regionsAuxList));
     setNodes(nodesList);
     setFaces(facesList);
     setElements(elementsList);
@@ -636,6 +671,83 @@ function MeshGeneratorController({ page, handleFileRead }: IMeshGeneratorControl
     setElementsFaces(elementsFacesList);
     setCorrectedFacesIds(correctedFacesIdsList);
     setStuffToShow({ ...stuffToShow, elements: true });
+  }
+
+  const meshStale =
+    elements.length > 0 &&
+    meshSignature !== null &&
+    meshSignature !== LOADED &&
+    meshSignature !== currentSignature;
+
+  // Validação das entradas. Os bloqueios impedem gerar um .fvt inválido
+  // (antes o app gerava material 0 ou quebrava ao enviar sem modelo).
+  const validation = useMemo(() => {
+    const materialErrors: Record<string, { young?: string; poisson?: string }> = {};
+    materials.forEach((material) => {
+      const errors: { young?: string; poisson?: string } = {};
+      if (material.young === null || material.young === undefined || !(material.young > 0)) {
+        errors.young = 'Young must be greater than 0.';
+      }
+      if (
+        material.poisson === null ||
+        material.poisson === undefined ||
+        !(material.poisson > -1 && material.poisson < 0.5)
+      ) {
+        errors.poisson = 'Poisson must be between -1 and 0.5.';
+      }
+      if (errors.young || errors.poisson) materialErrors[material.id] = errors;
+    });
+    const regionErrors: Record<string, string> = {};
+    regions.forEach((region) => {
+      if (!materials.find((material) => material.id === region.materialId)) {
+        regionErrors[region.id] = 'Choose a material.';
+      }
+    });
+    // subvolumes fora de qualquer região (mesmo critério do generateFvtFile)
+    let uncovered = 0;
+    elements.forEach((element) => {
+      if (!nodes[element[0]] || !nodes[element[2]]) return;
+      const cx =
+        (nodes[element[0]][0] +
+          nodes[element[1]][0] +
+          nodes[element[2]][0] +
+          nodes[element[3]][0]) /
+        4;
+      const cy =
+        (nodes[element[0]][1] +
+          nodes[element[1]][1] +
+          nodes[element[2]][1] +
+          nodes[element[3]][1]) /
+        4;
+      const inside = regions.some(
+        (region) =>
+          cx >= region.x - 9 * Math.pow(10, -9) &&
+          cx < region.x + region.width &&
+          cy >= region.y - 9 * Math.pow(10, -9) &&
+          cy < region.y + region.height
+      );
+      if (!inside) uncovered++;
+    });
+    const blockers: string[] = [];
+    if (elements.length === 0) blockers.push('Generate the mesh first.');
+    if (meshStale) blockers.push('The mesh is out of date: click Generate Mesh.');
+    if (materials.length === 0) blockers.push('Add at least one material.');
+    if (Object.keys(materialErrors).length > 0) blockers.push('Fix the material properties.');
+    if (Object.keys(regionErrors).length > 0) blockers.push('Every region needs a material.');
+    if (uncovered > 0) blockers.push(`${uncovered} subvolume(s) are not inside any region.`);
+    if (elements.length > 0 && supportedFaces.length === 0)
+      blockers.push('Choose a support (Central, Border or Edges).');
+    return { materialErrors, regionErrors, blockers };
+  }, [materials, regions, elements, nodes, supportedFaces, meshStale]);
+
+  function sendToFvdam() {
+    if (validation.blockers.length > 0) {
+      setError(validation.blockers.join(' '));
+      return;
+    }
+    page.set('mesh');
+    generateJsonFile(false);
+    generateFvtFile(false);
   }
 
   function generateFvtFile(isDownload = true) {
@@ -669,9 +781,7 @@ function MeshGeneratorController({ page, handleFileRead }: IMeshGeneratorControl
     lines.push(materials.length.toString());
     for (let i = 1; i < materials.length + 1; i++) {
       const material = materials[i - 1];
-      lines.push(
-        i.toString() + '\t' + material.young.toString() + '\t' + material.poisson.toString()
-      );
+      lines.push(i.toString() + '\t' + String(material.young) + '\t' + String(material.poisson));
     }
 
     // Write elements
@@ -915,6 +1025,9 @@ function MeshGeneratorController({ page, handleFileRead }: IMeshGeneratorControl
         set: setCircle
       }}
       generateCircle={generateCircle}
+      meshStale={meshStale}
+      validation={validation}
+      sendToFvdam={sendToFvdam}
     />
   );
 }
