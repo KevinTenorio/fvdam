@@ -140,7 +140,7 @@ function ContentView({
               >{`Nodes: ${nodes.state.length}`}</div>
               <div
                 style={{ paddingLeft: '20px', marginBottom: '5px' }}
-              >{`Elements: ${elements.state.length}`}</div>
+              >{`Subvolumes: ${elements.state.length}`}</div>
               <div
                 style={{ paddingLeft: '20px', marginBottom: '5px' }}
               >{`Faces: ${faces.state.length}`}</div>
