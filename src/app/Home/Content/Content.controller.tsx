@@ -15,7 +15,8 @@ function ContentController({
   results,
   handleExecuteFvdam,
   getPieChartColors,
-  elapsedTime
+  elapsedTime,
+  pythonStatus
 }: IContentControllerProps) {
   const { meshData }: AppContext = useAppContext();
   return (
@@ -30,6 +31,7 @@ function ContentController({
       getPieChartColors={getPieChartColors}
       elapsedTime={elapsedTime}
       meshData={meshData}
+      pythonStatus={pythonStatus}
     />
   );
 }

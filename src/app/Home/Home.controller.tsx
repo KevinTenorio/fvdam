@@ -4,7 +4,16 @@ import { useAppContext } from '../App.context';
 import { AppContext } from '../App.model';
 import HomeView from './Home.view';
 import { useEffect, useState } from 'react';
-import { NodesInfo, Node, Material, IElement, Face, Results, FvdamCore } from './Home.model';
+import {
+  NodesInfo,
+  Node,
+  Material,
+  IElement,
+  Face,
+  Results,
+  FvdamCore,
+  PythonRuntimeStatus
+} from './Home.model';
 import getNodes from './getNodes';
 import getMaterials from './getMaterials';
 import getElements from './getElements';
@@ -15,7 +24,7 @@ import calcStiffness from './calcStiffness';
 import calcConc from './calcConc';
 import homogenize from './homogenize';
 import * as math from 'mathjs';
-import { executarFvdamPython } from './python/fvdamPython';
+import { executarFvdamPython, prepararFvdamPython } from './python/fvdamPython';
 
 function HomeController() {
   const { setError, setLoading, fvdamFile, setMeshData, meshData }: AppContext = useAppContext();
@@ -36,6 +45,14 @@ function HomeController() {
   const [elapsedTime, setElapsedTime] = useState<number>(0);
   // texto .fvt da célula carregada (entrada do núcleo Python)
   const [inputText, setInputText] = useState<string>();
+  const [pythonStatus, setPythonStatus] = useState<PythonRuntimeStatus>('loading');
+
+  // baixa o runtime Python em segundo plano assim que o app abre
+  useEffect(() => {
+    prepararFvdamPython()
+      .then(() => setPythonStatus('ready'))
+      .catch(() => setPythonStatus('error'));
+  }, []);
 
   useEffect(() => {
     // if (!fvdamFile || page === 'mesh') {
@@ -151,7 +168,7 @@ function HomeController() {
     });
   }
 
-  const PYTHON_LOADING = 'Loading Python in the browser (first run only)...';
+  const PYTHON_LOADING = 'Finishing the Python download (first time only)...';
   const EXECUTING = 'Executing FVDAM algorithm. This may take a while...';
 
   async function handleExecuteFvdamPython() {
@@ -160,10 +177,26 @@ function HomeController() {
       setLoading(EXECUTING, false);
       return;
     }
+    // a tela de carga mostra só a primeira mensagem da fila: enquanto o runtime
+    // termina de baixar, troca "Executing..." pela mensagem de download
+    let mostrandoDownload = false;
     try {
       const res = await executarFvdamPython(inputText, 'fvt', (etapa) => {
-        if (etapa === 'carregando') setLoading(PYTHON_LOADING);
-        else setLoading(PYTHON_LOADING, false);
+        if (etapa === 'carregando') {
+          setPythonStatus('loading');
+          if (!mostrandoDownload) {
+            mostrandoDownload = true;
+            setLoading(PYTHON_LOADING);
+            setLoading(EXECUTING, false);
+          }
+        } else {
+          setPythonStatus('ready');
+          if (mostrandoDownload) {
+            mostrandoDownload = false;
+            setLoading(EXECUTING);
+            setLoading(PYTHON_LOADING, false);
+          }
+        }
       });
       const v = res.versoes;
       setResults({
@@ -179,9 +212,9 @@ function HomeController() {
       setElapsedTime(res.tempo_total_ms);
     } catch (error) {
       setError(error instanceof Error ? error.message : String(error));
+      if (String(error).includes('Could not load Python')) setPythonStatus('error');
     } finally {
-      setLoading(PYTHON_LOADING, false);
-      setLoading(EXECUTING, false);
+      setLoading(mostrandoDownload ? PYTHON_LOADING : EXECUTING, false);
     }
   }
 
@@ -308,6 +341,7 @@ function HomeController() {
       page={{ state: page, set: setPage }}
       parseFile={parseFile}
       elapsedTime={{ state: elapsedTime, set: setElapsedTime }}
+      pythonStatus={pythonStatus}
     />
   );
 }

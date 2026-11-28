@@ -5,12 +5,18 @@ import { IContentViewProps } from './Content.model';
 import './Content.styles.css';
 import { useAppContext } from '/src/app/App.context';
 import { AppContext } from '/src/app/App.model';
-import { FvdamCore } from '/src/app/Home/Home.model';
+import { FvdamCore, PythonRuntimeStatus } from '/src/app/Home/Home.model';
 import { useState } from 'react';
 
 const CORE_LABELS: Record<FvdamCore, string> = {
   python: 'Python (in browser)',
   typescript: 'TypeScript'
+};
+
+const PYTHON_STATUS_TEXT: Record<PythonRuntimeStatus, string> = {
+  loading: 'Python runtime: downloading in the background...',
+  ready: 'Python runtime: ready',
+  error: 'Python runtime: unavailable (will retry when you execute)'
 };
 
 const buttonStyle = {
@@ -29,9 +35,11 @@ const buttonStyle = {
 
 function ExecuteControls({
   onExecute,
+  pythonStatus,
   label = 'Execute FVDAM'
 }: {
   onExecute: (core: FvdamCore) => void;
+  pythonStatus: PythonRuntimeStatus;
   label?: string;
 }) {
   const { setLoading }: AppContext = useAppContext();
@@ -65,6 +73,18 @@ function ExecuteControls({
           </button>
         ))}
       </div>
+      {core === 'python' && (
+        <div
+          style={{
+            color: pythonStatus === 'error' ? '#ffd2d2' : 'white',
+            fontSize: '12px',
+            marginTop: '6px',
+            opacity: pythonStatus === 'ready' ? 0.8 : 1
+          }}
+        >
+          {PYTHON_STATUS_TEXT[pythonStatus]}
+        </div>
+      )}
       <button
         className="button"
         style={buttonStyle}
@@ -89,7 +109,8 @@ function ContentView({
   handleExecuteFvdam,
   getPieChartColors,
   elapsedTime,
-  meshData
+  meshData,
+  pythonStatus
 }: IContentViewProps) {
   return (
     <div
@@ -475,7 +496,11 @@ function ContentView({
                 >
                   Download Results
                 </button>
-                <ExecuteControls onExecute={handleExecuteFvdam} label="Execute again" />
+                <ExecuteControls
+                  onExecute={handleExecuteFvdam}
+                  pythonStatus={pythonStatus}
+                  label="Execute again"
+                />
               </div>
             </div>
           ) : (
@@ -490,7 +515,7 @@ function ContentView({
                   flexDirection: 'column'
                 }}
               >
-                <ExecuteControls onExecute={handleExecuteFvdam} />
+                <ExecuteControls onExecute={handleExecuteFvdam} pythonStatus={pythonStatus} />
               </div>
             </>
           )}
