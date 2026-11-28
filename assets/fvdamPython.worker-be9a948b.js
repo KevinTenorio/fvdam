@@ -1,7 +1,7 @@
 var h=`"""FVDAM 2D homogenization (Python port of the TypeScript core in ../src/app/Home)."""
 
 __version__ = "0.1.0.dev0"
-`,x=`"""Uso: python -m fvdam <malha.json|malha.fvt> [--saida resultado.json] [--faces-repetidas ts|somar]"""
+`,y=`"""Uso: python -m fvdam <malha.json|malha.fvt> [--saida resultado.json] [--faces-repetidas ts|somar]"""
 
 import argparse
 import json
@@ -42,7 +42,7 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-`,y=`"""Leitura de malhas FVDAM 2D: arquivos .fvt e projetos .json do gerador de malhas.
+`,x=`"""Leitura de malhas FVDAM 2D: arquivos .fvt e projetos .json do gerador de malhas.
 
 O leitor de .fvt reproduz o \`parseFile\` do app TypeScript (src/app/Home), inclusive
 nos detalhes que afetam o resultado:
@@ -349,7 +349,7 @@ def ler(caminho: str | Path) -> Malha:
     if p.suffix.lower() == ".fvt":
         return ler_fvt(p)
     raise ValueError(f"Extensão não suportada: {p.suffix}")
-`,C=`"""Núcleo FVDAM 2D (teoria de volumes finitos paramétrica, subvolumes quadrilaterais).
+`,g=`"""Núcleo FVDAM 2D (teoria de volumes finitos paramétrica, subvolumes quadrilaterais).
 
 Tradução do núcleo TypeScript (src/app/Home: calcConsts, getElements/calcDB,
 calcPhiTheta, calcStiffness, calcConc, homogenize), com a mesma formulação e a mesma
@@ -684,7 +684,7 @@ def homogeneizar(malha: Malha, faces_repetidas: str = "ts") -> Resultado:
         tempo_s=tempo,
         concentracao=Conc,
     )
-`,g=`"""Ponto de entrada para rodar o núcleo fora do disco (ex.: no navegador, via Pyodide).
+`,C=`"""Ponto de entrada para rodar o núcleo fora do disco (ex.: no navegador, via Pyodide).
 
 Recebe a malha como texto e devolve só tipos simples (dict, list, float, int, str),
 que atravessam a fronteira Python ↔ JavaScript sem conversão especial.
@@ -735,5 +735,5 @@ def versoes() -> dict:
         "scipy": scipy.__version__,
         "plataforma": sys.platform,
     }
-`;const l="314.0.8",m=`https://cdn.jsdelivr.net/pyodide/v${l}/full/`,t="/home/pyodide",I=Object.assign({"/python/src/fvdam/__init__.py":h,"/python/src/fvdam/__main__.py":x,"/python/src/fvdam/malha.py":y,"/python/src/fvdam/nucleo.py":C,"/python/src/fvdam/web.py":g}),e=self;let a=null;async function O(){const{loadPyodide:o}=await import(`${m}pyodide.mjs`),n=await o({indexURL:m});await n.loadPackage(["numpy","scipy"]),n.FS.mkdirTree(`${t}/fvdam`);for(const[r,s]of Object.entries(I))n.FS.writeFile(`${t}/fvdam/${r.split("/").pop()}`,s);return n.runPython(`import sys
-if "${t}" not in sys.path: sys.path.insert(0, "${t}")`),{web:n.pyimport("fvdam.web")}}e.onmessage=async o=>{const{id:n,texto:r,formato:s}=o.data;try{const i=a===null,d=performance.now();a===null&&(e.postMessage({id:n,tipo:"etapa",etapa:"carregando"}),a=O().catch(v=>{throw a=null,new Error(`Could not load Python (Pyodide ${l}) from ${m}. Check the internet connection or use the TypeScript core. Details: ${v}`)}));const{web:c}=await a,u=i?performance.now()-d:0;e.postMessage({id:n,tipo:"etapa",etapa:"executando"});const f=performance.now(),p=c.homogeneizar_texto(r,s),_=p.toJs({dict_converter:Object.fromEntries});p.destroy(),e.postMessage({id:n,tipo:"resultado",resultado:{..._,tempo_total_ms:performance.now()-f,tempo_carga_ms:u,pyodide:l}})}catch(i){e.postMessage({id:n,tipo:"erro",erro:String(i)})}};
+`;const m="314.0.8",i=`https://cdn.jsdelivr.net/pyodide/v${m}/full/`,r="/home/pyodide",I=Object.assign({"/python/src/fvdam/__init__.py":h,"/python/src/fvdam/__main__.py":y,"/python/src/fvdam/malha.py":x,"/python/src/fvdam/nucleo.py":g,"/python/src/fvdam/web.py":C}),o=self;let s=null,f=!1,l=0,d=!1;async function O(){const{loadPyodide:e}=await import(`${i}pyodide.mjs`),n=await e({indexURL:i});await n.loadPackage(["numpy","scipy"]),n.FS.mkdirTree(`${r}/fvdam`);for(const[a,t]of Object.entries(I))n.FS.writeFile(`${r}/fvdam/${a.split("/").pop()}`,t);return n.runPython(`import sys
+if "${r}" not in sys.path: sys.path.insert(0, "${r}")`),{web:n.pyimport("fvdam.web")}}function c(){if(s===null){const e=performance.now();s=O().then(n=>(f=!0,l=performance.now()-e,n)).catch(n=>{throw s=null,new Error(`Could not load Python (Pyodide ${m}) from ${i}. Check the internet connection or use the TypeScript core. Details: ${n}`)})}return s}const u=e=>e instanceof Error?e.message:String(e);o.onmessage=async e=>{const n=e.data,{id:a}=n;if(n.tipo==="preparar"){try{await c(),o.postMessage({id:a,tipo:"pronto",tempo_carga_ms:l})}catch(t){o.postMessage({id:a,tipo:"erro",erro:u(t)})}return}try{f||o.postMessage({id:a,tipo:"etapa",etapa:"carregando"});const{web:t}=await c();o.postMessage({id:a,tipo:"etapa",etapa:"executando"});const _=performance.now(),p=t.homogeneizar_texto(n.texto,n.formato),v=p.toJs({dict_converter:Object.fromEntries});p.destroy(),o.postMessage({id:a,tipo:"resultado",resultado:{...v,tempo_total_ms:performance.now()-_,tempo_carga_ms:d?0:l,pyodide:m}}),d=!0}catch(t){o.postMessage({id:a,tipo:"erro",erro:u(t)})}};
