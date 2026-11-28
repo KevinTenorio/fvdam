@@ -82,10 +82,16 @@ function HomeView({
           >
             FVDAM
           </div>
-          <Upload file={{ state: fvdamFile, set: setFvdamFile }} width="200px" height="50px" />
+          <Upload
+            file={{ state: fvdamFile, set: setFvdamFile }}
+            width="200px"
+            height="50px"
+            accept=".json,.fvt"
+          />
           {fvdamFile && (
             <button
               className="button"
+              title="Open the selected .json model or .fvt mesh"
               style={{
                 marginLeft: '20px',
                 cursor: 'pointer',
@@ -100,7 +106,7 @@ function HomeView({
               }}
               onClick={() => handleFileRead(fvdamFile)}
             >
-              Start
+              Load
             </button>
           )}
           <div style={{ flex: '1' }} />

@@ -6,6 +6,8 @@ import './MeshGenerator.styles.css';
 import Icon from '/src/components/atoms/Icon';
 import generateUuid from '/src/commons/generateUuid';
 import generateColor from '/src/commons/generateColor';
+import NumberField from '/src/components/atoms/NumberField';
+import { useEffect, useRef, useState } from 'react';
 
 function MeshGeneratorView({
   unitCellHeight,
@@ -28,24 +30,42 @@ function MeshGeneratorView({
   maxElemSize,
   minElemSize,
   extraZoom,
-  page,
   circle,
-  generateCircle
+  generateCircle,
+  meshStale,
+  validation,
+  sendToFvdam
 }: IMeshGeneratorViewProps) {
+  // zoom pelo tamanho real do viewport (antes usava a janela inteira)
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const [viewportSize, setViewportSize] = useState({ width: 600, height: 600 });
+  useEffect(() => {
+    const element = viewportRef.current;
+    if (!element) return;
+    const observer = new ResizeObserver(([entry]) => {
+      setViewportSize({ width: entry.contentRect.width, height: entry.contentRect.height });
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
   const zoom =
-    0.6 *
+    0.8 *
     extraZoom.state *
     Math.min(
-      window.innerWidth / (unitCellWidth.state || 1),
-      window.innerHeight / (unitCellHeight.state || 1)
+      viewportSize.width / (unitCellWidth.state || 1),
+      viewportSize.height / (unitCellHeight.state || 1)
     );
+  const hasMesh = elements.state.length > 0;
+  const blockersText = validation.blockers.join('\n');
   return (
     <div
       style={{
         width: '100%',
-        height: '100%',
+        // altura mínima em vez de fixa: a coluna de entradas não transborda sobre a seção da FVDAM
+        minHeight: 'calc(100vh - 110px)',
         padding: '20px',
-        display: 'flex'
+        display: 'flex',
+        flexShrink: 0
       }}
     >
       <div
@@ -53,7 +73,7 @@ function MeshGeneratorView({
           display: 'flex',
           flexDirection: 'column',
           width: '200px',
-          height: '100%',
+          flexShrink: 0,
           color: 'white'
         }}
       >
@@ -67,25 +87,29 @@ function MeshGeneratorView({
           <div style={{ fontWeight: 'bold', fontSize: '16px' }}>Define Unit Cell</div>
           <div style={{ height: '10px' }} />
           <label htmlFor="unitCellWidth">Width:</label>
-          <input
-            type="number"
+          <NumberField
             id="unitCellWidth"
-            name="unitCellWidth"
-            value={unitCellWidth.state || ''}
-            onChange={(event) => {
-              unitCellWidth.set(Number(event.target.value) || null);
-            }}
+            min={0}
+            value={unitCellWidth.state}
+            onChange={(value) => unitCellWidth.set(value)}
+            error={
+              unitCellWidth.state !== null && unitCellWidth.state <= 0
+                ? 'Must be greater than 0.'
+                : undefined
+            }
           />
           <div style={{ height: '10px' }} />
           <label htmlFor="unitCellHeight">Height:</label>
-          <input
-            type="number"
+          <NumberField
             id="unitCellHeight"
-            name="unitCellHeight"
-            value={unitCellHeight.state || ''}
-            onChange={(event) => {
-              unitCellHeight.set(Number(event.target.value) || null);
-            }}
+            min={0}
+            value={unitCellHeight.state}
+            onChange={(value) => unitCellHeight.set(value)}
+            error={
+              unitCellHeight.state !== null && unitCellHeight.state <= 0
+                ? 'Must be greater than 0.'
+                : undefined
+            }
           />
         </div>
         <div style={{ height: '20px' }} />
@@ -148,10 +172,10 @@ function MeshGeneratorView({
                 {!material.collapsed && (
                   <div style={{ display: 'flex', flexDirection: 'column', position: 'relative' }}>
                     <div style={{ height: '5px' }} />
-                    <label htmlFor="materialLabel">Label:</label>
+                    <label htmlFor={`material-${material.id}-label`}>Label:</label>
                     <input
                       type="text"
-                      id="materialLabel"
+                      id={`material-${material.id}-label`}
                       name="materialLabel"
                       value={material.label}
                       size={5}
@@ -164,48 +188,41 @@ function MeshGeneratorView({
                       }}
                     />
                     <div style={{ height: '5px' }} />
-                    <label htmlFor="materialYoung">Young:</label>
-                    <input
-                      type="number"
-                      id="materialYoung"
-                      name="materialYoung"
-                      value={material.young || ''}
-                      onChange={(event) => {
+                    <label htmlFor={`material-${material.id}-young`}>Young:</label>
+                    <NumberField
+                      id={`material-${material.id}-young`}
+                      value={material.young}
+                      error={validation.materialErrors[material.id]?.young}
+                      onChange={(value) => {
                         materials.set(
                           materials.state.map((mat) =>
-                            mat.id === material.id
-                              ? { ...mat, young: Number(event.target.value) }
-                              : mat
+                            mat.id === material.id ? { ...mat, young: value } : mat
                           )
                         );
                       }}
                     />
                     <div style={{ height: '5px' }} />
-                    <label htmlFor="materialPoisson">Poisson:</label>
-                    <input
-                      type="number"
-                      id="materialPoisson"
-                      name="materialPoisson"
-                      value={material.poisson || ''}
-                      onChange={(event) => {
+                    <label htmlFor={`material-${material.id}-poisson`}>Poisson:</label>
+                    <NumberField
+                      id={`material-${material.id}-poisson`}
+                      value={material.poisson}
+                      error={validation.materialErrors[material.id]?.poisson}
+                      onChange={(value) => {
                         materials.set(
                           materials.state.map((mat) =>
-                            mat.id === material.id
-                              ? { ...mat, poisson: Number(event.target.value) }
-                              : mat
+                            mat.id === material.id ? { ...mat, poisson: value } : mat
                           )
                         );
                       }}
                     />
                     <div style={{ height: '5px' }} />
-                    <label htmlFor="materialColor">Color:</label>
+                    <label htmlFor={`material-${material.id}-color`}>Color:</label>
                     <input
-                      type="text"
-                      id="materialColor"
+                      type="color"
+                      id={`material-${material.id}-color`}
                       name="materialColor"
-                      size={5}
                       value={material.color}
-                      style={{ color: material.color }}
+                      style={{ width: '100%', height: '28px', padding: 0, cursor: 'pointer' }}
                       onChange={(event) => {
                         materials.set(
                           materials.state.map((mat) =>
@@ -215,23 +232,24 @@ function MeshGeneratorView({
                       }}
                     />
                     <div style={{ height: '5px' }} />
-                    <div
-                      className="zoom-btns"
-                      style={{ cursor: 'pointer', position: 'absolute', top: '5px', right: '0px' }}
+                    <button
+                      type="button"
+                      aria-label={`Delete ${material.label}`}
+                      title="Delete material"
+                      className="zoom-btns icon-btn"
+                      style={{ position: 'absolute', top: '5px', right: '0px' }}
                       onClick={() => {
                         materials.set(materials.state.filter((mat) => mat.id !== material.id));
                       }}
                     >
                       <Icon icon="trash" color="white" size="14px" />
-                    </div>
-                    <div
-                      className="zoom-btns"
-                      style={{
-                        cursor: 'pointer',
-                        position: 'absolute',
-                        bottom: '25px',
-                        left: '45px'
-                      }}
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Random color"
+                      title="Random color"
+                      className="zoom-btns icon-btn"
+                      style={{ position: 'absolute', bottom: '38px', left: '45px' }}
                       onClick={() => {
                         materials.set(
                           materials.state.map((mat) =>
@@ -241,7 +259,7 @@ function MeshGeneratorView({
                       }}
                     >
                       <Icon icon="refresh" color="white" size="14px" />
-                    </div>
+                    </button>
                   </div>
                 )}
               </div>
@@ -254,8 +272,8 @@ function MeshGeneratorView({
                 id: generateUuid(),
                 label: 'Material ' + (newMaterials.length + 1),
                 color: generateColor(),
-                poisson: 0,
-                young: 0,
+                poisson: null,
+                young: null,
                 collapsed: false
               });
               materials.set(newMaterials);
@@ -315,10 +333,10 @@ function MeshGeneratorView({
                   {!region.collapsed && (
                     <div style={{ display: 'flex', flexDirection: 'column', position: 'relative' }}>
                       <div style={{ height: '5px' }} />
-                      <label htmlFor="regionLabel">Label:</label>
+                      <label htmlFor={`region-${region.id}-label`}>Label:</label>
                       <input
                         type="text"
-                        id="regionLabel"
+                        id={`region-${region.id}-label`}
                         name="regionLabel"
                         value={region.label}
                         size={5}
@@ -331,13 +349,11 @@ function MeshGeneratorView({
                         }}
                       />
                       <div style={{ height: '5px' }} />
-                      <label htmlFor="regionMaterial">Material:</label>
-                      <input
-                        type="text"
-                        id="regionMaterial"
-                        name="regionMaterial"
-                        value={materials.state.find((mat) => mat.id === region.materialId)?.label}
-                        size={5}
+                      <label htmlFor={`region-${region.id}-material`}>Material:</label>
+                      <select
+                        id={`region-${region.id}-material`}
+                        value={region.materialId}
+                        aria-invalid={validation.regionErrors[region.id] ? true : undefined}
                         onChange={(event) => {
                           regions.set(
                             regions.state.map((reg) =>
@@ -347,75 +363,32 @@ function MeshGeneratorView({
                             )
                           );
                         }}
-                        onClick={() => {
-                          regions.set(
-                            regions.state.map((reg) =>
-                              reg.id === region.id
-                                ? { ...reg, showMaterialsDropdown: !region.showMaterialsDropdown }
-                                : reg
-                            )
-                          );
-                        }}
-                      />
-
-                      {region.showMaterialsDropdown && (
+                      >
+                        <option value="">Choose…</option>
+                        {materials.state.map((material) => (
+                          <option key={material.id} value={material.id}>
+                            {material.label}
+                          </option>
+                        ))}
+                      </select>
+                      {validation.regionErrors[region.id] && (
                         <div
-                          style={{
-                            border: '2px solid var(--off-white)',
-                            position: 'absolute',
-                            top: '90px',
-                            backgroundColor: 'grey',
-                            width: '100%'
-                          }}
+                          role="alert"
+                          style={{ color: '#ffe0e0', fontSize: '12px', marginTop: '2px' }}
                         >
-                          {materials.state.map((material) => (
-                            <div
-                              className="materialItem"
-                              key={material.id}
-                              style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between'
-                              }}
-                              onClick={() => {
-                                regions.set(
-                                  regions.state.map((reg) =>
-                                    reg.id === region.id
-                                      ? {
-                                          ...reg,
-                                          materialId: material.id,
-                                          showMaterialsDropdown: false
-                                        }
-                                      : reg
-                                  )
-                                );
-                              }}
-                            >
-                              {material.label}
-                              <div
-                                style={{
-                                  width: '14px',
-                                  height: '14px',
-                                  backgroundColor: material.color,
-                                  marginLeft: '5px'
-                                }}
-                              />
-                            </div>
-                          ))}
+                          {validation.regionErrors[region.id]}
                         </div>
                       )}
-
                       <div style={{ height: '5px' }} />
                       <div style={{ display: 'flex' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', width: '48%' }}>
-                          <label htmlFor="regionWidth">Width:</label>
-                          <input
-                            type="number"
-                            id="regionWidth"
-                            name="regionWidth"
-                            value={region.width || ''}
-                            onChange={(event) => {
-                              let value = Number(event.target.value);
+                          <label htmlFor={`region-${region.id}-width`}>Width:</label>
+                          <NumberField
+                            id={`region-${region.id}-width`}
+                            emptyValue={0}
+                            value={region.width}
+                            onChange={(newValue) => {
+                              let value = newValue ?? 0;
 
                               if (unitCellWidth.state && region.x + value > unitCellWidth.state) {
                                 value = unitCellWidth.state - region.x;
@@ -430,14 +403,13 @@ function MeshGeneratorView({
                         </div>
                         <div style={{ width: '5px' }} />
                         <div style={{ display: 'flex', flexDirection: 'column', width: '48%' }}>
-                          <label htmlFor="regionHeight">Height:</label>
-                          <input
-                            type="number"
-                            id="regionHeight"
-                            name="regionHeight"
-                            value={region.height || ''}
-                            onChange={(event) => {
-                              const value = Number(event.target.value);
+                          <label htmlFor={`region-${region.id}-height`}>Height:</label>
+                          <NumberField
+                            id={`region-${region.id}-height`}
+                            emptyValue={0}
+                            value={region.height}
+                            onChange={(newValue) => {
+                              const value = newValue ?? 0;
                               regions.set(
                                 regions.state.map((reg) =>
                                   reg.id === region.id ? { ...reg, height: value } : reg
@@ -451,19 +423,15 @@ function MeshGeneratorView({
 
                       <div style={{ display: 'flex' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', width: '48%' }}>
-                          <label htmlFor="regionX">X:</label>
-                          <input
-                            type="number"
-                            id="regionX"
-                            name="regionX"
-                            value={region.x || ''}
-                            size={5}
-                            onChange={(event) => {
+                          <label htmlFor={`region-${region.id}-x`}>X:</label>
+                          <NumberField
+                            id={`region-${region.id}-x`}
+                            emptyValue={0}
+                            value={region.x}
+                            onChange={(value) => {
                               regions.set(
                                 regions.state.map((reg) =>
-                                  reg.id === region.id
-                                    ? { ...reg, x: Number(event.target.value) }
-                                    : reg
+                                  reg.id === region.id ? { ...reg, x: value ?? 0 } : reg
                                 )
                               );
                             }}
@@ -471,19 +439,15 @@ function MeshGeneratorView({
                         </div>
                         <div style={{ width: '5px' }} />
                         <div style={{ display: 'flex', flexDirection: 'column', width: '50%' }}>
-                          <label htmlFor="regionY">Y:</label>
-                          <input
-                            type="number"
-                            id="regionY"
-                            name="regionY"
-                            value={region.y || ''}
-                            size={5}
-                            onChange={(event) => {
+                          <label htmlFor={`region-${region.id}-y`}>Y:</label>
+                          <NumberField
+                            id={`region-${region.id}-y`}
+                            emptyValue={0}
+                            value={region.y}
+                            onChange={(value) => {
                               regions.set(
                                 regions.state.map((reg) =>
-                                  reg.id === region.id
-                                    ? { ...reg, y: Number(event.target.value) }
-                                    : reg
+                                  reg.id === region.id ? { ...reg, y: value ?? 0 } : reg
                                 )
                               );
                             }}
@@ -492,28 +456,24 @@ function MeshGeneratorView({
                       </div>
 
                       <div style={{ height: '5px' }} />
-                      <div
-                        className="zoom-btns"
-                        style={{
-                          cursor: 'pointer',
-                          position: 'absolute',
-                          top: '5px',
-                          right: '0px'
-                        }}
+                      <button
+                        type="button"
+                        aria-label={`Delete ${region.label}`}
+                        title="Delete region"
+                        className="zoom-btns icon-btn"
+                        style={{ position: 'absolute', top: '5px', right: '0px' }}
                         onClick={() => {
                           regions.set(regions.state.filter((reg) => reg.id !== region.id));
                         }}
                       >
                         <Icon icon="trash" color="white" size="14px" />
-                      </div>
-                      <div
-                        className="zoom-btns"
-                        style={{
-                          cursor: 'pointer',
-                          position: 'absolute',
-                          top: '5px',
-                          right: '20px'
-                        }}
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={`Duplicate ${region.label}`}
+                        title="Duplicate region"
+                        className="zoom-btns icon-btn"
+                        style={{ position: 'absolute', top: '5px', right: '20px' }}
                         onClick={() => {
                           if (
                             !unitCellWidth.state ||
@@ -550,7 +510,7 @@ function MeshGeneratorView({
                         }}
                       >
                         <Icon icon="copy" color="white" size="14px" />
-                      </div>
+                      </button>
                     </div>
                   )}
                 </div>
@@ -608,176 +568,108 @@ function MeshGeneratorView({
               </div>
               <div style={{ height: '5px' }} />
               <label htmlFor="radius">Fraction:</label>
-              <input
-                type="number"
+              <NumberField
                 id="radius"
-                name="radius"
-                onChange={(event) => {
+                emptyValue={0}
+                value={circle.state.fraction}
+                onChange={(newValue) => {
+                  const value = newValue ?? 0;
                   circle.set({
                     ...circle.state,
                     radius:
-                      Math.sqrt(Number(event.target.value) / Math.PI) *
+                      Math.sqrt(value / Math.PI) *
                       Math.min(unitCellHeight.state || 0, unitCellWidth.state || 0),
-                    fraction: Number(event.target.value)
+                    fraction: value
                   });
                 }}
-                value={circle.state.fraction || ''}
               />
               {circle.state.type === 'grid' ? (
                 <>
                   <div style={{ height: '5px' }} />
                   <label htmlFor="circleDivisions">Division:</label>
-                  <input
-                    type="number"
+                  <NumberField
                     id="circleDivisions"
-                    name="circleDivisions"
-                    onChange={(event) => {
-                      circle.set({
-                        ...circle.state,
-                        circleDivisions: Number(event.target.value)
-                      });
+                    emptyValue={0}
+                    step="1"
+                    value={circle.state.circleDivisions}
+                    onChange={(value) => {
+                      circle.set({ ...circle.state, circleDivisions: value ?? 0 });
                     }}
-                    value={circle.state.circleDivisions || ''}
                   />
                 </>
               ) : (
                 <>
                   <div style={{ height: '5px' }} />
                   <label htmlFor="edges">Edges:</label>
-                  <input
-                    type="number"
+                  <NumberField
                     id="edges"
-                    name="edges"
-                    onChange={(event) => {
-                      circle.set({ ...circle.state, edges: Number(event.target.value) });
+                    emptyValue={0}
+                    step="1"
+                    value={circle.state.edges}
+                    onChange={(value) => {
+                      circle.set({ ...circle.state, edges: value ?? 0 });
                     }}
-                    value={circle.state.edges || ''}
                   />
                 </>
               )}
 
               <div style={{ height: '5px' }} />
               <label htmlFor="circleMaterial">Circle Material:</label>
-              <input
+              <select
                 id="circleMaterial"
-                name="circleMaterial"
-                type="text"
-                value={
-                  materials.state.find((mat) => mat.id === circle.state.circleMaterialId)?.label
-                }
-                size={5}
-                onClick={() => {
-                  circle.set({
-                    ...circle.state,
-                    showCircleMaterials: !circle.state.showCircleMaterials
-                  });
+                value={circle.state.circleMaterialId}
+                onChange={(event) => {
+                  circle.set({ ...circle.state, circleMaterialId: event.target.value });
                 }}
-              />
-              {circle.state.showCircleMaterials && (
-                <div
-                  style={{
-                    border: '2px solid var(--off-white)',
-                    position: 'absolute',
-                    top: '130px',
-                    backgroundColor: 'grey',
-                    width: '100%'
-                  }}
-                >
-                  {materials.state.map((material) => (
-                    <div
-                      className="materialItem"
-                      key={material.id}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between'
-                      }}
-                      onClick={() => {
-                        circle.set({
-                          ...circle.state,
-                          circleMaterialId: material.id,
-                          showCircleMaterials: false
-                        });
-                      }}
-                    >
-                      {material.label}
-                      <div
-                        style={{
-                          width: '14px',
-                          height: '14px',
-                          backgroundColor: material.color,
-                          marginLeft: '5px'
-                        }}
-                      />
-                    </div>
-                  ))}
-                </div>
-              )}
+              >
+                <option value="">Choose…</option>
+                {materials.state.map((material) => (
+                  <option key={material.id} value={material.id}>
+                    {material.label}
+                  </option>
+                ))}
+              </select>
               <div style={{ height: '5px' }} />
               <label htmlFor="rectangleMaterial">Rectangle Material:</label>
-              <input
+              <select
                 id="rectangleMaterial"
-                name="rectangleMaterial"
-                type="text"
-                value={
-                  materials.state.find((mat) => mat.id === circle.state.rectangleMaterialId)?.label
-                }
-                size={5}
-                onClick={() => {
-                  circle.set({
-                    ...circle.state,
-                    showRectangleMaterials: !circle.state.showRectangleMaterials
-                  });
+                value={circle.state.rectangleMaterialId}
+                onChange={(event) => {
+                  circle.set({ ...circle.state, rectangleMaterialId: event.target.value });
                 }}
-              />
-              {circle.state.showRectangleMaterials && (
-                <div
-                  style={{
-                    border: '2px solid var(--off-white)',
-                    position: 'absolute',
-                    top: '170px',
-                    backgroundColor: 'grey',
-                    width: '100%'
-                  }}
-                >
-                  {materials.state.map((material) => (
-                    <div
-                      className="materialItem"
-                      key={material.id}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between'
-                      }}
-                      onClick={() => {
-                        circle.set({
-                          ...circle.state,
-                          rectangleMaterialId: material.id,
-                          showRectangleMaterials: false
-                        });
-                      }}
-                    >
-                      {material.label}
-                      <div
-                        style={{
-                          width: '14px',
-                          height: '14px',
-                          backgroundColor: material.color,
-                          marginLeft: '5px'
-                        }}
-                      />
-                    </div>
-                  ))}
-                </div>
-              )}
+              >
+                <option value="">Choose…</option>
+                {materials.state.map((material) => (
+                  <option key={material.id} value={material.id}>
+                    {material.label}
+                  </option>
+                ))}
+              </select>
               <div style={{ height: '10px' }} />
               <button
                 style={{ cursor: 'pointer' }}
+                disabled={
+                  !circle.state.circleMaterialId ||
+                  !circle.state.rectangleMaterialId ||
+                  !(circle.state.fraction > 0) ||
+                  (circle.state.type === 'grid'
+                    ? !(circle.state.circleDivisions > 0)
+                    : !(circle.state.edges > 0))
+                }
+                title="Replaces all regions with a circle inclusion"
                 onClick={() => {
                   generateCircle();
                 }}
               >
                 Generate Circle
+              </button>
+              <div style={{ height: '5px' }} />
+              <button
+                type="button"
+                style={{ cursor: 'pointer' }}
+                onClick={() => circle.set({ ...circle.state, showCircleInputs: false })}
+              >
+                Back to regions
               </button>
             </div>
           )}
@@ -843,12 +735,24 @@ function MeshGeneratorView({
           <div>
             <input
               type="radio"
+              id="noSupport"
+              name="support"
+              value="none"
+              style={{ cursor: 'pointer' }}
+              checked={supportType.state === 'none'}
+              onChange={() => supportType.set('none')}
+            />
+            <label htmlFor="noSupport">None</label>
+          </div>
+          <div>
+            <input
+              type="radio"
               id="centralSupport"
               name="support"
               value="central"
               style={{ cursor: 'pointer' }}
               checked={supportType.state === 'central'}
-              onClick={() => {
+              onChange={() => {
                 supportType.set('central');
                 stuffToShow.set({ ...stuffToShow.state, supports: true });
               }}
@@ -863,7 +767,7 @@ function MeshGeneratorView({
               value="border"
               style={{ cursor: 'pointer' }}
               checked={supportType.state === 'border'}
-              onClick={() => {
+              onChange={() => {
                 supportType.set('border');
                 stuffToShow.set({ ...stuffToShow.state, supports: true });
               }}
@@ -878,7 +782,7 @@ function MeshGeneratorView({
               value="edges"
               style={{ cursor: 'pointer' }}
               checked={supportType.state === 'edges'}
-              onClick={() => {
+              onChange={() => {
                 supportType.set('edges');
                 stuffToShow.set({ ...stuffToShow.state, supports: true });
               }}
@@ -930,39 +834,29 @@ function MeshGeneratorView({
         <div style={{ flex: '1' }} />
         <div style={{ height: '20px' }} />
         <label htmlFor="maxElemSize">Max Subvolume Size:</label>
-        <input
-          type="number"
+        <NumberField
           id="maxElemSize"
-          name="maxElemSize"
-          value={maxElemSize.state || ''}
-          size={5}
-          onChange={(event) => {
-            maxElemSize.set(Number(event.target.value));
-          }}
+          emptyValue={0}
+          value={maxElemSize.state}
+          onChange={(value) => maxElemSize.set(value ?? 0)}
         />
         <div style={{ height: '5px' }} />
         <label htmlFor="minElemSize">Min Subvolume Size:</label>
-        <input
-          type="number"
+        <NumberField
           id="minElemSize"
-          name="minElemSize"
-          value={minElemSize.state || ''}
-          size={5}
-          onChange={(event) => {
-            minElemSize.set(Number(event.target.value));
-          }}
+          emptyValue={0}
+          value={minElemSize.state}
+          onChange={(value) => minElemSize.set(value ?? 0)}
         />
         <div style={{ height: '5px' }} />
-        <label htmlFor="regionX">Divisions:</label>
-        <input
-          type="text"
-          id="regionX"
-          name="regionX"
+        <label htmlFor="divisionsByRegion">Divisions:</label>
+        <NumberField
+          id="divisionsByRegion"
+          emptyValue={1}
+          step="1"
+          min={1}
           value={divisionsByRegion.state}
-          size={5}
-          onChange={(event) => {
-            divisionsByRegion.set(Number(event.target.value) || 1);
-          }}
+          onChange={(value) => divisionsByRegion.set(value || 1)}
         />
         <div style={{ height: '15px' }} />
         <button
@@ -1003,17 +897,45 @@ function MeshGeneratorView({
           }}
         >
           <div
+            ref={viewportRef}
             style={{
               height: '100%',
               width: '100%',
+              minHeight: '420px',
               backgroundColor: 'rgba(0, 0, 0, 0.08)',
               border: '1px solid var(--off-white)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              position: 'relative'
+              position: 'relative',
+              overflow: 'hidden'
             }}
           >
+            {meshStale && (
+              <div
+                role="status"
+                style={{
+                  position: 'absolute',
+                  top: '10px',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  zIndex: 2,
+                  background: '#3a2f1c',
+                  color: '#f6d9a8',
+                  border: '1px solid #6b5426',
+                  borderRadius: '4px',
+                  padding: '6px 10px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px'
+                }}
+              >
+                The inputs changed after the last mesh. The mesh is out of date.
+                <button type="button" style={{ cursor: 'pointer' }} onClick={() => generateMesh()}>
+                  Regenerate mesh
+                </button>
+              </div>
+            )}
             <div // Zoom Buttons
               className="zoom-btns"
               style={{
@@ -1436,10 +1358,18 @@ function MeshGeneratorView({
               <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                 <label htmlFor="faceSupport">Edit Face Support:</label>
                 <div style={{ width: '5px' }} />
-                <input type="text" id="faceSupport" name="faceSupport" size={5} />
+                <input
+                  type="number"
+                  id="faceSupport"
+                  name="faceSupport"
+                  min={1}
+                  style={{ width: '70px' }}
+                />
                 <div style={{ width: '5px' }} />
                 <button
                   style={{ cursor: 'pointer' }}
+                  disabled={!hasMesh}
+                  title="Type a face id (turn on Faces to see them) to add or remove its support"
                   onClick={() => {
                     const faceIndex =
                       Number((document.getElementById('faceSupport') as HTMLInputElement).value) -
@@ -1461,33 +1391,51 @@ function MeshGeneratorView({
               <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                 <button
                   style={{ cursor: 'pointer' }}
+                  disabled={validation.blockers.length > 0}
+                  title={blockersText || 'Download the mesh as a .fvt file (FVDAM input)'}
                   onClick={() => {
                     generateFvtFile();
                   }}
                 >
-                  Download FVT File
+                  Export .fvt
                 </button>
                 <div style={{ width: '5px' }} />
                 <button
                   style={{ cursor: 'pointer' }}
+                  disabled={!unitCellWidth.state || !unitCellHeight.state}
+                  title="Save the whole model (.json) to open it again later"
                   onClick={() => {
                     generateJsonFile();
                   }}
                 >
-                  Download Model
+                  Save model (.json)
                 </button>
                 <div style={{ width: '15px' }} />
                 <button
                   style={{ cursor: 'pointer', fontWeight: 'bold' }}
+                  disabled={validation.blockers.length > 0}
+                  title={blockersText || 'Send this mesh to the FVDAM solver'}
                   onClick={() => {
-                    page.set('mesh');
-                    generateJsonFile(false);
-                    generateFvtFile(false);
+                    sendToFvdam();
                   }}
                 >
-                  START
+                  Send to FVDAM ▸
                 </button>
               </div>
+              {validation.blockers.length > 0 && (unitCellWidth.state || hasMesh) && (
+                <div
+                  role="status"
+                  style={{
+                    marginTop: '6px',
+                    fontSize: '12px',
+                    color: '#fff',
+                    maxWidth: '420px',
+                    textAlign: 'right'
+                  }}
+                >
+                  {validation.blockers[0]}
+                </div>
+              )}
             </div>
           </div>
         </div>

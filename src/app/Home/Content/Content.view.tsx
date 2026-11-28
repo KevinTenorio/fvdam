@@ -6,7 +6,8 @@ import './Content.styles.css';
 import { useAppContext } from '/src/app/App.context';
 import { AppContext } from '/src/app/App.model';
 import { FvdamCore, PythonRuntimeStatus } from '/src/app/Home/Home.model';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import materialColor from '/src/commons/materialColor';
 
 const CORE_LABELS: Record<FvdamCore, string> = {
   python: 'Python (in browser)',
@@ -112,8 +113,25 @@ function ContentView({
   meshData,
   pythonStatus
 }: IContentViewProps) {
+  // a seção da FVDAM abre abaixo do editor de malha: leva o usuário até ela
+  // ao enviar uma malha e de novo quando os resultados chegam
+  const sectionRef = useRef<HTMLDivElement>(null);
+  // rola só na vertical (scrollIntoView também deslocava a página para o lado)
+  function scrollToTop(element: HTMLElement | null, onlyIfHidden = false) {
+    if (!element) return;
+    const rect = element.getBoundingClientRect();
+    if (onlyIfHidden && rect.top >= 0 && rect.bottom <= window.innerHeight) return;
+    window.scrollTo({ top: window.scrollY + rect.top - 10, behavior: 'smooth' });
+  }
+  useEffect(() => {
+    scrollToTop(sectionRef.current);
+  }, [elements.state]);
+  useEffect(() => {
+    if (results.state) scrollToTop(sectionRef.current, true);
+  }, [results.state]);
   return (
     <div
+      ref={sectionRef}
       style={{
         marginTop: '20px',
         marginBottom: '20px',
@@ -272,15 +290,17 @@ function ContentView({
                     }}
                   >
                     {`Color: `}
-                    {meshData && (
-                      <div
-                        style={{
-                          paddingLeft: '5px',
-                          color: meshData.materials[materialIndex].color,
-                          fontWeight: 'bold'
-                        }}
-                      >{`${meshData.materials[materialIndex].color}`}</div>
-                    )}
+                    <span
+                      aria-hidden="true"
+                      style={{
+                        display: 'inline-block',
+                        width: '14px',
+                        height: '14px',
+                        marginLeft: '6px',
+                        backgroundColor: materialColor(meshData, materialIndex),
+                        border: '1px solid rgba(255, 255, 255, 0.6)'
+                      }}
+                    />
                   </div>
                 </div>
               ))}

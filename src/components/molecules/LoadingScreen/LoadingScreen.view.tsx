@@ -1,6 +1,12 @@
 import style from './LoadingScreen.module.css';
 
-const LoadingScreenView = ({ loadingMessages }: { loadingMessages: string[] }) => {
+const LoadingScreenView = ({
+  loadingMessages,
+  onCancel
+}: {
+  loadingMessages: string[];
+  onCancel?: () => void;
+}) => {
   return (
     <div
       style={{
@@ -11,12 +17,24 @@ const LoadingScreenView = ({ loadingMessages }: { loadingMessages: string[] }) =
         alignItems: 'center',
         zIndex: '150000',
         backdropFilter: 'blur(2px)',
+        backgroundColor: 'rgba(0, 0, 0, 0.35)',
         flexDirection: 'column',
         color: 'white'
       }}
     >
       <div className={style.loadingSpinner}></div>
-      <div style={{ marginTop: '10px' }}>{loadingMessages[0] || 'Loading...'}</div>
+      <div role="status" style={{ marginTop: '10px' }}>
+        {loadingMessages[0] || 'Loading...'}
+      </div>
+      {onCancel && (
+        <button
+          type="button"
+          onClick={onCancel}
+          style={{ marginTop: '14px', padding: '6px 14px', cursor: 'pointer' }}
+        >
+          Cancel
+        </button>
+      )}
     </div>
   );
 };

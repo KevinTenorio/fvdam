@@ -18,16 +18,14 @@ import getNodes from './getNodes';
 import getMaterials from './getMaterials';
 import getElements from './getElements';
 import getFaces from './getFaces';
-import calcConsts from './calcConsts';
-import calcDof from './calcDof';
-import calcStiffness from './calcStiffness';
-import calcConc from './calcConc';
-import homogenize from './homogenize';
 import * as math from 'mathjs';
 import { executarFvdamPython, prepararFvdamPython } from './python/fvdamPython';
+import materialColor from '/src/commons/materialColor';
+import { executarFvdamTs, cancelarFvdamTs, ExecucaoCancelada } from './typescript/fvdamTs';
 
 function HomeController() {
-  const { setError, setLoading, fvdamFile, setMeshData, meshData }: AppContext = useAppContext();
+  const { setError, setLoading, setCancelLoading, fvdamFile, setMeshData, meshData }: AppContext =
+    useAppContext();
   const [nodes, setNodes] = useState<Node[]>([]);
   const [nodesInfo, setNodesInfo] = useState<NodesInfo>({
     nodesX: 0,
@@ -101,34 +99,6 @@ function HomeController() {
       setError('Invalid file format.');
     }
     return { nodes, nodesInfo, materials, elements, faces };
-  }
-
-  async function fvdamAlg(
-    nodes: Node[],
-    nodesInfo: NodesInfo,
-    materials: Material[],
-    elements: IElement[],
-    faces: Face[]
-  ) {
-    const { AIn, EIn, MIn, NIn, PIn, AOut, MOut, NOut, POut } = calcConsts();
-    const { dofAOut, dofAIn } = calcDof(faces);
-    const { KgIn, KgOut } = calcStiffness(
-      faces,
-      elements,
-      AIn,
-      EIn,
-      MIn,
-      NIn,
-      PIn,
-      AOut,
-      MOut,
-      NOut,
-      POut
-    );
-    calcConc(faces, elements, dofAIn, dofAOut, KgIn, KgOut);
-    const Ch = homogenize(elements, materials);
-
-    return Ch;
   }
 
   function handleEffectiveStiffness(Ch: math.MathCollection, core: FvdamCore = 'typescript') {
@@ -224,20 +194,25 @@ function HomeController() {
       handleExecuteFvdamPython();
       return;
     }
-    const runAlg = async () => {
-      const start = performance.now();
-      await fvdamAlg(nodes, nodesInfo, materials, elements, faces)
-        .then((res) => handleEffectiveStiffness(res))
-        .catch((error) => setError(error))
-        .finally(() => {
-          setLoading(EXECUTING, false);
-        });
-      const end = performance.now();
-      setElapsedTime(end - start);
-    };
-    setTimeout(() => {
-      runAlg();
-    }, 5);
+    if (!inputText) {
+      setError('No unit cell loaded.');
+      setLoading(EXECUTING, false);
+      return;
+    }
+    // núcleo TypeScript num Web Worker: a interface continua respondendo e dá para cancelar
+    setCancelLoading(() => () => cancelarFvdamTs());
+    try {
+      const res = await executarFvdamTs(inputText);
+      handleEffectiveStiffness(math.matrix(res.C));
+      setElapsedTime(res.tempo_ms);
+    } catch (error) {
+      if (!(error instanceof ExecucaoCancelada)) {
+        setError(error instanceof Error ? error.message : String(error));
+      }
+    } finally {
+      setCancelLoading(undefined);
+      setLoading(EXECUTING, false);
+    }
   }
 
   function readJsonFile(file: any) {
@@ -271,6 +246,8 @@ function HomeController() {
                 setFaces(faces);
                 setResults(undefined);
                 setInputText(text);
+                // .fvt aberto direto: vai para a FVDAM (antes a seção nunca aparecia)
+                if (materials.length > 0 && nodes.length > 0) setPage('fvdam');
               })
               .catch((error) => setError(error))
               .finally(() => {
@@ -308,9 +285,7 @@ function HomeController() {
     const percentages: number[] = [0];
     materials.forEach((material, materialIndex) => {
       totalArea += material.area;
-      if (meshData) {
-        colors.push(meshData.materials[materialIndex].color);
-      }
+      colors.push(materialColor(meshData, materialIndex));
     });
     let cumulativeArea = 0;
     materials.forEach((material) => {

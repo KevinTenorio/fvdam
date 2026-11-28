@@ -39,6 +39,15 @@ export interface IMeshGeneratorViewProps {
     circleDivisions: number;
   }>;
   generateCircle: () => void;
+  meshStale: boolean;
+  validation: IMeshValidation;
+  sendToFvdam: () => void;
+}
+
+export interface IMeshValidation {
+  materialErrors: Record<string, { young?: string; poisson?: string }>;
+  regionErrors: Record<string, string>;
+  blockers: string[];
 }
 
 export interface IMeshGeneratorContext {
@@ -84,8 +93,8 @@ export interface IMeshGeneratorControllerProps {
 export interface IMeshMaterial {
   id: string;
   label: string;
-  poisson: number;
-  young: number;
+  poisson: number | null;
+  young: number | null;
   color: string;
   collapsed: boolean;
 }

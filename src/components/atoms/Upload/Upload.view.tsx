@@ -6,9 +6,10 @@ interface UploadViewProps {
   file: IState<any>;
   width: string;
   height: string;
+  accept?: string;
 }
 
-function UploadView({ file, width, height }: UploadViewProps) {
+function UploadView({ file, width, height, accept }: UploadViewProps) {
   return (
     <div
       className="upload"
@@ -36,9 +37,21 @@ function UploadView({ file, width, height }: UploadViewProps) {
               alignItems: 'center'
             }}
           >
-            <div onClick={() => file.set(null)} style={{ cursor: 'pointer' }}>
+            <button
+              type="button"
+              aria-label="Remove file"
+              title="Remove file"
+              onClick={() => file.set(null)}
+              style={{
+                cursor: 'pointer',
+                background: 'none',
+                border: 0,
+                padding: 2,
+                lineHeight: 0
+              }}
+            >
               <Icon icon="trash" size="18px" color="white" />
-            </div>
+            </button>
 
             <span
               style={{
@@ -58,6 +71,8 @@ function UploadView({ file, width, height }: UploadViewProps) {
           <input
             type="file"
             name="file"
+            accept={accept}
+            aria-label="Choose a .json model or .fvt mesh"
             style={{
               opacity: 0,
               position: 'absolute',
@@ -109,7 +124,7 @@ function UploadView({ file, width, height }: UploadViewProps) {
                   fontWeight: '500'
                 }}
               >
-                Drag or click to import a file.
+                Drop or click to open a .json or .fvt file
               </span>
             </div>
           </div>

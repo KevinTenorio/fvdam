@@ -22,6 +22,8 @@ export interface AppContext {
   readJsonFile: (file: any) => void;
   meshData: any;
   setMeshData: (meshData: any) => void;
+  cancelLoading: (() => void) | undefined;
+  setCancelLoading: (cancel: (() => void) | undefined) => void;
 }
 
 export interface PortalVars {
