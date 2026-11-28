@@ -14,7 +14,6 @@ function ContentController({
   nodesInfo,
   results,
   handleExecuteFvdam,
-  getPieChartColors,
   elapsedTime,
   pythonStatus
 }: IContentControllerProps) {
@@ -28,7 +27,6 @@ function ContentController({
       nodesInfo={nodesInfo}
       results={results}
       handleExecuteFvdam={handleExecuteFvdam}
-      getPieChartColors={getPieChartColors}
       elapsedTime={elapsedTime}
       meshData={meshData}
       pythonStatus={pythonStatus}

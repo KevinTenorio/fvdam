@@ -1,13 +1,72 @@
 // No view fica o que é renderizado pelo componente
 // Importa o styles (se tiver) e outros componentes filhos
 // É exportado para o controller
-import { IMeshGeneratorViewProps } from './MeshGenerator.model';
+import { IMeshGeneratorViewProps, IMeshRegion } from './MeshGenerator.model';
 import './MeshGenerator.styles.css';
 import Icon from '/src/components/atoms/Icon';
 import generateUuid from '/src/commons/generateUuid';
 import generateColor from '/src/commons/generateColor';
 import NumberField from '/src/components/atoms/NumberField';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useAppContext } from '/src/app/App.context';
+import { AppContext } from '/src/app/App.model';
+import { unitSuffix } from '/src/commons/units';
+
+// número curto para resumos (ex.: 4000, 0.15, 12.5)
+function short(value: number | null | undefined, digits = 6) {
+  if (value === null || value === undefined || Number.isNaN(value)) return '—';
+  return Number(value.toPrecision(digits)).toString();
+}
+
+// Camadas que o usuário liga e desliga no viewport (mesmos campos de stuffToShow)
+const LAYERS: { key: string; label: string }[] = [
+  { key: 'elements', label: 'Subvolumes' },
+  { key: 'elementsIds', label: 'Subvolume IDs' },
+  { key: 'regionsMaterials', label: 'Materials' },
+  { key: 'regionsLabels', label: 'Regions' },
+  { key: 'nodesIds', label: 'Nodes' },
+  { key: 'facesIds', label: 'Faces' },
+  { key: 'borderFacesIds', label: 'Border faces' },
+  { key: 'supports', label: 'Supports' }
+];
+
+const SUPPORTS: { value: string; label: string; hint: string }[] = [
+  { value: 'none', label: 'None', hint: 'No restrained face (FVDAM needs at least one)' },
+  { value: 'central', label: 'Central', hint: 'Restrain a face near the center of the cell' },
+  { value: 'border', label: 'Border', hint: 'Restrain faces on the cell border' },
+  { value: 'edges', label: 'Edges', hint: 'Restrain faces at the cell edges' }
+];
+
+function Section({
+  title,
+  count,
+  children,
+  defaultOpen = true
+}: {
+  title: string;
+  count?: number;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <section className="mg-section">
+      <button
+        type="button"
+        className="mg-section-head"
+        aria-expanded={open}
+        onClick={() => setOpen(!open)}
+      >
+        <span className="mg-chevron" data-open={open}>
+          <Icon icon="chevron" color="currentColor" size="14px" />
+        </span>
+        <span className="eyebrow">{title}</span>
+        {count !== undefined && <span className="mg-count mono">{count}</span>}
+      </button>
+      {open && <div className="mg-section-body">{children}</div>}
+    </section>
+  );
+}
 
 function MeshGeneratorView({
   unitCellHeight,
@@ -36,6 +95,10 @@ function MeshGeneratorView({
   validation,
   sendToFvdam
 }: IMeshGeneratorViewProps) {
+  const { units }: AppContext = useAppContext();
+  const len = unitSuffix(units.length);
+  const stress = unitSuffix(units.stress);
+
   // zoom pelo tamanho real do viewport (antes usava a janela inteira)
   const viewportRef = useRef<HTMLDivElement>(null);
   const [viewportSize, setViewportSize] = useState({ width: 600, height: 600 });
@@ -57,1389 +120,947 @@ function MeshGeneratorView({
     );
   const hasMesh = elements.state.length > 0;
   const blockersText = validation.blockers.join('\n');
+
+  // seleção só da interface: não altera o modelo salvo no .json
+  const [openMaterialId, setOpenMaterialId] = useState<string | null>(null);
+  const [selectedRegionId, setSelectedRegionId] = useState<string | null>(null);
+  const [regionQuery, setRegionQuery] = useState('');
+  const [regionMaterialFilter, setRegionMaterialFilter] = useState('');
+  const faceSupportRef = useRef<HTMLInputElement>(null);
+
+  const selectedRegion = regions.state.find((region) => region.id === selectedRegionId);
+  const materialById = useMemo(() => {
+    const map: Record<string, (typeof materials.state)[number]> = {};
+    materials.state.forEach((material) => (map[material.id] = material));
+    return map;
+  }, [materials.state]);
+
+  const filteredRegions = useMemo(() => {
+    const query = regionQuery.trim().toLowerCase();
+    return regions.state.filter(
+      (region) =>
+        (!query || region.label.toLowerCase().includes(query)) &&
+        (!regionMaterialFilter || region.materialId === regionMaterialFilter)
+    );
+  }, [regions.state, regionQuery, regionMaterialFilter]);
+
+  function updateRegion(id: string, changes: Partial<IMeshRegion>) {
+    regions.set(regions.state.map((reg) => (reg.id === id ? { ...reg, ...changes } : reg)));
+  }
+
+  function addRegion() {
+    if (!unitCellWidth.state || !unitCellHeight.state) return;
+    const newRegions = [...regions.state];
+    const id = generateUuid();
+    newRegions.push({
+      id,
+      label: 'Region ' + (newRegions.length + 1),
+      collapsed: false,
+      showMaterialsDropdown: false,
+      width: 0,
+      height:
+        (newRegions[newRegions.length - 1]?.x + newRegions[newRegions.length - 1]?.width >=
+          unitCellWidth.state &&
+        2 * newRegions[newRegions.length - 1]?.height + newRegions[newRegions.length - 1]?.y >=
+          unitCellHeight.state
+          ? unitCellHeight.state -
+            newRegions[newRegions.length - 1]?.y -
+            newRegions[newRegions.length - 1]?.height
+          : newRegions[newRegions.length - 1]?.height) || 0,
+      x:
+        (newRegions[newRegions.length - 1]?.x + newRegions[newRegions.length - 1]?.width >=
+        unitCellWidth.state
+          ? 0
+          : newRegions[newRegions.length - 1]?.x + newRegions[newRegions.length - 1]?.width) || 0,
+      y:
+        (newRegions[newRegions.length - 1]?.x + newRegions[newRegions.length - 1]?.width >=
+        unitCellWidth.state
+          ? newRegions[newRegions.length - 1]?.y + newRegions[newRegions.length - 1]?.height
+          : newRegions[newRegions.length - 1]?.y) || 0,
+      materialId: ''
+    });
+    regions.set(newRegions);
+    setSelectedRegionId(id);
+  }
+
+  function duplicateRegion(region: IMeshRegion) {
+    if (!unitCellWidth.state || !unitCellHeight.state) return;
+    const newRegions = [...regions.state];
+    const last = newRegions[newRegions.length - 1];
+    const id = generateUuid();
+    newRegions.push({
+      id,
+      label: 'Region ' + (newRegions.length + 1),
+      collapsed: true,
+      showMaterialsDropdown: false,
+      width: region.width || 0,
+      height: region.height || 0,
+      x: (last?.x + last?.width >= unitCellWidth.state ? 0 : last?.x + last?.width) || 0,
+      y: (last?.x + last?.width >= unitCellWidth.state ? last?.y + last?.height : last?.y) || 0,
+      materialId: region.materialId || ''
+    });
+    regions.set(newRegions);
+    setSelectedRegionId(id);
+  }
+
+  function addMaterial() {
+    const newMaterials = [...materials.state];
+    const id = generateUuid();
+    newMaterials.push({
+      id,
+      label: 'Material ' + (newMaterials.length + 1),
+      color: generateColor(),
+      poisson: null,
+      young: null,
+      collapsed: false
+    });
+    materials.set(newMaterials);
+    setOpenMaterialId(id);
+  }
+
+  function updateMaterial(id: string, changes: Partial<(typeof materials.state)[number]>) {
+    materials.set(materials.state.map((mat) => (mat.id === id ? { ...mat, ...changes } : mat)));
+  }
+
+  const materialOptions = materials.state.map((material) => (
+    <option key={material.id} value={material.id}>
+      {material.label}
+    </option>
+  ));
+
+  const meshStats = hasMesh
+    ? `${elements.state.length} subvolumes · ${nodes.state.length} nodes · ${faces.state.length} faces · ${supportedFaces.state.length} restrained`
+    : 'No mesh yet';
+
   return (
-    <div
-      style={{
-        width: '100%',
-        // altura mínima em vez de fixa: a coluna de entradas não transborda sobre a seção da FVDAM
-        minHeight: 'calc(100vh - 110px)',
-        padding: '20px',
-        display: 'flex',
-        flexShrink: 0
-      }}
-    >
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          width: '200px',
-          flexShrink: 0,
-          color: 'white'
-        }}
-      >
-        <div // Unit Cell Inputs
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            width: '100%'
-          }}
-        >
-          <div style={{ fontWeight: 'bold', fontSize: '16px' }}>Define Unit Cell</div>
-          <div style={{ height: '10px' }} />
-          <label htmlFor="unitCellWidth">Width:</label>
-          <NumberField
-            id="unitCellWidth"
-            min={0}
-            value={unitCellWidth.state}
-            onChange={(value) => unitCellWidth.set(value)}
-            error={
-              unitCellWidth.state !== null && unitCellWidth.state <= 0
-                ? 'Must be greater than 0.'
-                : undefined
-            }
-          />
-          <div style={{ height: '10px' }} />
-          <label htmlFor="unitCellHeight">Height:</label>
-          <NumberField
-            id="unitCellHeight"
-            min={0}
-            value={unitCellHeight.state}
-            onChange={(value) => unitCellHeight.set(value)}
-            error={
-              unitCellHeight.state !== null && unitCellHeight.state <= 0
-                ? 'Must be greater than 0.'
-                : undefined
-            }
-          />
-        </div>
-        <div style={{ height: '20px' }} />
-        <div // Materials
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            width: '100%'
-          }}
-        >
-          <div style={{ fontWeight: 'bold', fontSize: '16px' }}>Create Materials</div>
-          <div style={{ height: '10px' }} />
-          {materials.state.length > 0 &&
-            materials.state.map((material) => (
-              <div
-                key={material.id}
-                style={{
-                  marginBottom: '5px',
-                  border: material.collapsed ? 'none' : '1px solid var(--off-white)',
-                  width: '100%',
-                  padding: material.collapsed ? '0px' : '5px',
-                  boxSizing: 'border-box'
-                }}
-              >
-                <div
-                  className="materialItem"
-                  onClick={() =>
-                    materials.set(
-                      materials.state.map((mat) =>
-                        mat.id === material.id ? { ...mat, collapsed: !mat.collapsed } : mat
-                      )
-                    )
-                  }
-                >
-                  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                    {material.label}
-                    <div
-                      style={{
-                        width: '14px',
-                        height: '14px',
-                        backgroundColor: material.color,
-                        marginLeft: '5px'
-                      }}
-                    />
-                  </div>
+    <div className="mg">
+      <aside className="mg-sidebar" aria-label="Model inputs">
+        <Section title="Unit cell">
+          <div className="field-row">
+            <div className="field">
+              <label htmlFor="unitCellWidth">Width{len}</label>
+              <NumberField
+                id="unitCellWidth"
+                min={0}
+                value={unitCellWidth.state}
+                onChange={(value) => unitCellWidth.set(value)}
+                error={
+                  unitCellWidth.state !== null && unitCellWidth.state <= 0
+                    ? 'Must be greater than 0.'
+                    : undefined
+                }
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="unitCellHeight">Height{len}</label>
+              <NumberField
+                id="unitCellHeight"
+                min={0}
+                value={unitCellHeight.state}
+                onChange={(value) => unitCellHeight.set(value)}
+                error={
+                  unitCellHeight.state !== null && unitCellHeight.state <= 0
+                    ? 'Must be greater than 0.'
+                    : undefined
+                }
+              />
+            </div>
+          </div>
+        </Section>
 
-                  <div
-                    style={{
-                      transform: material.collapsed ? 'rotate(0deg)' : 'rotate(90deg)',
-                      width: '21px',
-                      height: '21px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
+        <Section title="Materials" count={materials.state.length}>
+          <div className="mg-list">
+            {materials.state.map((material) => {
+              const open = openMaterialId === material.id;
+              const errors = validation.materialErrors[material.id];
+              return (
+                <div key={material.id} className="mg-item" data-open={open}>
+                  <button
+                    type="button"
+                    className="mg-item-head"
+                    aria-expanded={open}
+                    onClick={() => setOpenMaterialId(open ? null : material.id)}
                   >
-                    <Icon icon="chevron" color="white" />
-                  </div>
-                </div>
-                {!material.collapsed && (
-                  <div style={{ display: 'flex', flexDirection: 'column', position: 'relative' }}>
-                    <div style={{ height: '5px' }} />
-                    <label htmlFor={`material-${material.id}-label`}>Label:</label>
-                    <input
-                      type="text"
-                      id={`material-${material.id}-label`}
-                      name="materialLabel"
-                      value={material.label}
-                      size={5}
-                      onChange={(event) => {
-                        materials.set(
-                          materials.state.map((mat) =>
-                            mat.id === material.id ? { ...mat, label: event.target.value } : mat
-                          )
-                        );
-                      }}
-                    />
-                    <div style={{ height: '5px' }} />
-                    <label htmlFor={`material-${material.id}-young`}>Young:</label>
-                    <NumberField
-                      id={`material-${material.id}-young`}
-                      value={material.young}
-                      error={validation.materialErrors[material.id]?.young}
-                      onChange={(value) => {
-                        materials.set(
-                          materials.state.map((mat) =>
-                            mat.id === material.id ? { ...mat, young: value } : mat
-                          )
-                        );
-                      }}
-                    />
-                    <div style={{ height: '5px' }} />
-                    <label htmlFor={`material-${material.id}-poisson`}>Poisson:</label>
-                    <NumberField
-                      id={`material-${material.id}-poisson`}
-                      value={material.poisson}
-                      error={validation.materialErrors[material.id]?.poisson}
-                      onChange={(value) => {
-                        materials.set(
-                          materials.state.map((mat) =>
-                            mat.id === material.id ? { ...mat, poisson: value } : mat
-                          )
-                        );
-                      }}
-                    />
-                    <div style={{ height: '5px' }} />
-                    <label htmlFor={`material-${material.id}-color`}>Color:</label>
-                    <input
-                      type="color"
-                      id={`material-${material.id}-color`}
-                      name="materialColor"
-                      value={material.color}
-                      style={{ width: '100%', height: '28px', padding: 0, cursor: 'pointer' }}
-                      onChange={(event) => {
-                        materials.set(
-                          materials.state.map((mat) =>
-                            mat.id === material.id ? { ...mat, color: event.target.value } : mat
-                          )
-                        );
-                      }}
-                    />
-                    <div style={{ height: '5px' }} />
-                    <button
-                      type="button"
-                      aria-label={`Delete ${material.label}`}
-                      title="Delete material"
-                      className="zoom-btns icon-btn"
-                      style={{ position: 'absolute', top: '5px', right: '0px' }}
-                      onClick={() => {
-                        materials.set(materials.state.filter((mat) => mat.id !== material.id));
-                      }}
-                    >
-                      <Icon icon="trash" color="white" size="14px" />
-                    </button>
-                    <button
-                      type="button"
-                      aria-label="Random color"
-                      title="Random color"
-                      className="zoom-btns icon-btn"
-                      style={{ position: 'absolute', bottom: '38px', left: '45px' }}
-                      onClick={() => {
-                        materials.set(
-                          materials.state.map((mat) =>
-                            mat.id === material.id ? { ...mat, color: generateColor() } : mat
-                          )
-                        );
-                      }}
-                    >
-                      <Icon icon="refresh" color="white" size="14px" />
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))}
-          <button
-            style={{ cursor: 'pointer' }}
-            onClick={() => {
-              const newMaterials = [...materials.state];
-              newMaterials.push({
-                id: generateUuid(),
-                label: 'Material ' + (newMaterials.length + 1),
-                color: generateColor(),
-                poisson: null,
-                young: null,
-                collapsed: false
-              });
-              materials.set(newMaterials);
-            }}
-          >
-            Add Material
-          </button>
-        </div>
-        <div style={{ height: '20px' }} />
-        <div // Regions
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            width: '100%'
-          }}
-        >
-          <div style={{ fontWeight: 'bold', fontSize: '16px' }}>Create Regions</div>
-          <div style={{ height: '10px' }} />
-          <div style={{ maxHeight: '20vh', overflowY: 'auto' }}>
-            {regions.state.length > 0 &&
-              !circle.state.showCircleInputs &&
-              regions.state.map((region) => (
-                <div
-                  key={region.id}
-                  style={{
-                    marginBottom: '5px',
-                    border: region.collapsed ? 'none' : '1px solid var(--off-white)',
-                    width: '100%',
-                    padding: region.collapsed ? '0px' : '5px',
-                    boxSizing: 'border-box'
-                  }}
-                >
-                  <div
-                    className="materialItem"
-                    onClick={() =>
-                      regions.set(
-                        regions.state.map((reg) =>
-                          reg.id === region.id ? { ...reg, collapsed: !reg.collapsed } : reg
-                        )
-                      )
-                    }
-                  >
-                    {region.label}
-                    <div
-                      style={{
-                        transform: region.collapsed ? 'rotate(0deg)' : 'rotate(90deg)',
-                        width: '21px',
-                        height: '21px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}
-                    >
-                      <Icon icon="chevron" color="white" />
-                    </div>
-                  </div>
-                  {!region.collapsed && (
-                    <div style={{ display: 'flex', flexDirection: 'column', position: 'relative' }}>
-                      <div style={{ height: '5px' }} />
-                      <label htmlFor={`region-${region.id}-label`}>Label:</label>
-                      <input
-                        type="text"
-                        id={`region-${region.id}-label`}
-                        name="regionLabel"
-                        value={region.label}
-                        size={5}
-                        onChange={(event) => {
-                          regions.set(
-                            regions.state.map((reg) =>
-                              reg.id === region.id ? { ...reg, label: event.target.value } : reg
-                            )
-                          );
-                        }}
-                      />
-                      <div style={{ height: '5px' }} />
-                      <label htmlFor={`region-${region.id}-material`}>Material:</label>
-                      <select
-                        id={`region-${region.id}-material`}
-                        value={region.materialId}
-                        aria-invalid={validation.regionErrors[region.id] ? true : undefined}
-                        onChange={(event) => {
-                          regions.set(
-                            regions.state.map((reg) =>
-                              reg.id === region.id
-                                ? { ...reg, materialId: event.target.value }
-                                : reg
-                            )
-                          );
-                        }}
-                      >
-                        <option value="">Choose…</option>
-                        {materials.state.map((material) => (
-                          <option key={material.id} value={material.id}>
-                            {material.label}
-                          </option>
-                        ))}
-                      </select>
-                      {validation.regionErrors[region.id] && (
-                        <div
-                          role="alert"
-                          style={{ color: '#ffe0e0', fontSize: '12px', marginTop: '2px' }}
-                        >
-                          {validation.regionErrors[region.id]}
-                        </div>
+                    <span className="swatch" style={{ backgroundColor: material.color }} />
+                    <span className="mg-item-label">{material.label}</span>
+                    <span className="mg-item-meta mono">
+                      {errors ? (
+                        <span className="field-error">check values</span>
+                      ) : (
+                        <>
+                          <span className="sym">E</span> {short(material.young)} ·{' '}
+                          <span className="sym">ν</span> {short(material.poisson)}
+                        </>
                       )}
-                      <div style={{ height: '5px' }} />
-                      <div style={{ display: 'flex' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', width: '48%' }}>
-                          <label htmlFor={`region-${region.id}-width`}>Width:</label>
+                    </span>
+                  </button>
+                  {open && (
+                    <div className="mg-item-body">
+                      <div className="field">
+                        <label htmlFor={`material-${material.id}-label`}>Name</label>
+                        <input
+                          type="text"
+                          id={`material-${material.id}-label`}
+                          value={material.label}
+                          onChange={(event) =>
+                            updateMaterial(material.id, { label: event.target.value })
+                          }
+                        />
+                      </div>
+                      <div className="field-row">
+                        <div className="field">
+                          <label htmlFor={`material-${material.id}-young`}>
+                            Young <span className="sym">E</span>
+                            {stress}
+                          </label>
                           <NumberField
-                            id={`region-${region.id}-width`}
-                            emptyValue={0}
-                            value={region.width}
-                            onChange={(newValue) => {
-                              let value = newValue ?? 0;
-
-                              if (unitCellWidth.state && region.x + value > unitCellWidth.state) {
-                                value = unitCellWidth.state - region.x;
-                              }
-                              regions.set(
-                                regions.state.map((reg) =>
-                                  reg.id === region.id ? { ...reg, width: value } : reg
-                                )
-                              );
-                            }}
+                            id={`material-${material.id}-young`}
+                            value={material.young}
+                            error={errors?.young}
+                            onChange={(value) => updateMaterial(material.id, { young: value })}
                           />
                         </div>
-                        <div style={{ width: '5px' }} />
-                        <div style={{ display: 'flex', flexDirection: 'column', width: '48%' }}>
-                          <label htmlFor={`region-${region.id}-height`}>Height:</label>
+                        <div className="field">
+                          <label htmlFor={`material-${material.id}-poisson`}>
+                            Poisson <span className="sym">ν</span>
+                          </label>
                           <NumberField
-                            id={`region-${region.id}-height`}
-                            emptyValue={0}
-                            value={region.height}
-                            onChange={(newValue) => {
-                              const value = newValue ?? 0;
-                              regions.set(
-                                regions.state.map((reg) =>
-                                  reg.id === region.id ? { ...reg, height: value } : reg
-                                )
-                              );
-                            }}
+                            id={`material-${material.id}-poisson`}
+                            value={material.poisson}
+                            error={errors?.poisson}
+                            onChange={(value) => updateMaterial(material.id, { poisson: value })}
                           />
                         </div>
                       </div>
-                      <div style={{ height: '5px' }} />
-
-                      <div style={{ display: 'flex' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', width: '48%' }}>
-                          <label htmlFor={`region-${region.id}-x`}>X:</label>
-                          <NumberField
-                            id={`region-${region.id}-x`}
-                            emptyValue={0}
-                            value={region.x}
-                            onChange={(value) => {
-                              regions.set(
-                                regions.state.map((reg) =>
-                                  reg.id === region.id ? { ...reg, x: value ?? 0 } : reg
-                                )
-                              );
-                            }}
+                      <div className="field">
+                        <label htmlFor={`material-${material.id}-color`}>Color</label>
+                        <div className="mg-inline">
+                          <input
+                            type="color"
+                            id={`material-${material.id}-color`}
+                            value={material.color}
+                            onChange={(event) =>
+                              updateMaterial(material.id, { color: event.target.value })
+                            }
                           />
-                        </div>
-                        <div style={{ width: '5px' }} />
-                        <div style={{ display: 'flex', flexDirection: 'column', width: '50%' }}>
-                          <label htmlFor={`region-${region.id}-y`}>Y:</label>
-                          <NumberField
-                            id={`region-${region.id}-y`}
-                            emptyValue={0}
-                            value={region.y}
-                            onChange={(value) => {
-                              regions.set(
-                                regions.state.map((reg) =>
-                                  reg.id === region.id ? { ...reg, y: value ?? 0 } : reg
-                                )
-                              );
-                            }}
-                          />
+                          <button
+                            type="button"
+                            className="icon-btn"
+                            aria-label="Random color"
+                            title="Random color"
+                            onClick={() => updateMaterial(material.id, { color: generateColor() })}
+                          >
+                            <Icon icon="refresh" color="currentColor" size="14px" />
+                          </button>
                         </div>
                       </div>
-
-                      <div style={{ height: '5px' }} />
-                      <button
-                        type="button"
-                        aria-label={`Delete ${region.label}`}
-                        title="Delete region"
-                        className="zoom-btns icon-btn"
-                        style={{ position: 'absolute', top: '5px', right: '0px' }}
-                        onClick={() => {
-                          regions.set(regions.state.filter((reg) => reg.id !== region.id));
-                        }}
-                      >
-                        <Icon icon="trash" color="white" size="14px" />
-                      </button>
-                      <button
-                        type="button"
-                        aria-label={`Duplicate ${region.label}`}
-                        title="Duplicate region"
-                        className="zoom-btns icon-btn"
-                        style={{ position: 'absolute', top: '5px', right: '20px' }}
-                        onClick={() => {
-                          if (
-                            !unitCellWidth.state ||
-                            !unitCellHeight.state ||
-                            !regions.state.find((reg) => reg.id === region.id)
-                          )
-                            return;
-                          const newRegions = [...regions.state];
-                          newRegions.push({
-                            id: generateUuid(),
-                            label: 'Region ' + (newRegions.length + 1),
-                            collapsed: true,
-                            showMaterialsDropdown: false,
-                            width: regions.state.find((reg) => reg.id === region.id)?.width || 0,
-                            height: regions.state.find((reg) => reg.id === region.id)?.height || 0,
-                            x:
-                              (newRegions[newRegions.length - 1]?.x +
-                                newRegions[newRegions.length - 1]?.width >=
-                              unitCellWidth.state
-                                ? 0
-                                : newRegions[newRegions.length - 1]?.x +
-                                  newRegions[newRegions.length - 1]?.width) || 0,
-                            y:
-                              (newRegions[newRegions.length - 1]?.x +
-                                newRegions[newRegions.length - 1]?.width >=
-                              unitCellWidth.state
-                                ? newRegions[newRegions.length - 1]?.y +
-                                  newRegions[newRegions.length - 1]?.height
-                                : newRegions[newRegions.length - 1]?.y) || 0,
-                            materialId:
-                              regions.state.find((reg) => reg.id === region.id)?.materialId || ''
-                          });
-                          regions.set(newRegions);
-                        }}
-                      >
-                        <Icon icon="copy" color="white" size="14px" />
-                      </button>
+                      <div className="mg-item-actions">
+                        <button
+                          type="button"
+                          className="btn"
+                          onClick={() => {
+                            materials.set(materials.state.filter((mat) => mat.id !== material.id));
+                            setOpenMaterialId(null);
+                          }}
+                        >
+                          <Icon icon="trash" color="currentColor" size="14px" />
+                          Delete material
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
-              ))}
+              );
+            })}
           </div>
-          <div style={{ height: '5px' }} />
-          {!circle.state.showCircleInputs && (
-            <button
-              style={{ cursor: 'pointer' }}
-              disabled={
-                !unitCellWidth.state || !unitCellHeight.state || materials.state.length === 0
-              }
-              onClick={() => {
-                circle.set({ ...circle.state, showCircleInputs: true });
-              }}
-            >
-              Add Circle
-            </button>
-          )}
+          <button type="button" className="btn btn-block" onClick={addMaterial}>
+            + Add material
+          </button>
+        </Section>
 
-          {circle.state.showCircleInputs && (
-            <div style={{ display: 'flex', flexDirection: 'column', position: 'relative' }}>
-              <div style={{ display: 'flex' }}>
-                <div style={{ display: 'flex', flexDirection: 'row', width: '48%' }}>
-                  <label htmlFor="gridRadio">Grid:</label>
-                  <input
-                    type="radio"
-                    id="gridRadio"
-                    name="circleType"
-                    checked={circle.state.type === 'grid'}
-                    onChange={() => {
-                      circle.set({
-                        ...circle.state,
-                        type: circle.state.type === 'grid' ? 'radial' : 'grid'
-                      });
-                    }}
-                  />
-                </div>
-                <div style={{ width: '5px' }} />
-                <div style={{ display: 'flex', flexDirection: 'row', width: '50%' }}>
-                  <label htmlFor="radialRadio">Radial:</label>
-                  <input
-                    type="radio"
-                    id="radialRadio"
-                    name="circleType"
-                    checked={circle.state.type === 'radial'}
-                    onChange={() => {
-                      circle.set({
-                        ...circle.state,
-                        type: circle.state.type === 'radial' ? 'grid' : 'radial'
-                      });
-                    }}
-                  />
-                </div>
-              </div>
-              <div style={{ height: '5px' }} />
-              <label htmlFor="radius">Fraction:</label>
-              <NumberField
-                id="radius"
-                emptyValue={0}
-                value={circle.state.fraction}
-                onChange={(newValue) => {
-                  const value = newValue ?? 0;
-                  circle.set({
-                    ...circle.state,
-                    radius:
-                      Math.sqrt(value / Math.PI) *
-                      Math.min(unitCellHeight.state || 0, unitCellWidth.state || 0),
-                    fraction: value
-                  });
-                }}
+        <Section title="Regions" count={regions.state.length}>
+          {regions.state.length > 6 && (
+            <div className="field-row">
+              <input
+                type="text"
+                aria-label="Filter regions by name"
+                placeholder="Filter by name…"
+                value={regionQuery}
+                onChange={(event) => setRegionQuery(event.target.value)}
               />
-              {circle.state.type === 'grid' ? (
-                <>
-                  <div style={{ height: '5px' }} />
-                  <label htmlFor="circleDivisions">Division:</label>
-                  <NumberField
-                    id="circleDivisions"
-                    emptyValue={0}
-                    step="1"
-                    value={circle.state.circleDivisions}
-                    onChange={(value) => {
-                      circle.set({ ...circle.state, circleDivisions: value ?? 0 });
-                    }}
-                  />
-                </>
-              ) : (
-                <>
-                  <div style={{ height: '5px' }} />
-                  <label htmlFor="edges">Edges:</label>
-                  <NumberField
-                    id="edges"
-                    emptyValue={0}
-                    step="1"
-                    value={circle.state.edges}
-                    onChange={(value) => {
-                      circle.set({ ...circle.state, edges: value ?? 0 });
-                    }}
-                  />
-                </>
+              <select
+                aria-label="Filter regions by material"
+                value={regionMaterialFilter}
+                onChange={(event) => setRegionMaterialFilter(event.target.value)}
+              >
+                <option value="">All materials</option>
+                {materialOptions}
+              </select>
+            </div>
+          )}
+          {regions.state.length > 0 && (
+            <ul className="mg-region-list" aria-label="Regions">
+              {filteredRegions.map((region) => {
+                const material = materialById[region.materialId];
+                const selected = region.id === selectedRegionId;
+                return (
+                  <li key={region.id}>
+                    <button
+                      type="button"
+                      className="mg-region-row"
+                      aria-pressed={selected}
+                      title={region.label}
+                      onClick={() => setSelectedRegionId(selected ? null : region.id)}
+                    >
+                      <span
+                        className="swatch"
+                        style={{ backgroundColor: material?.color ?? 'transparent' }}
+                      />
+                      <span className="mg-item-label">{region.label}</span>
+                      {validation.regionErrors[region.id] ? (
+                        <span className="field-error">no material</span>
+                      ) : (
+                        <span className="mg-item-meta mono">
+                          {short(region.width, 4)}×{short(region.height, 4)}
+                        </span>
+                      )}
+                    </button>
+                  </li>
+                );
+              })}
+              {filteredRegions.length === 0 && (
+                <li className="muted" style={{ padding: '6px 8px' }}>
+                  No region matches the filter.
+                </li>
               )}
-
-              <div style={{ height: '5px' }} />
-              <label htmlFor="circleMaterial">Circle Material:</label>
-              <select
-                id="circleMaterial"
-                value={circle.state.circleMaterialId}
-                onChange={(event) => {
-                  circle.set({ ...circle.state, circleMaterialId: event.target.value });
-                }}
-              >
-                <option value="">Choose…</option>
-                {materials.state.map((material) => (
-                  <option key={material.id} value={material.id}>
-                    {material.label}
-                  </option>
-                ))}
-              </select>
-              <div style={{ height: '5px' }} />
-              <label htmlFor="rectangleMaterial">Rectangle Material:</label>
-              <select
-                id="rectangleMaterial"
-                value={circle.state.rectangleMaterialId}
-                onChange={(event) => {
-                  circle.set({ ...circle.state, rectangleMaterialId: event.target.value });
-                }}
-              >
-                <option value="">Choose…</option>
-                {materials.state.map((material) => (
-                  <option key={material.id} value={material.id}>
-                    {material.label}
-                  </option>
-                ))}
-              </select>
-              <div style={{ height: '10px' }} />
-              <button
-                style={{ cursor: 'pointer' }}
-                disabled={
-                  !circle.state.circleMaterialId ||
-                  !circle.state.rectangleMaterialId ||
-                  !(circle.state.fraction > 0) ||
-                  (circle.state.type === 'grid'
-                    ? !(circle.state.circleDivisions > 0)
-                    : !(circle.state.edges > 0))
-                }
-                title="Replaces all regions with a circle inclusion"
-                onClick={() => {
-                  generateCircle();
-                }}
-              >
-                Generate Circle
-              </button>
-              <div style={{ height: '5px' }} />
-              <button
-                type="button"
-                style={{ cursor: 'pointer' }}
-                onClick={() => circle.set({ ...circle.state, showCircleInputs: false })}
-              >
-                Back to regions
-              </button>
-            </div>
+            </ul>
           )}
 
-          <div style={{ height: '5px' }} />
-          {!circle.state.showCircleInputs && (
-            <button
-              style={{ cursor: 'pointer' }}
-              onClick={() => {
-                if (!unitCellWidth.state || !unitCellHeight.state) return;
-                const newRegions = [...regions.state];
-                newRegions.push({
-                  id: generateUuid(),
-                  label: 'Region ' + (newRegions.length + 1),
-                  collapsed: false,
-                  showMaterialsDropdown: false,
-                  width: 0,
-                  height:
-                    (newRegions[newRegions.length - 1]?.x +
-                      newRegions[newRegions.length - 1]?.width >=
-                      unitCellWidth.state &&
-                    2 * newRegions[newRegions.length - 1]?.height +
-                      newRegions[newRegions.length - 1]?.y >=
-                      unitCellHeight.state
-                      ? unitCellHeight.state -
-                        newRegions[newRegions.length - 1]?.y -
-                        newRegions[newRegions.length - 1]?.height
-                      : newRegions[newRegions.length - 1]?.height) || 0,
-                  x:
-                    (newRegions[newRegions.length - 1]?.x +
-                      newRegions[newRegions.length - 1]?.width >=
-                    unitCellWidth.state
-                      ? 0
-                      : newRegions[newRegions.length - 1]?.x +
-                        newRegions[newRegions.length - 1]?.width) || 0,
-                  y:
-                    (newRegions[newRegions.length - 1]?.x +
-                      newRegions[newRegions.length - 1]?.width >=
-                    unitCellWidth.state
-                      ? newRegions[newRegions.length - 1]?.y +
-                        newRegions[newRegions.length - 1]?.height
-                      : newRegions[newRegions.length - 1]?.y) || 0,
-                  materialId: ''
-                });
-                regions.set(newRegions);
-              }}
-              disabled={!unitCellWidth.state || !unitCellHeight.state}
-            >
-              Add Region
-            </button>
-          )}
-        </div>
-        <div style={{ height: '20px' }} />
-        <div // Supports
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            width: '100%'
-          }}
-        >
-          <div style={{ fontWeight: 'bold', fontSize: '16px' }}>Add Supports</div>
-          <div style={{ height: '10px' }} />
-          <div>
-            <input
-              type="radio"
-              id="noSupport"
-              name="support"
-              value="none"
-              style={{ cursor: 'pointer' }}
-              checked={supportType.state === 'none'}
-              onChange={() => supportType.set('none')}
-            />
-            <label htmlFor="noSupport">None</label>
-          </div>
-          <div>
-            <input
-              type="radio"
-              id="centralSupport"
-              name="support"
-              value="central"
-              style={{ cursor: 'pointer' }}
-              checked={supportType.state === 'central'}
-              onChange={() => {
-                supportType.set('central');
-                stuffToShow.set({ ...stuffToShow.state, supports: true });
-              }}
-            />
-            <label htmlFor="centralSupport">Central</label>
-          </div>
-          <div>
-            <input
-              type="radio"
-              id="borderSupport"
-              name="support"
-              value="border"
-              style={{ cursor: 'pointer' }}
-              checked={supportType.state === 'border'}
-              onChange={() => {
-                supportType.set('border');
-                stuffToShow.set({ ...stuffToShow.state, supports: true });
-              }}
-            />
-            <label htmlFor="borderSupport">Border</label>
-          </div>
-          <div>
-            <input
-              type="radio"
-              id="edgesSupport"
-              name="support"
-              value="edges"
-              style={{ cursor: 'pointer' }}
-              checked={supportType.state === 'edges'}
-              onChange={() => {
-                supportType.set('edges');
-                stuffToShow.set({ ...stuffToShow.state, supports: true });
-              }}
-            />
-            <label htmlFor="edgesSupport">Edges</label>
-          </div>
-        </div>
-        <div style={{ height: '20px' }} />
-        <div // Periodicity
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            width: '100%'
-          }}
-        >
-          <div style={{ fontWeight: 'bold', fontSize: '16px' }}>Set Periodicity</div>
-          <div style={{ height: '10px' }} />
-          <div>
-            <input
-              type="checkbox"
-              id="horizontal"
-              name="periodicity"
-              checked={periodicity.state.horizontal}
-              onChange={() => {
-                periodicity.set({
-                  ...periodicity.state,
-                  horizontal: !periodicity.state.horizontal
-                });
-              }}
-            />
-            <label htmlFor="horizontal">Horizontal</label>
-          </div>
-          <div>
-            <input
-              type="checkbox"
-              id="vertical"
-              name="periodicity"
-              checked={periodicity.state.vertical}
-              onChange={() => {
-                periodicity.set({
-                  ...periodicity.state,
-                  vertical: !periodicity.state.vertical
-                });
-              }}
-            />
-            <label htmlFor="vertical">Vertical</label>
-          </div>
-        </div>
-        <div style={{ flex: '1' }} />
-        <div style={{ height: '20px' }} />
-        <label htmlFor="maxElemSize">Max Subvolume Size:</label>
-        <NumberField
-          id="maxElemSize"
-          emptyValue={0}
-          value={maxElemSize.state}
-          onChange={(value) => maxElemSize.set(value ?? 0)}
-        />
-        <div style={{ height: '5px' }} />
-        <label htmlFor="minElemSize">Min Subvolume Size:</label>
-        <NumberField
-          id="minElemSize"
-          emptyValue={0}
-          value={minElemSize.state}
-          onChange={(value) => minElemSize.set(value ?? 0)}
-        />
-        <div style={{ height: '5px' }} />
-        <label htmlFor="divisionsByRegion">Divisions:</label>
-        <NumberField
-          id="divisionsByRegion"
-          emptyValue={1}
-          step="1"
-          min={1}
-          value={divisionsByRegion.state}
-          onChange={(value) => divisionsByRegion.set(value || 1)}
-        />
-        <div style={{ height: '15px' }} />
-        <button
-          style={{ cursor: 'pointer' }}
-          onClick={() => {
-            generateMesh();
-          }}
-          disabled={!unitCellWidth.state || !unitCellHeight.state || regions.state.length === 0}
-        >
-          Generate Mesh
-        </button>
-      </div>
-      <div style={{ width: '20px' }} />
-      <div style={{ border: '1px solid var(--off-white)' }} />
-      <div style={{ width: '20px' }} />
-      <div // Mesh
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          width: '100%',
-          height: '100%',
-          color: 'white',
-          alignItems: 'center'
-        }}
-      >
-        <div style={{ fontWeight: 'bold', fontSize: '18px' }}>Mesh</div>
-        <div
-          style={{
-            marginTop: '10px',
-            padding: '15px',
-            height: '100%',
-            width: '100%',
-            backgroundColor: 'rgba(0, 0, 0, 0.08)',
-            border: '1px solid var(--off-white)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}
-        >
-          <div
-            ref={viewportRef}
-            style={{
-              height: '100%',
-              width: '100%',
-              minHeight: '420px',
-              backgroundColor: 'rgba(0, 0, 0, 0.08)',
-              border: '1px solid var(--off-white)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              position: 'relative',
-              overflow: 'hidden'
-            }}
-          >
-            {meshStale && (
-              <div
-                role="status"
-                style={{
-                  position: 'absolute',
-                  top: '10px',
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  zIndex: 2,
-                  background: '#3a2f1c',
-                  color: '#f6d9a8',
-                  border: '1px solid #6b5426',
-                  borderRadius: '4px',
-                  padding: '6px 10px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px'
-                }}
-              >
-                The inputs changed after the last mesh. The mesh is out of date.
-                <button type="button" style={{ cursor: 'pointer' }} onClick={() => generateMesh()}>
-                  Regenerate mesh
-                </button>
-              </div>
-            )}
-            <div // Zoom Buttons
-              className="zoom-btns"
-              style={{
-                position: 'absolute',
-                top: '10px',
-                right: '10px',
-                display: 'flex',
-                flexDirection: 'row'
-              }}
-            >
-              <div
-                className="icon"
-                style={{ cursor: 'pointer', marginRight: '10px' }}
-                onClick={() => {
-                  extraZoom.set(1);
-                }}
-              >
-                <Icon icon="refresh" size="18px" color="white" />
-              </div>
-              <div
-                className="icon"
-                style={{ cursor: 'pointer', marginRight: '10px' }}
-                onClick={() => {
-                  extraZoom.set(extraZoom.state / 1.1);
-                }}
-              >
-                <Icon icon="zoom-out" size="18px" color="white" />
-              </div>
-              <div
-                className="icon"
-                style={{ cursor: 'pointer' }}
-                onClick={() => {
-                  extraZoom.set(extraZoom.state * 1.1);
-                }}
-              >
-                <Icon icon="zoom-in" size="18px" color="white" />
-              </div>
-            </div>
-            {unitCellWidth.state || unitCellHeight.state ? (
-              <div
-                style={{
-                  width: (unitCellWidth.state || 0) * zoom,
-                  height: (unitCellHeight.state || 0) * zoom,
-                  border: '1px solid white',
-                  boxSizing: 'content-box',
-                  position: 'relative'
-                }}
-              >
-                {regions.state.map((region) => (
-                  <div
-                    key={region.id}
-                    style={{
-                      position: 'absolute',
-                      top: region.y * zoom,
-                      left: region.x * zoom,
-                      width: region.width * zoom,
-                      height: region.height * zoom,
-                      backgroundColor:
-                        materials.state.find((mat) => mat.id === region.materialId)?.color ||
-                        'white',
-                      border: region.collapsed ? '1px solid var(--off-white)' : '1px dashed white',
-                      boxSizing: 'border-box',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
+          {selectedRegion && !circle.state.showCircleInputs && (
+            <div className="mg-editor" aria-label={`Edit ${selectedRegion.label}`}>
+              <div className="mg-editor-head">
+                <span className="eyebrow">Selected region</span>
+                <div className="mg-inline">
+                  <button
+                    type="button"
+                    className="icon-btn"
+                    aria-label={`Duplicate ${selectedRegion.label}`}
+                    title="Duplicate region"
+                    onClick={() => duplicateRegion(selectedRegion)}
+                  >
+                    <Icon icon="copy" color="currentColor" size="14px" />
+                  </button>
+                  <button
+                    type="button"
+                    className="icon-btn"
+                    aria-label={`Delete ${selectedRegion.label}`}
+                    title="Delete region"
+                    onClick={() => {
+                      regions.set(regions.state.filter((reg) => reg.id !== selectedRegion.id));
+                      setSelectedRegionId(null);
                     }}
                   >
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}
-                    >
-                      <div style={{ fontWeight: 'bold' }}>
-                        {stuffToShow.state.regionsMaterials &&
-                          `${materials.state.find((mat) => mat.id === region.materialId)?.label}`}
-                        {stuffToShow.state.regionsLabels && `${region.label}`}
-                      </div>
-                    </div>
+                    <Icon icon="trash" color="currentColor" size="14px" />
+                  </button>
+                </div>
+              </div>
+              <div className="field">
+                <label htmlFor={`region-${selectedRegion.id}-label`}>Name</label>
+                <input
+                  type="text"
+                  id={`region-${selectedRegion.id}-label`}
+                  value={selectedRegion.label}
+                  onChange={(event) =>
+                    updateRegion(selectedRegion.id, { label: event.target.value })
+                  }
+                />
+              </div>
+              <div className="field">
+                <label htmlFor={`region-${selectedRegion.id}-material`}>Material</label>
+                <select
+                  id={`region-${selectedRegion.id}-material`}
+                  value={selectedRegion.materialId}
+                  aria-invalid={validation.regionErrors[selectedRegion.id] ? true : undefined}
+                  onChange={(event) =>
+                    updateRegion(selectedRegion.id, { materialId: event.target.value })
+                  }
+                >
+                  <option value="">Choose…</option>
+                  {materialOptions}
+                </select>
+                {validation.regionErrors[selectedRegion.id] && (
+                  <div role="alert" className="field-error">
+                    {validation.regionErrors[selectedRegion.id]}
                   </div>
-                ))}
-                {stuffToShow.state.elements &&
-                  elements.state.length > 0 &&
-                  elements.state.map((element, index) => (
+                )}
+              </div>
+              <div className="field-row">
+                <div className="field">
+                  <label htmlFor={`region-${selectedRegion.id}-x`}>x₀{len}</label>
+                  <NumberField
+                    id={`region-${selectedRegion.id}-x`}
+                    emptyValue={0}
+                    value={selectedRegion.x}
+                    onChange={(value) => updateRegion(selectedRegion.id, { x: value ?? 0 })}
+                  />
+                </div>
+                <div className="field">
+                  <label htmlFor={`region-${selectedRegion.id}-y`}>y₀{len}</label>
+                  <NumberField
+                    id={`region-${selectedRegion.id}-y`}
+                    emptyValue={0}
+                    value={selectedRegion.y}
+                    onChange={(value) => updateRegion(selectedRegion.id, { y: value ?? 0 })}
+                  />
+                </div>
+                <div className="field">
+                  <label htmlFor={`region-${selectedRegion.id}-width`}>Width{len}</label>
+                  <NumberField
+                    id={`region-${selectedRegion.id}-width`}
+                    emptyValue={0}
+                    value={selectedRegion.width}
+                    onChange={(newValue) => {
+                      let value = newValue ?? 0;
+                      if (unitCellWidth.state && selectedRegion.x + value > unitCellWidth.state) {
+                        value = unitCellWidth.state - selectedRegion.x;
+                      }
+                      updateRegion(selectedRegion.id, { width: value });
+                    }}
+                  />
+                </div>
+                <div className="field">
+                  <label htmlFor={`region-${selectedRegion.id}-height`}>Height{len}</label>
+                  <NumberField
+                    id={`region-${selectedRegion.id}-height`}
+                    emptyValue={0}
+                    value={selectedRegion.height}
+                    onChange={(value) => updateRegion(selectedRegion.id, { height: value ?? 0 })}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {circle.state.showCircleInputs ? (
+            <div className="mg-editor" aria-label="Circular inclusion">
+              <div className="mg-editor-head">
+                <span className="eyebrow">Circular inclusion</span>
+              </div>
+              <div className="notice notice-warn">Replaces all current regions.</div>
+              <fieldset className="mg-fieldset">
+                <legend className="field-label">Subdivision</legend>
+                <label className="check">
+                  <input
+                    type="radio"
+                    name="circleType"
+                    checked={circle.state.type === 'grid'}
+                    onChange={() => circle.set({ ...circle.state, type: 'grid' })}
+                  />
+                  Grid
+                </label>
+                <label className="check">
+                  <input
+                    type="radio"
+                    name="circleType"
+                    checked={circle.state.type === 'radial'}
+                    onChange={() => circle.set({ ...circle.state, type: 'radial' })}
+                  />
+                  Radial
+                </label>
+              </fieldset>
+              <div className="field-row">
+                <div className="field">
+                  <label htmlFor="radius">Volume fraction</label>
+                  <NumberField
+                    id="radius"
+                    emptyValue={0}
+                    value={circle.state.fraction}
+                    onChange={(newValue) => {
+                      const value = newValue ?? 0;
+                      circle.set({
+                        ...circle.state,
+                        radius:
+                          Math.sqrt(value / Math.PI) *
+                          Math.min(unitCellHeight.state || 0, unitCellWidth.state || 0),
+                        fraction: value
+                      });
+                    }}
+                  />
+                </div>
+                {circle.state.type === 'grid' ? (
+                  <div className="field">
+                    <label htmlFor="circleDivisions">Divisions</label>
+                    <NumberField
+                      id="circleDivisions"
+                      emptyValue={0}
+                      step="1"
+                      value={circle.state.circleDivisions}
+                      onChange={(value) =>
+                        circle.set({ ...circle.state, circleDivisions: value ?? 0 })
+                      }
+                    />
+                  </div>
+                ) : (
+                  <div className="field">
+                    <label htmlFor="edges">Edges</label>
+                    <NumberField
+                      id="edges"
+                      emptyValue={0}
+                      step="1"
+                      value={circle.state.edges}
+                      onChange={(value) => circle.set({ ...circle.state, edges: value ?? 0 })}
+                    />
+                  </div>
+                )}
+              </div>
+              <div className="field">
+                <label htmlFor="circleMaterial">Inclusion material</label>
+                <select
+                  id="circleMaterial"
+                  value={circle.state.circleMaterialId}
+                  onChange={(event) =>
+                    circle.set({ ...circle.state, circleMaterialId: event.target.value })
+                  }
+                >
+                  <option value="">Choose…</option>
+                  {materialOptions}
+                </select>
+              </div>
+              <div className="field">
+                <label htmlFor="rectangleMaterial">Matrix material</label>
+                <select
+                  id="rectangleMaterial"
+                  value={circle.state.rectangleMaterialId}
+                  onChange={(event) =>
+                    circle.set({ ...circle.state, rectangleMaterialId: event.target.value })
+                  }
+                >
+                  <option value="">Choose…</option>
+                  {materialOptions}
+                </select>
+              </div>
+              <div className="mg-item-actions">
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => circle.set({ ...circle.state, showCircleInputs: false })}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  disabled={
+                    !circle.state.circleMaterialId ||
+                    !circle.state.rectangleMaterialId ||
+                    !(circle.state.fraction > 0) ||
+                    (circle.state.type === 'grid'
+                      ? !(circle.state.circleDivisions > 0)
+                      : !(circle.state.edges > 0))
+                  }
+                  title="Replaces all regions with a circle inclusion"
+                  onClick={() => {
+                    generateCircle();
+                    setSelectedRegionId(null);
+                  }}
+                >
+                  Generate circle
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="field-row">
+              <button
+                type="button"
+                className="btn"
+                onClick={addRegion}
+                disabled={!unitCellWidth.state || !unitCellHeight.state}
+              >
+                + Rectangle
+              </button>
+              <button
+                type="button"
+                className="btn"
+                disabled={
+                  !unitCellWidth.state || !unitCellHeight.state || materials.state.length === 0
+                }
+                onClick={() => circle.set({ ...circle.state, showCircleInputs: true })}
+              >
+                + Circle…
+              </button>
+            </div>
+          )}
+        </Section>
+
+        <Section title="Boundary conditions">
+          <fieldset className="mg-fieldset">
+            <legend className="field-label">Support</legend>
+            {SUPPORTS.map((support) => (
+              <label key={support.value} className="check" title={support.hint}>
+                <input
+                  type="radio"
+                  id={`${support.value}Support`}
+                  name="support"
+                  value={support.value}
+                  checked={supportType.state === support.value}
+                  onChange={() => {
+                    supportType.set(support.value);
+                    if (support.value !== 'none') {
+                      stuffToShow.set({ ...stuffToShow.state, supports: true });
+                    }
+                  }}
+                />
+                {support.label}
+              </label>
+            ))}
+          </fieldset>
+          <fieldset className="mg-fieldset">
+            <legend className="field-label">Periodicity</legend>
+            <label className="check">
+              <input
+                type="checkbox"
+                id="horizontal"
+                checked={periodicity.state.horizontal}
+                onChange={() =>
+                  periodicity.set({
+                    ...periodicity.state,
+                    horizontal: !periodicity.state.horizontal
+                  })
+                }
+              />
+              Horizontal (x₁)
+            </label>
+            <label className="check">
+              <input
+                type="checkbox"
+                id="vertical"
+                checked={periodicity.state.vertical}
+                onChange={() =>
+                  periodicity.set({ ...periodicity.state, vertical: !periodicity.state.vertical })
+                }
+              />
+              Vertical (x₂)
+            </label>
+          </fieldset>
+        </Section>
+
+        <Section title="Mesh">
+          <div className="field-row">
+            <div className="field">
+              <label htmlFor="maxElemSize">Max size{len}</label>
+              <NumberField
+                id="maxElemSize"
+                emptyValue={0}
+                value={maxElemSize.state}
+                onChange={(value) => maxElemSize.set(value ?? 0)}
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="minElemSize">Min size{len}</label>
+              <NumberField
+                id="minElemSize"
+                emptyValue={0}
+                value={minElemSize.state}
+                onChange={(value) => minElemSize.set(value ?? 0)}
+              />
+            </div>
+          </div>
+          <div className="field">
+            <label htmlFor="divisionsByRegion">Divisions per region</label>
+            <NumberField
+              id="divisionsByRegion"
+              emptyValue={1}
+              step="1"
+              min={1}
+              value={divisionsByRegion.state}
+              onChange={(value) => divisionsByRegion.set(value || 1)}
+            />
+          </div>
+          <button
+            type="button"
+            className={meshStale || !hasMesh ? 'btn btn-primary btn-block' : 'btn btn-block'}
+            onClick={() => generateMesh()}
+            disabled={!unitCellWidth.state || !unitCellHeight.state || regions.state.length === 0}
+          >
+            {hasMesh ? 'Regenerate mesh' : 'Generate mesh'}
+          </button>
+          <div className="muted mono" style={{ fontSize: 'var(--text-sm)' }}>
+            {meshStale ? 'Out of date · ' : ''}
+            {meshStats}
+          </div>
+        </Section>
+      </aside>
+
+      <section className="mg-view" aria-label="Unit cell view">
+        <div className="mg-toolbar" role="toolbar" aria-label="View options">
+          <span className="mg-toolbar-label">Show</span>
+          {LAYERS.map((layer) => {
+            const on = (stuffToShow.state as any)[layer.key];
+            return (
+              <button
+                key={layer.key}
+                type="button"
+                className="mg-chip"
+                aria-pressed={on}
+                onClick={() => stuffToShow.set({ ...stuffToShow.state, [layer.key]: !on })}
+              >
+                {layer.label}
+              </button>
+            );
+          })}
+          <span style={{ flex: 1 }} />
+          <button
+            type="button"
+            className="icon-btn icon-btn-dark"
+            aria-label="Zoom out"
+            title="Zoom out"
+            onClick={() => extraZoom.set(extraZoom.state / 1.1)}
+          >
+            <Icon icon="zoom-out" size="16px" color="currentColor" />
+          </button>
+          <button
+            type="button"
+            className="icon-btn icon-btn-dark"
+            aria-label="Zoom in"
+            title="Zoom in"
+            onClick={() => extraZoom.set(extraZoom.state * 1.1)}
+          >
+            <Icon icon="zoom-in" size="16px" color="currentColor" />
+          </button>
+          <button
+            type="button"
+            className="icon-btn icon-btn-dark"
+            aria-label="Fit to view"
+            title="Fit to view"
+            onClick={() => extraZoom.set(1)}
+          >
+            <Icon icon="refresh" size="16px" color="currentColor" />
+          </button>
+        </div>
+
+        <div ref={viewportRef} className="mg-canvas">
+          {meshStale && (
+            <div role="status" className="mg-stale">
+              The inputs changed after the last mesh. The mesh is out of date.
+              <button type="button" className="btn" onClick={() => generateMesh()}>
+                Regenerate mesh
+              </button>
+            </div>
+          )}
+          {unitCellWidth.state || unitCellHeight.state ? (
+            <div
+              className="mg-cell"
+              style={{
+                width: (unitCellWidth.state || 0) * zoom,
+                height: (unitCellHeight.state || 0) * zoom
+              }}
+            >
+              {regions.state.map((region) => (
+                <div
+                  key={region.id}
+                  className="mg-region"
+                  data-selected={region.id === selectedRegionId}
+                  style={{
+                    top: region.y * zoom,
+                    left: region.x * zoom,
+                    width: region.width * zoom,
+                    height: region.height * zoom,
+                    backgroundColor: materialById[region.materialId]?.color || '#ffffff'
+                  }}
+                >
+                  {(stuffToShow.state.regionsMaterials || stuffToShow.state.regionsLabels) && (
+                    <span className="mg-tag">
+                      {stuffToShow.state.regionsMaterials &&
+                        `${materialById[region.materialId]?.label}`}
+                      {stuffToShow.state.regionsMaterials && stuffToShow.state.regionsLabels
+                        ? ' · '
+                        : ''}
+                      {stuffToShow.state.regionsLabels && `${region.label}`}
+                    </span>
+                  )}
+                </div>
+              ))}
+              {stuffToShow.state.elements &&
+                elements.state.length > 0 &&
+                elements.state.map((element, index) => {
+                  const w = (nodes.state[element[2]][0] - nodes.state[element[3]][0]) * zoom;
+                  const h = (nodes.state[element[1]][1] - nodes.state[element[3]][1]) * zoom;
+                  // só mostra o número quando cabe no subvolume (evita a mancha em malhas finas)
+                  const fits = w >= String(index + 1).length * 6 + 4 && h >= 11;
+                  return (
                     <div
                       key={index}
+                      className="mg-subvolume"
                       style={{
-                        position: 'absolute',
-                        boxSizing: 'border-box',
                         left: nodes.state[element[3]][0] * zoom,
                         top: nodes.state[element[3]][1] * zoom,
-                        width: (nodes.state[element[2]][0] - nodes.state[element[3]][0]) * zoom,
-                        height: (nodes.state[element[1]][1] - nodes.state[element[3]][1]) * zoom,
-                        // right: nodes.state[element[2]][0],
-                        // bottom: nodes.state[element[2]][1],
-                        border: '1px solid white',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
+                        width: w,
+                        height: h
                       }}
                     >
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center'
-                        }}
-                      >
-                        <div style={{ fontSize: '8px' }}>
-                          {stuffToShow.state.elementsIds && index + 1}
-                        </div>
-                      </div>
+                      {stuffToShow.state.elementsIds && fits && (
+                        <span className="mg-id">{index + 1}</span>
+                      )}
                     </div>
-                  ))}
-                {stuffToShow.state.nodesIds &&
-                  nodes.state.length > 0 &&
-                  nodes.state.map((node, index) => (
+                  );
+                })}
+              {stuffToShow.state.nodesIds &&
+                nodes.state.length > 0 &&
+                nodes.state.map((node, index) => (
+                  <div
+                    key={index}
+                    className="mg-node"
+                    style={{ left: node[0] * zoom - 2, top: node[1] * zoom - 2 }}
+                  >
+                    <span className="mg-id mg-node-id">{index + 1}</span>
+                  </div>
+                ))}
+              {stuffToShow.state.facesIds &&
+                faces.state.length > 0 &&
+                faces.state.map((face, index) => (
+                  <div
+                    key={index}
+                    className="mg-marker"
+                    style={{
+                      left:
+                        ((nodes.state[face[1]][0] + nodes.state[face[0]][0]) / 2) * zoom -
+                        (nodes.state[face[1]][0] === nodes.state[face[0]][0] ? 10 : 0),
+                      top:
+                        ((nodes.state[face[1]][1] + nodes.state[face[0]][1]) / 2) * zoom -
+                        (nodes.state[face[1]][1] === nodes.state[face[0]][1] ? 10 : 0)
+                    }}
+                  >
+                    <span className="mg-id">{correctedFacesIds.state[index] + 1}</span>
+                  </div>
+                ))}
+              {stuffToShow.state.borderFacesIds &&
+                faces.state.length > 0 &&
+                faces.state.map((face, index) => {
+                  let numberOfAppearences = 0;
+                  for (let i = 0; i < elementsFaces.state.length; i++) {
+                    if (elementsFaces.state[i].includes(index)) numberOfAppearences++;
+                  }
+                  if (numberOfAppearences !== 1) return null;
+                  return (
                     <div
                       key={index}
+                      className="mg-marker"
                       style={{
-                        position: 'absolute',
-                        boxSizing: 'border-box',
-                        left: node[0] * zoom - 2,
-                        top: node[1] * zoom - 2,
-                        width: '4px',
-                        height: '4px',
-                        backgroundColor: 'white',
-                        borderRadius: '50%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          position: 'relative',
-                          top: '-10px',
-                          left: '-10px'
-                        }}
-                      >
-                        <div style={{ fontSize: '8px' }}>
-                          {stuffToShow.state.nodesIds && index + 1}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                {stuffToShow.state.facesIds &&
-                  faces.state.length > 0 &&
-                  faces.state.map((face, index) => (
-                    <div
-                      key={index}
-                      style={{
-                        position: 'absolute',
-                        boxSizing: 'border-box',
                         left:
                           ((nodes.state[face[1]][0] + nodes.state[face[0]][0]) / 2) * zoom -
                           (nodes.state[face[1]][0] === nodes.state[face[0]][0] ? 10 : 0),
                         top:
                           ((nodes.state[face[1]][1] + nodes.state[face[0]][1]) / 2) * zoom -
-                          (nodes.state[face[1]][1] === nodes.state[face[0]][1] ? 10 : 0),
-                        width: '4px',
-                        height: '4px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
+                          (nodes.state[face[1]][1] === nodes.state[face[0]][1] ? 10 : 0)
                       }}
                     >
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          position: 'relative'
-                        }}
-                      >
-                        <div style={{ fontSize: '8px' }}>{correctedFacesIds.state[index] + 1}</div>
-                      </div>
+                      <span className="mg-id">{correctedFacesIds.state[index] + 1}</span>
                     </div>
-                  ))}
-                {stuffToShow.state.borderFacesIds &&
-                  faces.state.length > 0 &&
-                  faces.state.map((face, index) => {
-                    let numberOfAppearences = 0;
-                    for (let i = 0; i < elementsFaces.state.length; i++) {
-                      const elementFace = elementsFaces.state[i];
-                      if (elementFace.includes(index)) {
-                        numberOfAppearences++;
-                      }
-                    }
-                    if (numberOfAppearences === 1) {
-                      return (
-                        <div
-                          key={index}
-                          style={{
-                            position: 'absolute',
-                            boxSizing: 'border-box',
-                            left:
-                              ((nodes.state[face[1]][0] + nodes.state[face[0]][0]) / 2) * zoom -
-                              (nodes.state[face[1]][0] === nodes.state[face[0]][0] ? 10 : 0),
-                            top:
-                              ((nodes.state[face[1]][1] + nodes.state[face[0]][1]) / 2) * zoom -
-                              (nodes.state[face[1]][1] === nodes.state[face[0]][1] ? 10 : 0),
-                            width: '4px',
-                            height: '4px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                          }}
-                        >
-                          <div
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              position: 'relative'
-                            }}
-                          >
-                            <div style={{ fontSize: '8px' }}>
-                              {correctedFacesIds.state[index] + 1}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    } else {
-                      return <></>;
-                    }
-                  })}
-                {stuffToShow.state.supports &&
-                  supportedFaces.state.map((faceIndex) => (
+                  );
+                })}
+              {stuffToShow.state.supports &&
+                supportedFaces.state.map((faceIndex) => {
+                  const a = nodes.state[faces.state[faceIndex]?.[0]];
+                  const b = nodes.state[faces.state[faceIndex]?.[1]];
+                  if (!a || !b) return null;
+                  const vertical = a[0] === b[0];
+                  return (
                     <div
                       key={faceIndex}
+                      className="mg-marker mg-support"
                       style={{
-                        position: 'absolute',
-                        boxSizing: 'border-box',
-                        left:
-                          ((nodes.state[faces.state[faceIndex][1]][0] +
-                            nodes.state[faces.state[faceIndex][0]][0]) /
-                            2) *
-                            zoom -
-                          (nodes.state[faces.state[faceIndex][1]][0] ===
-                          nodes.state[faces.state[faceIndex][0]][0]
-                            ? 2
-                            : 0),
-                        top:
-                          ((nodes.state[faces.state[faceIndex][1]][1] +
-                            nodes.state[faces.state[faceIndex][0]][1]) /
-                            2) *
-                            zoom -
-                          (nodes.state[faces.state[faceIndex][1]][1] ===
-                          nodes.state[faces.state[faceIndex][0]][1]
-                            ? 2
-                            : 0),
-                        width: '4px',
-                        transform: `rotate(${
-                          nodes.state[faces.state[faceIndex][1]][0] ===
-                          nodes.state[faces.state[faceIndex][0]][0]
-                            ? 270
-                            : 0
-                        }deg)`,
-                        height: '4px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
+                        left: ((a[0] + b[0]) / 2) * zoom - (vertical ? 2 : 0),
+                        top: ((a[1] + b[1]) / 2) * zoom - (vertical ? 0 : 2),
+                        transform: `rotate(${vertical ? 270 : 0}deg)`
                       }}
                     >
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          position: 'relative'
-                        }}
-                      >
-                        <Icon icon="support" color="white" />
-                      </div>
+                      <Icon icon="support" color="#f0b35a" />
                     </div>
-                  ))}
-              </div>
-            ) : (
-              <>No data.</>
-            )}
-            <div style={{ position: 'absolute', top: '5px', left: '5px' }}>
-              <div // Filter Visualization
-                style={{ display: 'flex', justifyContent: 'start', alignItems: 'center' }}
-              >
-                <input
-                  type="checkbox"
-                  id="elements"
-                  name="elements"
-                  checked={stuffToShow.state.elements}
-                  onChange={() => {
-                    stuffToShow.set({
-                      ...stuffToShow.state,
-                      elements: !stuffToShow.state.elements
-                    });
-                  }}
-                />
-                <label htmlFor="elements">Subvolumes</label>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'start', alignItems: 'center' }}>
-                <input
-                  type="checkbox"
-                  id="elementsIds"
-                  name="elementsIds"
-                  checked={stuffToShow.state.elementsIds}
-                  onChange={() => {
-                    stuffToShow.set({
-                      ...stuffToShow.state,
-                      elementsIds: !stuffToShow.state.elementsIds
-                    });
-                  }}
-                />
-                <label htmlFor="elementsIds">Subvolume Ids</label>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'start', alignItems: 'center' }}>
-                <input
-                  type="checkbox"
-                  id="regionsMaterials"
-                  name="regionsMaterials"
-                  checked={stuffToShow.state.regionsMaterials}
-                  onChange={() => {
-                    stuffToShow.set({
-                      ...stuffToShow.state,
-                      regionsMaterials: !stuffToShow.state.regionsMaterials
-                    });
-                  }}
-                />
-                <label htmlFor="regionsMaterials">Materials</label>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'start', alignItems: 'center' }}>
-                <input
-                  type="checkbox"
-                  id="regionsLabels"
-                  name="regionsLabels"
-                  checked={stuffToShow.state.regionsLabels}
-                  onChange={() => {
-                    stuffToShow.set({
-                      ...stuffToShow.state,
-                      regionsLabels: !stuffToShow.state.regionsLabels
-                    });
-                  }}
-                />
-                <label htmlFor="regionsLabels">Regions</label>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'start', alignItems: 'center' }}>
-                <input
-                  type="checkbox"
-                  id="nodesIds"
-                  name="nodesIds"
-                  checked={stuffToShow.state.nodesIds}
-                  onChange={() => {
-                    stuffToShow.set({
-                      ...stuffToShow.state,
-                      nodesIds: !stuffToShow.state.nodesIds
-                    });
-                  }}
-                />
-                <label htmlFor="nodesIds">Nodes</label>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'start', alignItems: 'center' }}>
-                <input
-                  type="checkbox"
-                  id="facesIds"
-                  name="facesIds"
-                  checked={stuffToShow.state.facesIds}
-                  onChange={() => {
-                    stuffToShow.set({
-                      ...stuffToShow.state,
-                      facesIds: !stuffToShow.state.facesIds
-                    });
-                  }}
-                />
-                <label htmlFor="facesIds">Faces</label>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'start', alignItems: 'center' }}>
-                <input
-                  type="checkbox"
-                  id="borderFacesIds"
-                  name="borderFacesIds"
-                  checked={stuffToShow.state.borderFacesIds}
-                  onChange={() => {
-                    stuffToShow.set({
-                      ...stuffToShow.state,
-                      borderFacesIds: !stuffToShow.state.borderFacesIds
-                    });
-                  }}
-                />
-                <label htmlFor="borderFacesIds">Border Faces</label>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'start', alignItems: 'center' }}>
-                <input
-                  type="checkbox"
-                  id="supports"
-                  name="supports"
-                  checked={stuffToShow.state.supports}
-                  onChange={() => {
-                    stuffToShow.set({
-                      ...stuffToShow.state,
-                      supports: !stuffToShow.state.supports
-                    });
-                  }}
-                />
-                <label htmlFor="supports">Supports</label>
-              </div>
+                  );
+                })}
             </div>
-            <div
-              style={{
-                position: 'absolute',
-                bottom: '5px',
-                right: '5px',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'end'
+          ) : (
+            <div className="mg-empty">
+              <strong>No unit cell yet</strong>
+              <span>Open a .json model or .fvt mesh, or set the cell width and height.</span>
+            </div>
+          )}
+          {(unitCellWidth.state || 0) > 0 && (unitCellHeight.state || 0) > 0 && (
+            <div className="mg-dims mono" aria-hidden="true">
+              {short(unitCellWidth.state)} × {short(unitCellHeight.state)}
+              {units.length ? ` ${units.length}` : ''}
+            </div>
+          )}
+        </div>
+
+        <div className="mg-actionbar">
+          <div className="mg-inline">
+            <label htmlFor="faceSupport" className="mg-toolbar-label">
+              Toggle support on face
+            </label>
+            <input
+              ref={faceSupportRef}
+              type="number"
+              id="faceSupport"
+              min={1}
+              style={{ width: '80px' }}
+              disabled={!hasMesh}
+            />
+            <button
+              type="button"
+              className="btn btn-dark"
+              disabled={!hasMesh}
+              title="Type a face id (turn on Faces to see them) to add or remove its support"
+              onClick={() => {
+                const faceIndex = Number(faceSupportRef.current?.value) - 1;
+                if (faceIndex < 0 || faceIndex >= faces.state.length) return;
+                const newSupportedFaces = [...supportedFaces.state];
+                if (newSupportedFaces.includes(faceIndex)) {
+                  newSupportedFaces.splice(newSupportedFaces.indexOf(faceIndex), 1);
+                } else {
+                  newSupportedFaces.push(faceIndex);
+                }
+                supportedFaces.set(newSupportedFaces);
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                <label htmlFor="faceSupport">Edit Face Support:</label>
-                <div style={{ width: '5px' }} />
-                <input
-                  type="number"
-                  id="faceSupport"
-                  name="faceSupport"
-                  min={1}
-                  style={{ width: '70px' }}
-                />
-                <div style={{ width: '5px' }} />
-                <button
-                  style={{ cursor: 'pointer' }}
-                  disabled={!hasMesh}
-                  title="Type a face id (turn on Faces to see them) to add or remove its support"
-                  onClick={() => {
-                    const faceIndex =
-                      Number((document.getElementById('faceSupport') as HTMLInputElement).value) -
-                      1;
-                    if (faceIndex < 0 || faceIndex >= faces.state.length) return;
-                    const newSupportedFaces = [...supportedFaces.state];
-                    if (newSupportedFaces.includes(faceIndex)) {
-                      newSupportedFaces.splice(newSupportedFaces.indexOf(faceIndex), 1);
-                    } else {
-                      newSupportedFaces.push(faceIndex);
-                    }
-                    supportedFaces.set(newSupportedFaces);
-                  }}
-                >
-                  Change
-                </button>
-              </div>
-              <div style={{ height: '10px' }} />
-              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                <button
-                  style={{ cursor: 'pointer' }}
-                  disabled={validation.blockers.length > 0}
-                  title={blockersText || 'Download the mesh as a .fvt file (FVDAM input)'}
-                  onClick={() => {
-                    generateFvtFile();
-                  }}
-                >
-                  Export .fvt
-                </button>
-                <div style={{ width: '5px' }} />
-                <button
-                  style={{ cursor: 'pointer' }}
-                  disabled={!unitCellWidth.state || !unitCellHeight.state}
-                  title="Save the whole model (.json) to open it again later"
-                  onClick={() => {
-                    generateJsonFile();
-                  }}
-                >
-                  Save model (.json)
-                </button>
-                <div style={{ width: '15px' }} />
-                <button
-                  style={{ cursor: 'pointer', fontWeight: 'bold' }}
-                  disabled={validation.blockers.length > 0}
-                  title={blockersText || 'Send this mesh to the FVDAM solver'}
-                  onClick={() => {
-                    sendToFvdam();
-                  }}
-                >
-                  Send to FVDAM ▸
-                </button>
-              </div>
-              {validation.blockers.length > 0 && (unitCellWidth.state || hasMesh) && (
-                <div
-                  role="status"
-                  style={{
-                    marginTop: '6px',
-                    fontSize: '12px',
-                    color: '#fff',
-                    maxWidth: '420px',
-                    textAlign: 'right'
-                  }}
-                >
-                  {validation.blockers[0]}
-                </div>
-              )}
-            </div>
+              Toggle
+            </button>
           </div>
+          <span style={{ flex: 1 }} />
+          {validation.blockers.length > 0 && (unitCellWidth.state || hasMesh) && (
+            <span role="status" className="mg-blocker">
+              {validation.blockers[0]}
+            </span>
+          )}
+          <button
+            type="button"
+            className="btn btn-dark"
+            disabled={!unitCellWidth.state || !unitCellHeight.state}
+            title="Save the whole model (.json) to open it again later"
+            onClick={() => generateJsonFile()}
+          >
+            Save model (.json)
+          </button>
+          <button
+            type="button"
+            className="btn btn-dark"
+            disabled={validation.blockers.length > 0}
+            title={blockersText || 'Download the mesh as a .fvt file (FVDAM input)'}
+            onClick={() => generateFvtFile()}
+          >
+            Export .fvt
+          </button>
+          <button
+            type="button"
+            className="btn btn-primary"
+            disabled={validation.blockers.length > 0}
+            title={blockersText || 'Send this mesh to the FVDAM solver'}
+            onClick={() => sendToFvdam()}
+          >
+            Send to FVDAM ▸
+          </button>
         </div>
-      </div>
+      </section>
     </div>
   );
 }

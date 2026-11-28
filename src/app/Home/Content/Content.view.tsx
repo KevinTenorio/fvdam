@@ -8,6 +8,7 @@ import { AppContext } from '/src/app/App.model';
 import { FvdamCore, PythonRuntimeStatus } from '/src/app/Home/Home.model';
 import { useEffect, useRef, useState } from 'react';
 import materialColor from '/src/commons/materialColor';
+import { unitSuffix } from '/src/commons/units';
 
 const CORE_LABELS: Record<FvdamCore, string> = {
   python: 'Python (in browser)',
@@ -15,80 +16,89 @@ const CORE_LABELS: Record<FvdamCore, string> = {
 };
 
 const PYTHON_STATUS_TEXT: Record<PythonRuntimeStatus, string> = {
-  loading: 'Python runtime: downloading in the background...',
-  ready: 'Python runtime: ready',
-  error: 'Python runtime: unavailable (will retry when you execute)'
+  loading: 'Downloading the Python runtime in the background…',
+  ready: 'Python runtime ready',
+  error: 'Python runtime unavailable (will retry when you run)'
 };
 
-const buttonStyle = {
-  cursor: 'pointer',
-  backgroundColor: 'rgba(0, 0, 0, 0.08)',
-  border: '1px solid var(--off-white)',
-  color: 'white',
-  padding: '10px',
-  borderRadius: '5px',
-  fontWeight: 'bold',
-  fontSize: '16px',
-  height: '50px',
-  width: '200px',
-  margin: '15px'
-};
+// Notação de Voigt usada pelo núcleo: 1=11, 2=22, 3=33, 4=23, 5=13, 6=12
+const VOIGT = ['11', '22', '33', '23', '13', '12'];
 
-function ExecuteControls({
+// entradas e resumos: até 6 algarismos significativos
+const fmtStiffness = new Intl.NumberFormat('en-US', { maximumSignificantDigits: 6 });
+const fmtRatio = new Intl.NumberFormat('en-US', { maximumSignificantDigits: 4 });
+// coeficientes de Poisson do resultado: sempre 4 casas
+const fmtNu = new Intl.NumberFormat('en-US', {
+  minimumFractionDigits: 4,
+  maximumFractionDigits: 4
+});
+
+// Resultados com o mesmo número de casas em toda a tabela, escolhido pela ordem de grandeza
+// do maior termo (6 algarismos nele). Funciona em MPa, GPa ou Pa sem perder precisão.
+function fixedFormatter(maxAbs: number) {
+  const magnitude = maxAbs > 0 ? Math.floor(Math.log10(maxAbs)) : 0;
+  const decimals = Math.min(8, Math.max(0, 5 - magnitude));
+  return new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals
+  });
+}
+
+function toMatrix(Ch: any): number[][] {
+  const data = typeof Ch?.toArray === 'function' ? Ch.toArray() : Ch?.data ?? Ch;
+  return (data as any[][]).map((row) => row.map(Number));
+}
+
+function copyText(text: string) {
+  if (navigator.clipboard) navigator.clipboard.writeText(text).catch(() => undefined);
+}
+
+function RunControls({
   onExecute,
   pythonStatus,
-  label = 'Execute FVDAM'
+  label
 }: {
   onExecute: (core: FvdamCore) => void;
   pythonStatus: PythonRuntimeStatus;
-  label?: string;
+  label: string;
 }) {
   const { setLoading }: AppContext = useAppContext();
   const [core, setCore] = useState<FvdamCore>('python');
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', color: 'white' }}>
-        <span style={{ marginRight: '10px', fontWeight: 'bold' }}>Core:</span>
-        {(Object.keys(CORE_LABELS) as FvdamCore[]).map((option) => (
-          <button
-            key={option}
-            className="button"
-            title={
-              option === 'python'
-                ? 'NumPy/SciPy core running in the browser (Pyodide). The first run downloads the Python runtime.'
-                : 'Original TypeScript core (mathjs). Slow for large meshes.'
-            }
-            style={{
-              cursor: 'pointer',
-              backgroundColor: core === option ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.08)',
-              border: '1px solid var(--off-white)',
-              color: 'white',
-              padding: '6px 12px',
-              fontWeight: core === option ? 'bold' : 'normal',
-              borderRadius: '5px',
-              marginRight: '6px'
-            }}
-            onClick={() => setCore(option)}
-          >
-            {CORE_LABELS[option]}
-          </button>
-        ))}
-      </div>
-      {core === 'python' && (
-        <div
-          style={{
-            color: pythonStatus === 'error' ? '#ffd2d2' : 'white',
-            fontSize: '12px',
-            marginTop: '6px',
-            opacity: pythonStatus === 'ready' ? 0.8 : 1
-          }}
-        >
-          {PYTHON_STATUS_TEXT[pythonStatus]}
+    <div className="fv-run">
+      <div className="field">
+        <span className="field-label" id="core-label">
+          Solver core
+        </span>
+        <div className="segmented" role="group" aria-labelledby="core-label">
+          {(Object.keys(CORE_LABELS) as FvdamCore[]).map((option) => (
+            <button
+              key={option}
+              type="button"
+              aria-pressed={core === option}
+              title={
+                option === 'python'
+                  ? 'NumPy/SciPy core running in the browser (Pyodide). The first run downloads the Python runtime.'
+                  : 'Original TypeScript core (mathjs). Slow for large meshes.'
+              }
+              onClick={() => setCore(option)}
+            >
+              {CORE_LABELS[option]}
+            </button>
+          ))}
         </div>
-      )}
+        {core === 'python' && (
+          <span className="fv-status" data-status={pythonStatus}>
+            {PYTHON_STATUS_TEXT[pythonStatus]}
+          </span>
+        )}
+        {core === 'typescript' && (
+          <span className="fv-status">Runs in a background worker; you can cancel it.</span>
+        )}
+      </div>
       <button
-        className="button"
-        style={buttonStyle}
+        type="button"
+        className="btn btn-primary btn-lg btn-block"
         onClick={() => {
           setLoading('Executing FVDAM algorithm. This may take a while...');
           onExecute(core);
@@ -108,439 +118,328 @@ function ContentView({
   nodesInfo,
   results,
   handleExecuteFvdam,
-  getPieChartColors,
   elapsedTime,
   meshData,
   pythonStatus
 }: IContentViewProps) {
+  const { units }: AppContext = useAppContext();
+  const len = unitSuffix(units.length);
+  const stress = unitSuffix(units.stress);
+  const area = units.length ? ` (${units.length}²)` : '';
+
   // a seção da FVDAM abre abaixo do editor de malha: leva o usuário até ela
   // ao enviar uma malha e de novo quando os resultados chegam
   const sectionRef = useRef<HTMLDivElement>(null);
+  const resultsRef = useRef<HTMLDivElement>(null);
   // rola só na vertical (scrollIntoView também deslocava a página para o lado)
   function scrollToTop(element: HTMLElement | null, onlyIfHidden = false) {
     if (!element) return;
     const rect = element.getBoundingClientRect();
-    if (onlyIfHidden && rect.top >= 0 && rect.bottom <= window.innerHeight) return;
-    window.scrollTo({ top: window.scrollY + rect.top - 10, behavior: 'smooth' });
+    if (onlyIfHidden && rect.top >= 56 && rect.bottom <= window.innerHeight) return;
+    window.scrollTo({ top: window.scrollY + rect.top - 66, behavior: 'smooth' });
   }
   useEffect(() => {
     scrollToTop(sectionRef.current);
   }, [elements.state]);
   useEffect(() => {
-    if (results.state) scrollToTop(sectionRef.current, true);
+    if (results.state) scrollToTop(resultsRef.current, true);
   }, [results.state]);
-  return (
-    <div
-      ref={sectionRef}
-      style={{
-        marginTop: '20px',
-        marginBottom: '20px',
-        width: '100%',
-        display: 'flex',
-        flexDirection: 'column'
-      }}
-    >
-      <div
-        style={{
-          width: '100%',
-          display: 'flex',
-          flexDirection: 'row'
-        }}
-      >
-        <div // UNIT CELL
-          style={{
-            width: '400px',
-            display: 'flex',
-            flexDirection: 'column',
-            padding: '15px',
-            backgroundColor: 'rgba(0, 0, 0, 0.08)',
-            border: '1px solid var(--off-white)',
-            marginRight: '20px'
-          }}
-        >
-          <div
-            style={{
-              margin: '10px',
-              border: '1px solid var(--off-white)',
-              color: 'white',
-              backgroundColor: 'rgba(0, 0, 0, 0.08)',
-              padding: '10px',
-              display: 'flex',
-              flexDirection: 'row'
-            }}
-          >
-            <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>Unit Cell</div>
-            <div>
-              <div
-                style={{ paddingLeft: '20px', marginBottom: '5px' }}
-              >{`Materials: ${materials.state.length}`}</div>
-              <div
-                style={{ paddingLeft: '20px', marginBottom: '5px' }}
-              >{`Nodes: ${nodes.state.length}`}</div>
-              <div
-                style={{ paddingLeft: '20px', marginBottom: '5px' }}
-              >{`Subvolumes: ${elements.state.length}`}</div>
-              <div
-                style={{ paddingLeft: '20px', marginBottom: '5px' }}
-              >{`Faces: ${faces.state.length}`}</div>
-            </div>
-            <div>
-              <div style={{ paddingLeft: '20px', marginBottom: '5px' }}>{`Constraints: ${
-                faces.state.filter(
-                  (face) => face.constraints.filter((constraint) => constraint === 1).length > 0
-                ).length
-              }`}</div>
-              <div style={{ paddingLeft: '20px', marginBottom: '5px' }}>{`Area: ${
-                (nodesInfo.state?.maxX - nodesInfo.state?.minX) *
-                (nodesInfo.state?.maxY - nodesInfo.state?.minY)
-              }`}</div>
-              <div style={{ paddingLeft: '20px', marginBottom: '5px' }}>{`Width: ${
-                nodesInfo.state?.maxX - nodesInfo.state?.minX
-              }`}</div>
-              <div style={{ paddingLeft: '20px', marginBottom: '5px' }}>{`Height: ${
-                nodesInfo.state?.maxY - nodesInfo.state?.minY
-              }`}</div>
-            </div>
-          </div>
-          <div
-            style={{
-              margin: '10px',
-              border: '1px solid var(--off-white)',
-              color: 'white',
-              backgroundColor: 'rgba(0, 0, 0, 0.08)',
-              padding: '20px 20px 20px 20px',
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center'
-            }}
-          >
-            <div
-              style={{
-                height: '300px',
-                width: '300px',
-                borderRadius: '50%',
-                background: `conic-gradient(${getPieChartColors(materials.state)})`,
-                boxShadow: '0px 0px 5px 0px rgba(0,0,0,0.75)'
-              }}
-            />
-          </div>
-        </div>
-        <div
-          style={{
-            width: '100%',
-            display: 'flex',
-            flexDirection: 'row'
-          }}
-        >
-          <div // MATERIALS
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              padding: '15px',
-              backgroundColor: 'rgba(0, 0, 0, 0.08)',
-              border: '1px solid var(--off-white)',
-              marginRight: '20px',
-              width: '400px'
-            }}
-          >
-            <div
-              style={{
-                fontWeight: 'bold',
-                color: 'white',
-                width: '100%',
-                textAlign: 'center',
-                marginBottom: '10px'
-              }}
-            >
-              Materials
-            </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              {materials.state.map((material, materialIndex) => (
-                <div
-                  style={{
-                    margin: '10px',
-                    border: '1px solid var(--off-white)',
-                    color: 'white',
-                    backgroundColor: 'rgba(0, 0, 0, 0.08)',
-                    padding: '10px'
-                  }}
-                  key={material.label}
-                >
-                  <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>{material.label}</div>
-                  <div
-                    style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                  >{`Poisson: ${material.poisson}`}</div>
-                  <div
-                    style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                  >{`Young: ${material.young}`}</div>
-                  <div
-                    style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                  >{`Area: ${material.area.toFixed(2)}`}</div>
-                  <div style={{ paddingLeft: '20px', marginBottom: '5px' }}>{`Fraction: ${(
-                    (material.area * 100) /
-                    elements.state.map((element) => element?.area || 0).reduce((a, b) => a + b, 0)
-                  ).toFixed(2)} %`}</div>
-                  <div
-                    style={{
-                      paddingLeft: '20px',
-                      marginBottom: '5px',
-                      display: 'flex',
-                      flexDirection: 'row'
-                    }}
-                  >
-                    {`Color: `}
-                    <span
-                      aria-hidden="true"
-                      style={{
-                        display: 'inline-block',
-                        width: '14px',
-                        height: '14px',
-                        marginLeft: '6px',
-                        backgroundColor: materialColor(meshData, materialIndex),
-                        border: '1px solid rgba(255, 255, 255, 0.6)'
-                      }}
-                    />
+  const [copied, setCopied] = useState<string | null>(null);
+  function copy(what: string, text: string) {
+    copyText(text);
+    setCopied(what);
+    window.setTimeout(() => setCopied(null), 1500);
+  }
+
+  const width = nodesInfo.state?.maxX - nodesInfo.state?.minX;
+  const height = nodesInfo.state?.maxY - nodesInfo.state?.minY;
+  const totalArea = materials.state.reduce((sum, material) => sum + Math.abs(material.area), 0);
+  const restrained = faces.state.filter((face) =>
+    face.constraints.some((constraint) => constraint === 1)
+  ).length;
+
+  const res = results.state;
+  const C = res ? toMatrix(res.Ch) : null;
+  const maxAbs = C ? Math.max(...C.flat().map(Math.abs)) : 0;
+  const isZero = (value: number) => Math.abs(value) <= 1e-9 * maxAbs;
+  const fmtC = fixedFormatter(maxAbs);
+
+  const constants = res
+    ? [
+        {
+          name: "Young's modulus",
+          unit: stress,
+          fmt: fmtC,
+          items: [
+            ['E₁', res.E11],
+            ['E₂', res.E22],
+            ['E₃', res.E33]
+          ]
+        },
+        {
+          name: 'Shear modulus',
+          unit: stress,
+          fmt: fmtC,
+          items: [
+            ['G₂₃', res.G23],
+            ['G₁₃', res.G13],
+            ['G₁₂', res.G12]
+          ]
+        },
+        {
+          name: "Poisson's ratio",
+          unit: '',
+          symbol: 'ν',
+          fmt: fmtNu,
+          items: [
+            ['ν₂₃', res.v23],
+            ['ν₁₃', res.v13],
+            ['ν₁₂', res.v12]
+          ]
+        }
+      ]
+    : [];
+
+  return (
+    <div ref={sectionRef} className="fv" aria-label="FVDAM homogenization">
+      <h2 className="fv-heading">Homogenization</h2>
+      <div className="fv-grid">
+        <section className="panel" aria-labelledby="fv-cell-title">
+          <h3 className="panel-title" id="fv-cell-title">
+            Unit cell
+          </h3>
+          <dl className="fv-kv">
+            <dt>Size{len}</dt>
+            <dd className="mono">
+              {fmtStiffness.format(width)} × {fmtStiffness.format(height)}
+            </dd>
+            <dt>Area{area}</dt>
+            <dd className="mono">{fmtStiffness.format(width * height)}</dd>
+            <dt>Subvolumes</dt>
+            <dd className="mono">{elements.state.length}</dd>
+            <dt>Nodes</dt>
+            <dd className="mono">{nodes.state.length}</dd>
+            <dt>Faces</dt>
+            <dd className="mono">{faces.state.length}</dd>
+            <dt>Restrained faces</dt>
+            <dd className="mono">{restrained}</dd>
+          </dl>
+        </section>
+
+        <section className="panel fv-wide" aria-labelledby="fv-mat-title">
+          <h3 className="panel-title" id="fv-mat-title">
+            Phases
+          </h3>
+          <div
+            className="fv-bar"
+            role="img"
+            aria-label={`Volume fractions: ${materials.state
+              .map(
+                (material) =>
+                  `${material.label} ${((Math.abs(material.area) * 100) / totalArea).toFixed(1)}%`
+              )
+              .join(', ')}`}
+          >
+            {materials.state.map((material, index) => (
+              <span
+                key={material.label + index}
+                style={{
+                  width: `${(Math.abs(material.area) * 100) / totalArea}%`,
+                  backgroundColor: materialColor(meshData, index)
+                }}
+              />
+            ))}
+          </div>
+          <div className="fv-table-wrap">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Phase</th>
+                  <th className="num">
+                    <span className="sym">E</span>
+                    {stress}
+                  </th>
+                  <th className="num">
+                    <span className="sym">ν</span>
+                  </th>
+                  <th className="num">Area{area}</th>
+                  <th className="num" title="Volume fraction">
+                    <span className="sym">V</span>
+                    <sub>f</sub>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {materials.state.map((material, index) => (
+                  <tr key={material.label + index}>
+                    <td>
+                      <span className="fv-phase">
+                        <span
+                          className="swatch"
+                          style={{ backgroundColor: materialColor(meshData, index) }}
+                        />
+                        {material.label}
+                      </span>
+                    </td>
+                    <td className="num">{fmtStiffness.format(material.young)}</td>
+                    <td className="num">{fmtRatio.format(material.poisson)}</td>
+                    <td className="num">{fmtStiffness.format(Math.abs(material.area))}</td>
+                    <td className="num">
+                      {((Math.abs(material.area) * 100) / totalArea).toFixed(2)}%
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section className="panel" aria-labelledby="fv-run-title">
+          <h3 className="panel-title" id="fv-run-title">
+            Solve
+          </h3>
+          <RunControls
+            onExecute={handleExecuteFvdam}
+            pythonStatus={pythonStatus}
+            label={res ? 'Run again' : 'Run FVDAM'}
+          />
+        </section>
+      </div>
+
+      {res && C && (
+        <div ref={resultsRef} className="fv-grid fv-results">
+          <section className="panel fv-wide" aria-labelledby="fv-c-title">
+            <h3 className="panel-title" id="fv-c-title">
+              Effective stiffness C*
+              <small>{units.stress ? `${units.stress}, ` : ''}Voigt notation</small>
+              <span style={{ flex: 1 }} />
+              <button
+                type="button"
+                className="btn"
+                onClick={() => copy('C', C.map((row) => row.join('\t')).join('\n'))}
+                title="Copy the 6×6 matrix (tab-separated, full precision)"
+              >
+                {copied === 'C' ? 'Copied' : 'Copy matrix'}
+              </button>
+            </h3>
+            <div className="fv-table-wrap">
+              <table className="fv-matrix mono">
+                <thead>
+                  <tr>
+                    <th aria-label="Row" />
+                    {VOIGT.map((index) => (
+                      <th key={index} scope="col">
+                        {index}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {C.map((row, i) => (
+                    <tr key={i}>
+                      <th scope="row">{VOIGT[i]}</th>
+                      {row.map((value, j) => (
+                        <td
+                          key={j}
+                          data-diag={i === j}
+                          data-zero={isZero(value)}
+                          title={`C*${VOIGT[i]}${VOIGT[j]} = ${value}`}
+                        >
+                          {isZero(value) ? '0' : fmtC.format(value)}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section className="panel fv-wide" aria-labelledby="fv-eng-title">
+            <h3 className="panel-title" id="fv-eng-title">
+              Engineering constants
+              <span style={{ flex: 1 }} />
+              <button
+                type="button"
+                className="btn"
+                title="Copy the constants (tab-separated, full precision)"
+                onClick={() =>
+                  copy(
+                    'eng',
+                    constants
+                      .flatMap((group) =>
+                        group.items.map(([symbol, value]) => `${symbol}\t${value}`)
+                      )
+                      .join('\n')
+                  )
+                }
+              >
+                {copied === 'eng' ? 'Copied' : 'Copy'}
+              </button>
+            </h3>
+            <div className="fv-constants">
+              {constants.map((group) => (
+                <div key={group.name} className="fv-const-group">
+                  <div className="field-label">
+                    {group.name}
+                    <span className="unit">{group.unit}</span>
                   </div>
+                  <dl className="fv-kv">
+                    {group.items.map(([symbol, value]) => (
+                      <div key={symbol as string} style={{ display: 'contents' }}>
+                        <dt>
+                          <span className="sym">{(symbol as string).charAt(0)}</span>
+                          <sub>{(symbol as string).slice(1)}</sub>
+                        </dt>
+                        <dd className="mono">{group.fmt.format(value as number)}</dd>
+                      </div>
+                    ))}
+                  </dl>
                 </div>
               ))}
             </div>
-          </div>
-          {results.state ? (
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                width: '100%',
-                marginRight: '20px'
+          </section>
+
+          <section className="panel" aria-labelledby="fv-runinfo-title">
+            <h3 className="panel-title" id="fv-runinfo-title">
+              Run
+            </h3>
+            <dl className="fv-kv">
+              <dt>Core</dt>
+              <dd>{CORE_LABELS[res.core ?? 'typescript']}</dd>
+              {res.coreDetails && (
+                <>
+                  <dt>Details</dt>
+                  <dd className="fv-details">{res.coreDetails}</dd>
+                </>
+              )}
+              <dt>Solver time</dt>
+              <dd className="mono">{elapsedTime.state.toFixed(0)} ms</dd>
+            </dl>
+            <button
+              type="button"
+              className="btn btn-block"
+              style={{ marginTop: 'var(--space-3)' }}
+              onClick={() => {
+                const data = {
+                  results: { ...res, Ch: res.Ch }
+                };
+                const dataStr =
+                  'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(data));
+                const downloadAnchorNode = document.createElement('a');
+                downloadAnchorNode.setAttribute('href', dataStr);
+                downloadAnchorNode.setAttribute('download', 'fvdam.json');
+                document.body.appendChild(downloadAnchorNode);
+                downloadAnchorNode.click();
+                downloadAnchorNode.remove();
               }}
             >
-              <div // RESULTS
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  width: '100%',
-                  padding: '15px',
-                  backgroundColor: 'rgba(0, 0, 0, 0.08)',
-                  border: '1px solid var(--off-white)',
-                  marginRight: '20px',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  position: 'relative'
-                }}
-              >
-                <div
-                  style={{
-                    position: 'absolute',
-                    bottom: '5px',
-                    right: '5px',
-                    color: 'white'
-                  }}
-                >{`Elapsed Time: ${elapsedTime.state.toFixed(0)} ms`}</div>
-
-                <div
-                  style={{
-                    fontWeight: 'bold',
-                    color: 'white',
-                    width: '100%',
-                    textAlign: 'center',
-                    marginBottom: '10px'
-                  }}
-                >
-                  Results
-                </div>
-
-                <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'row',
-                    width: '100%'
-                  }}
-                >
-                  <div
-                    style={{
-                      margin: '10px',
-                      border: '1px solid var(--off-white)',
-                      color: 'white',
-                      backgroundColor: 'rgba(0, 0, 0, 0.08)',
-                      padding: '10px',
-                      flex: '1'
-                    }}
-                  >
-                    <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>
-                      Effective Stiffness Matrix
-                    </div>
-                    <div
-                      style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                      // @ts-ignore
-                    >{`C1111: ${results.state.Ch.get([0, 0]).toFixed(2)}`}</div>
-                    <div
-                      style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                      // @ts-ignore
-                    >{`C2222: ${results.state.Ch.get([1, 1]).toFixed(2)}`}</div>
-                    <div
-                      style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                      // @ts-ignore
-                    >{`C3333: ${results.state.Ch.get([2, 2]).toFixed(2)}`}</div>
-                    <div
-                      style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                      // @ts-ignore
-                    >{`C2233: ${results.state.Ch.get([1, 2]).toFixed(2)}`}</div>
-                    <div
-                      style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                      // @ts-ignore
-                    >{`C2323: ${results.state.Ch.get([3, 3]).toFixed(2)}`}</div>
-                  </div>
-                  <div
-                    style={{
-                      margin: '10px',
-                      border: '1px solid var(--off-white)',
-                      color: 'white',
-                      backgroundColor: 'rgba(0, 0, 0, 0.08)',
-                      padding: '20px',
-                      flex: '1'
-                    }}
-                  >
-                    <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>
-                      Young&apos;s Modulus
-                    </div>
-                    <div
-                      style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                    >{`E11: ${results.state.E11.toFixed(2)}`}</div>
-                    <div
-                      style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                    >{`E22: ${results.state.E22.toFixed(2)}`}</div>
-                    <div
-                      style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                    >{`E33: ${results.state.E33.toFixed(2)}`}</div>
-                  </div>
-                  <div
-                    style={{
-                      margin: '10px',
-                      border: '1px solid var(--off-white)',
-                      color: 'white',
-                      backgroundColor: 'rgba(0, 0, 0, 0.08)',
-                      padding: '20px',
-                      flex: '1'
-                    }}
-                  >
-                    <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>
-                      Poisson&apos;s Ratio
-                    </div>
-                    <div
-                      style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                    >{`v23: ${results.state.v23.toFixed(4)}`}</div>
-                    <div
-                      style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                    >{`v13: ${results.state.v13.toFixed(4)}`}</div>
-                    <div
-                      style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                    >{`v12: ${results.state.v12.toFixed(4)}`}</div>
-                  </div>
-                  <div
-                    style={{
-                      margin: '10px',
-                      border: '1px solid var(--off-white)',
-                      color: 'white',
-                      backgroundColor: 'rgba(0, 0, 0, 0.08)',
-                      padding: '20px',
-                      flex: '1'
-                    }}
-                  >
-                    <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>Shear Modulus</div>
-                    <div
-                      style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                    >{`G23: ${results.state.G23.toFixed(2)}`}</div>
-                    <div
-                      style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                    >{`G13: ${results.state.G13.toFixed(2)}`}</div>
-                    <div
-                      style={{ paddingLeft: '20px', marginBottom: '5px' }}
-                    >{`G12: ${results.state.G12.toFixed(2)}`}</div>
-                  </div>
-                </div>
-                <div
-                  style={{
-                    alignSelf: 'flex-start',
-                    color: 'white',
-                    fontSize: '12px',
-                    margin: '0 10px 18px 10px',
-                    maxWidth: '75%'
-                  }}
-                >
-                  <span style={{ fontWeight: 'bold' }}>{`Core: ${
-                    CORE_LABELS[results.state.core ?? 'typescript']
-                  }`}</span>
-                  {results.state.coreDetails ? ` — ${results.state.coreDetails}` : ''}
-                </div>
-              </div>
-              <div // DOWNLOAD BTNS
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'flex-end',
-                  flexDirection: 'row'
-                }}
-              >
-                <button
-                  className="button"
-                  style={{
-                    cursor: 'pointer',
-                    backgroundColor: 'rgba(0, 0, 0, 0.08)',
-                    border: '1px solid var(--off-white)',
-                    color: 'white',
-                    padding: '10px',
-                    borderRadius: '5px',
-                    fontWeight: 'bold',
-                    fontSize: '16px',
-                    height: '50px',
-                    width: '200px',
-                    margin: '15px'
-                  }}
-                  onClick={() => {
-                    const data = {
-                      // @ts-ignore
-                      results: { ...results.state, Ch: results.state.Ch }
-                    };
-                    const dataStr =
-                      'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(data));
-                    const downloadAnchorNode = document.createElement('a');
-                    downloadAnchorNode.setAttribute('href', dataStr);
-                    downloadAnchorNode.setAttribute('download', 'fvdam.json');
-                    document.body.appendChild(downloadAnchorNode);
-                    downloadAnchorNode.click();
-                    downloadAnchorNode.remove();
-                  }}
-                >
-                  Download Results
-                </button>
-                <ExecuteControls
-                  onExecute={handleExecuteFvdam}
-                  pythonStatus={pythonStatus}
-                  label="Execute again"
-                />
-              </div>
-            </div>
-          ) : (
-            <>
-              <div // EXECUTE FVDAM BTN
-                style={{
-                  width: '100%',
-                  flex: '1',
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  flexDirection: 'column'
-                }}
-              >
-                <ExecuteControls onExecute={handleExecuteFvdam} pythonStatus={pythonStatus} />
-              </div>
-            </>
-          )}
+              Download results (.json)
+            </button>
+          </section>
         </div>
-      </div>
+      )}
     </div>
   );
 }

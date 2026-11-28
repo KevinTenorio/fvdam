@@ -20,11 +20,10 @@ import getElements from './getElements';
 import getFaces from './getFaces';
 import * as math from 'mathjs';
 import { executarFvdamPython, prepararFvdamPython } from './python/fvdamPython';
-import materialColor from '/src/commons/materialColor';
 import { executarFvdamTs, cancelarFvdamTs, ExecucaoCancelada } from './typescript/fvdamTs';
 
 function HomeController() {
-  const { setError, setLoading, setCancelLoading, fvdamFile, setMeshData, meshData }: AppContext =
+  const { setError, setLoading, setCancelLoading, fvdamFile, setMeshData }: AppContext =
     useAppContext();
   const [nodes, setNodes] = useState<Node[]>([]);
   const [nodesInfo, setNodesInfo] = useState<NodesInfo>({
@@ -279,29 +278,6 @@ function HomeController() {
     }
   }
 
-  function getPieChartColors(materials: Material[]) {
-    let totalArea = 0;
-    const colors: string[] = [];
-    const percentages: number[] = [0];
-    materials.forEach((material, materialIndex) => {
-      totalArea += material.area;
-      colors.push(materialColor(meshData, materialIndex));
-    });
-    let cumulativeArea = 0;
-    materials.forEach((material) => {
-      cumulativeArea += material.area;
-      percentages.push((cumulativeArea / totalArea) * 100);
-    });
-    let string = '';
-    for (let i = 0; i < colors.length; i++) {
-      string += `${colors[i]} ${percentages[i]}% ${percentages[i + 1]}%`;
-      if (i !== colors.length - 1) {
-        string += ', ';
-      }
-    }
-    return string;
-  }
-
   return (
     <HomeView
       handleFileRead={handleFileRead}
@@ -310,7 +286,6 @@ function HomeController() {
       nodesInfo={{ state: nodesInfo, set: setNodesInfo }}
       elements={{ state: elements, set: setElements }}
       faces={{ state: faces, set: setFaces }}
-      getPieChartColors={getPieChartColors}
       results={{ state: results, set: setResults }}
       handleExecuteFvdam={handleExecuteFvdam}
       page={{ state: page, set: setPage }}

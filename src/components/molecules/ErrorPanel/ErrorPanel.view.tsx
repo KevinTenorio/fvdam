@@ -11,46 +11,42 @@ function ErrorPanelView({ errorMessage, closeError, errorNumber }: ErrorPanelPro
         justifyContent: 'center',
         alignItems: 'center',
         zIndex: '150000',
-        backdropFilter: 'blur(2px)'
+        backgroundColor: 'rgba(20, 24, 31, 0.35)'
       }}
     >
       <div
+        role="alertdialog"
+        aria-labelledby="error-title"
+        aria-describedby="error-message"
+        className="panel"
         style={{
-          width: '550px',
-          height: 'min(80%, auto)',
-          backgroundColor: 'white',
-          border: '1px solid var(--off-white)',
-          display: 'flex',
-          flexDirection: 'column'
+          width: 'min(520px, calc(100vw - 32px))',
+          maxHeight: '80vh',
+          overflow: 'auto',
+          padding: 0,
+          boxShadow: '0 12px 32px rgba(0, 0, 0, 0.25)',
+          borderTop: '4px solid var(--danger)'
         }}
       >
-        <div
-          style={{
-            width: '100%',
-            backgroundColor: 'red',
-            paddingLeft: '10px',
-            paddingRight: '10px',
-            textAlign: 'left',
-            display: 'flex',
-            justifyContent: 'right'
-          }}
-        >
-          <div style={{ width: '100%' }}>{`ERROR ${errorNumber > 1 ? errorNumber : ''}`}</div>
-
-          <div onClick={closeError} style={{ cursor: 'pointer' }}>
-            <Icon icon="close" size="18px" color="grey" />
-          </div>
+        <div style={{ display: 'flex', alignItems: 'center', padding: '12px 12px 0 20px' }}>
+          <h2
+            id="error-title"
+            style={{ margin: 0, flex: 1, fontSize: 'var(--text-lg)', color: 'var(--danger)' }}
+          >
+            {errorNumber > 1 ? `Error (${errorNumber})` : 'Error'}
+          </h2>
+          <button
+            type="button"
+            className="icon-btn"
+            aria-label="Close"
+            onClick={closeError}
+            autoFocus
+          >
+            <Icon icon="close" size="16px" color="currentColor" />
+          </button>
         </div>
-        <div
-          style={{
-            width: '100%',
-            height: '100%',
-            padding: '10px 30px 10px 30px',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}
-        >
-          {errorMessage}
+        <div id="error-message" style={{ padding: '8px 20px 20px', whiteSpace: 'pre-wrap' }}>
+          {(errorMessage as any) instanceof Error ? (errorMessage as any).message : errorMessage}
         </div>
       </div>
     </div>

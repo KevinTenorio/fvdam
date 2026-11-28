@@ -16,21 +16,21 @@ const LoadingScreenView = ({
         justifyContent: 'center',
         alignItems: 'center',
         zIndex: '150000',
-        backdropFilter: 'blur(2px)',
-        backgroundColor: 'rgba(0, 0, 0, 0.35)',
+        backgroundColor: 'rgba(20, 24, 31, 0.55)',
         flexDirection: 'column',
         color: 'white'
       }}
     >
       <div className={style.loadingSpinner}></div>
-      <div role="status" style={{ marginTop: '10px' }}>
+      <div role="status" style={{ marginTop: '12px', fontSize: 'var(--text-lg)' }}>
         {loadingMessages[0] || 'Loading...'}
       </div>
       {onCancel && (
         <button
           type="button"
           onClick={onCancel}
-          style={{ marginTop: '14px', padding: '6px 14px', cursor: 'pointer' }}
+          className="btn btn-dark"
+          style={{ marginTop: '16px' }}
         >
           Cancel
         </button>

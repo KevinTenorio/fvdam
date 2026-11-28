@@ -50,10 +50,7 @@ function NumberField({
         value={text}
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? `${id}-error` : undefined}
-        style={{
-          ...(error ? { outline: '2px solid #ff9b9b', outlineOffset: '-1px' } : {}),
-          ...style
-        }}
+        style={style}
         onChange={(event) => {
           const raw = event.target.value;
           setText(raw);
@@ -65,11 +62,7 @@ function NumberField({
         }}
       />
       {error && (
-        <div
-          id={`${id}-error`}
-          role="alert"
-          style={{ color: '#ffe0e0', fontSize: '12px', marginTop: '2px' }}
-        >
+        <div id={`${id}-error`} role="alert" className="field-error">
           {error}
         </div>
       )}

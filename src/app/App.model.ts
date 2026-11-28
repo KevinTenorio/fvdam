@@ -1,3 +1,4 @@
+import { UnitSystem } from '/src/commons/units';
 export interface AppViewProps {
   theme: Theme | undefined;
   token: string | undefined;
@@ -24,6 +25,8 @@ export interface AppContext {
   setMeshData: (meshData: any) => void;
   cancelLoading: (() => void) | undefined;
   setCancelLoading: (cancel: (() => void) | undefined) => void;
+  units: UnitSystem;
+  setUnits: (units: UnitSystem) => void;
 }
 
 export interface PortalVars {

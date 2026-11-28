@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useMemo } from 'react';
+import { loadUnitSystem, saveUnitSystem, UnitSystem } from '/src/commons/units';
 
 const AppContext = createContext<any>(null);
 
@@ -18,6 +19,12 @@ export function AppProvider({ children }: any) {
   const [meshData, setMeshData] = useState<any>();
   // ação opcional de cancelar a tarefa que está na tela de carga
   const [cancelLoading, setCancelLoading] = useState<(() => void) | undefined>();
+  // unidades de exibição (só rótulos)
+  const [units, setUnitsState] = useState<UnitSystem>(loadUnitSystem);
+  const setUnits = (system: UnitSystem) => {
+    saveUnitSystem(system);
+    setUnitsState(system);
+  };
 
   // Function to manage the global loading state. To start loading pass the message you want to display. To finish loading pass the same message and the false status.
   const setLoading = (message: string, status = true) => {
@@ -56,9 +63,11 @@ export function AppProvider({ children }: any) {
       meshData,
       setMeshData,
       cancelLoading,
-      setCancelLoading
+      setCancelLoading,
+      units,
+      setUnits
     }),
-    [loadingMessages, errorMessages, fvdamFile, meshData, cancelLoading]
+    [loadingMessages, errorMessages, fvdamFile, meshData, cancelLoading, units]
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

@@ -17,7 +17,6 @@ export interface IContentControllerProps {
   nodesInfo: IState<NodesInfo>;
   elements: IState<IElement[]>;
   faces: IState<Face[]>;
-  getPieChartColors: (materials: Material[]) => string;
   results: IState<Results | undefined>;
   handleExecuteFvdam: (core: FvdamCore) => void;
   elapsedTime: IState<number>;
@@ -29,7 +28,6 @@ export interface IContentViewProps {
   nodesInfo: IState<NodesInfo>;
   elements: IState<IElement[]>;
   faces: IState<Face[]>;
-  getPieChartColors: (materials: Material[]) => string;
   results: IState<Results | undefined>;
   handleExecuteFvdam: (core: FvdamCore) => void;
   elapsedTime: IState<number>;
