@@ -5,6 +5,79 @@ import { IContentViewProps } from './Content.model';
 import './Content.styles.css';
 import { useAppContext } from '/src/app/App.context';
 import { AppContext } from '/src/app/App.model';
+import { FvdamCore } from '/src/app/Home/Home.model';
+import { useState } from 'react';
+
+const CORE_LABELS: Record<FvdamCore, string> = {
+  python: 'Python (in browser)',
+  typescript: 'TypeScript'
+};
+
+const buttonStyle = {
+  cursor: 'pointer',
+  backgroundColor: 'rgba(0, 0, 0, 0.08)',
+  border: '1px solid var(--off-white)',
+  color: 'white',
+  padding: '10px',
+  borderRadius: '5px',
+  fontWeight: 'bold',
+  fontSize: '16px',
+  height: '50px',
+  width: '200px',
+  margin: '15px'
+};
+
+function ExecuteControls({
+  onExecute,
+  label = 'Execute FVDAM'
+}: {
+  onExecute: (core: FvdamCore) => void;
+  label?: string;
+}) {
+  const { setLoading }: AppContext = useAppContext();
+  const [core, setCore] = useState<FvdamCore>('python');
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', color: 'white' }}>
+        <span style={{ marginRight: '10px', fontWeight: 'bold' }}>Core:</span>
+        {(Object.keys(CORE_LABELS) as FvdamCore[]).map((option) => (
+          <button
+            key={option}
+            className="button"
+            title={
+              option === 'python'
+                ? 'NumPy/SciPy core running in the browser (Pyodide). The first run downloads the Python runtime.'
+                : 'Original TypeScript core (mathjs). Slow for large meshes.'
+            }
+            style={{
+              cursor: 'pointer',
+              backgroundColor: core === option ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.08)',
+              border: '1px solid var(--off-white)',
+              color: 'white',
+              padding: '6px 12px',
+              fontWeight: core === option ? 'bold' : 'normal',
+              borderRadius: '5px',
+              marginRight: '6px'
+            }}
+            onClick={() => setCore(option)}
+          >
+            {CORE_LABELS[option]}
+          </button>
+        ))}
+      </div>
+      <button
+        className="button"
+        style={buttonStyle}
+        onClick={() => {
+          setLoading('Executing FVDAM algorithm. This may take a while...');
+          onExecute(core);
+        }}
+      >
+        {label}
+      </button>
+    </div>
+  );
+}
 
 function ContentView({
   materials,
@@ -18,7 +91,6 @@ function ContentView({
   elapsedTime,
   meshData
 }: IContentViewProps) {
-  const { setLoading }: AppContext = useAppContext();
   return (
     <div
       style={{
@@ -224,6 +296,7 @@ function ContentView({
                     color: 'white'
                   }}
                 >{`Elapsed Time: ${elapsedTime.state.toFixed(0)} ms`}</div>
+
                 <div
                   style={{
                     fontWeight: 'bold',
@@ -345,6 +418,20 @@ function ContentView({
                     >{`G12: ${results.state.G12.toFixed(2)}`}</div>
                   </div>
                 </div>
+                <div
+                  style={{
+                    alignSelf: 'flex-start',
+                    color: 'white',
+                    fontSize: '12px',
+                    margin: '0 10px 18px 10px',
+                    maxWidth: '75%'
+                  }}
+                >
+                  <span style={{ fontWeight: 'bold' }}>{`Core: ${
+                    CORE_LABELS[results.state.core ?? 'typescript']
+                  }`}</span>
+                  {results.state.coreDetails ? ` — ${results.state.coreDetails}` : ''}
+                </div>
               </div>
               <div // DOWNLOAD BTNS
                 style={{
@@ -352,7 +439,7 @@ function ContentView({
                   height: '100%',
                   display: 'flex',
                   justifyContent: 'center',
-                  alignItems: 'center',
+                  alignItems: 'flex-end',
                   flexDirection: 'row'
                 }}
               >
@@ -388,6 +475,7 @@ function ContentView({
                 >
                   Download Results
                 </button>
+                <ExecuteControls onExecute={handleExecuteFvdam} label="Execute again" />
               </div>
             </div>
           ) : (
@@ -402,28 +490,7 @@ function ContentView({
                   flexDirection: 'column'
                 }}
               >
-                <button
-                  className="button"
-                  style={{
-                    cursor: 'pointer',
-                    backgroundColor: 'rgba(0, 0, 0, 0.08)',
-                    border: '1px solid var(--off-white)',
-                    color: 'white',
-                    padding: '10px',
-                    borderRadius: '5px',
-                    fontWeight: 'bold',
-                    fontSize: '16px',
-                    height: '50px',
-                    width: '200px',
-                    margin: '15px'
-                  }}
-                  onClick={() => {
-                    setLoading('Executing FVDAM algorithm. This may take a while...');
-                    handleExecuteFvdam();
-                  }}
-                >
-                  Execute FVDAM
-                </button>
+                <ExecuteControls onExecute={handleExecuteFvdam} />
               </div>
             </>
           )}

@@ -24,8 +24,7 @@
     "moment-timezone": "^0.5.43",
     "postmate": "^1.5.2",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "squid-navalweb-ui": "^0.40.79"
+    "react-dom": "^18.2.0"
   },
   "devDependencies": {
     "@types/react": "^18.0.28",

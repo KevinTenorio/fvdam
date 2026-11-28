@@ -36,11 +36,30 @@ res.propriedades   # E11, E22, E33, v12, v13, v23, G12, G13, G23
 |---|---|
 | `src/fvdam/malha.py` | Leitura de `.fvt` (como o `parseFile` do app) e de `.json` do gerador (`gerar_fvt`, tradução de `generateFvtFile`) |
 | `src/fvdam/nucleo.py` | Núcleo: geometria, matrizes locais, montagem esparsa, 6 casos de deformação, concentração, C* e constantes de engenharia |
+| `src/fvdam/web.py` | `homogeneizar_texto`: entrada e saída só com texto e tipos simples (usada pelo app no navegador) |
 | `tests/test_regressao.py` | C* e propriedades contra o núcleo TypeScript (38 malhas) e `.fvt` gerado byte a byte igual ao do gerador TS (35 `.json`) |
 | `tests/test_nucleo.py` | Testes independentes do TS: material homogêneo, limites de Voigt e Reuss, constantes de material isotrópico |
+| `tests/test_web.py` | `homogeneizar_texto` igual à leitura de arquivo |
 | `casos/regressao/` | Malhas e referência do núcleo TS (ver o README dali) |
 | `scripts/regressao_ts/` | Scripts que geram a referência com o núcleo TS |
 | `scripts/benchmark.py` | Tempo Python × TypeScript; grava `resultados/benchmark.csv` |
+| `scripts/pyodide/regressao_pyodide.mjs` | Regressão das 38 malhas rodando o núcleo dentro do Pyodide (Node) |
+
+## No navegador (Pyodide)
+
+O app da raiz do repositório roda este mesmo núcleo no navegador. No botão **Execute FVDAM**, escolha o núcleo **Python (in browser)** ou **TypeScript**. O núcleo Python roda num Web Worker com [Pyodide](https://pyodide.org) 314.0.8 (Python 3.14, NumPy 2.4, SciPy 1.18), carregado do CDN jsDelivr na primeira execução (alguns segundos; depois fica em cache). O código Python é embutido no build a partir de `python/src/fvdam/`, então o app e o pacote usam sempre a mesma versão do núcleo. A tela de resultados mostra qual núcleo e quais versões foram usados.
+
+Arquivos: `src/app/Home/python/fvdamPython.worker.ts` (worker) e `src/app/Home/python/fvdamPython.ts` (cliente).
+
+Regressão no Pyodide (Node), com a distribuição do Pyodide baixada em `<pasta>`:
+
+```bash
+cd python/scripts/pyodide
+npm install
+node regressao_pyodide.mjs <pasta>/pyodide/ ../..
+```
+
+Nas 38 malhas, a maior diferença relativa em C* contra o TypeScript também é da ordem de 1e-13. Com 576 subvolumes, o núcleo leva cerca de 0,1 s no navegador.
 
 ## Regressão e tempo
 

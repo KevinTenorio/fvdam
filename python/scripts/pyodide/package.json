@@ -1,0 +1,9 @@
+{
+  "name": "fvdam-regressao-pyodide",
+  "private": true,
+  "type": "module",
+  "description": "Regressão do núcleo Python rodando no Pyodide (Node)",
+  "dependencies": {
+    "pyodide": "314.0.8"
+  }
+}
