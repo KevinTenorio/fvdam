@@ -964,17 +964,58 @@ function MeshGeneratorView({
                   const b = nodes.state[faces.state[faceIndex]?.[1]];
                   if (!a || !b) return null;
                   const vertical = a[0] === b[0];
+                  const x0 = Math.min(a[0], b[0]) * zoom;
+                  const y0 = Math.min(a[1], b[1]) * zoom;
+                  const length = (vertical ? Math.abs(a[1] - b[1]) : Math.abs(a[0] - b[0])) * zoom;
+                  const midX = ((a[0] + b[0]) / 2) * zoom;
+                  const midY = ((a[1] + b[1]) / 2) * zoom;
+                  // símbolo sempre para fora da célula: em cima, embaixo, à esquerda ou à direita
+                  const tol = 1e-9 * Math.max(unitCellWidth.state || 1, unitCellHeight.state || 1);
+                  const rotation = vertical
+                    ? Math.abs(a[0]) <= tol
+                      ? 90
+                      : -90
+                    : Math.abs(a[1]) <= tol
+                    ? 180
+                    : 0;
                   return (
-                    <div
-                      key={faceIndex}
-                      className="mg-marker mg-support"
-                      style={{
-                        left: ((a[0] + b[0]) / 2) * zoom - (vertical ? 2 : 0),
-                        top: ((a[1] + b[1]) / 2) * zoom - (vertical ? 0 : 2),
-                        transform: `rotate(${vertical ? 270 : 0}deg)`
-                      }}
-                    >
-                      <Icon icon="support" color="#f0b35a" />
+                    <div key={faceIndex}>
+                      {/* a face restringida, realçada em toda a extensão */}
+                      <div
+                        className="mg-support-face"
+                        style={
+                          vertical
+                            ? { left: x0 - 2, top: y0, width: 4, height: length }
+                            : { left: x0, top: y0 - 2, width: length, height: 4 }
+                        }
+                      />
+                      {/* símbolo de apoio (triângulo com base hachurada), com a ponta no meio da face */}
+                      <svg
+                        className="mg-support-pin"
+                        width="22"
+                        height="22"
+                        viewBox="0 0 22 22"
+                        aria-hidden="true"
+                        style={{
+                          left: midX - 11,
+                          top: midY,
+                          transform: rotation ? `rotate(${rotation}deg)` : undefined,
+                          transformOrigin: '11px 0px'
+                        }}
+                      >
+                        <path
+                          d="M11 1 L3 15 H19 Z"
+                          fill="#f0b35a"
+                          stroke="#14181f"
+                          strokeWidth="1.5"
+                        />
+                        <path
+                          d="M2 18 H20 M4 18 L2 21 M8 18 L6 21 M12 18 L10 21 M16 18 L14 21 M20 18 L18 21"
+                          stroke="#f0b35a"
+                          strokeWidth="1.5"
+                          fill="none"
+                        />
+                      </svg>
                     </div>
                   );
                 })}

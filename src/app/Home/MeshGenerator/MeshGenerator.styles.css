@@ -362,8 +362,20 @@
   justify-content: center;
 }
 
-.mg-support {
+.mg-support-face {
+  position: absolute;
   z-index: 2;
+  background: #f0b35a;
+  box-shadow: 0 0 0 1px #14181f;
+  pointer-events: none;
+}
+
+.mg-support-pin {
+  position: absolute;
+  z-index: 3;
+  overflow: visible;
+  pointer-events: none;
+  filter: drop-shadow(0 0 1px #000);
 }
 
 /* rótulos sobre a geometria: branco com contorno escuro, legível sobre qualquer cor */

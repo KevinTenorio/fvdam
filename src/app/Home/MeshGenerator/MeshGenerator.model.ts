@@ -9,7 +9,7 @@ export interface IMeshGeneratorViewProps {
   nodes: IState<number[][]>;
   faces: IState<number[][]>;
   elements: IState<number[][]>;
-  generateMesh: () => void;
+  generateMesh: () => Promise<null>;
   stuffToShow: IState<IStuffToShow>;
   divisionsByRegion: IState<number>;
   generateFvtFile: (isDownload?: boolean) => void;
